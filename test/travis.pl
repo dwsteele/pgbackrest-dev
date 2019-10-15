@@ -43,6 +43,7 @@ test.pl [options] doc|test
 
  VM Options:
    --vm                 docker container to build/test
+   --vm-arch            architecture to use for vm
    --param              parameters to pass to test.pl
    --sudo               test requires sudo
 
@@ -54,6 +55,7 @@ test.pl [options] doc|test
 # Command line parameters
 ####################################################################################################################################
 my $strVm;
+my $strVmArch;
 my @stryParam;
 my $bSudo;
 my $bHelp;
@@ -61,7 +63,8 @@ my $bHelp;
 GetOptions ('help' => \$bHelp,
             'param=s@' => \@stryParam,
             'sudo' => \$bSudo,
-            'vm=s' => \$strVm)
+            'vm=s' => \$strVm,
+            'vm-arch=s' => \$strVmArch)
     or pod2usage(2);
 
 ####################################################################################################################################
@@ -205,8 +208,17 @@ eval
         # Build the container
         if ($strVm ne VM_NONE)
         {
+            if ($strVmArch ne VM_ARCH_AMD64)
+            {
+                processBegin("Install qemu");
+                processExec("apt-get install -y qemu-user-static", {bSuppressStdErr => true});
+                processEnd();
+            }
+
             processBegin("${strVm} build");
-            processExec("${strTestExe} --vm-build --vm=${strVm}", {bShowOutputAsync => true, bOutLogOnError => false});
+            processExec(
+                "${strTestExe} --vm-build --vm-arch=${strVmArch} --vm=${strVm}",
+                {bShowOutputAsync => true, bOutLogOnError => false});
             processEnd();
         }
 
