@@ -13,7 +13,8 @@ services:
 
 matrix:
   include:
-    - env: PGB_CI="test --vm=u18 --vm-arch=ppc64le --sudo"
+    - dist: bionic
+      env: PGB_CI="test --vm=u18 --vm-arch=ppc64le --sudo"
 
 install:
   - umask 0022 && cd ~ && pwd && whoami && umask && groups
