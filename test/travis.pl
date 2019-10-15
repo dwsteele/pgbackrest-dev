@@ -211,7 +211,7 @@ eval
             if ($strVmArch ne VM_ARCH_AMD64)
             {
                 processBegin("Install qemu");
-                processExec("apt-get install -y qemu-user-static", {bSuppressStdErr => true});
+                processExec("sudo apt-get install -y qemu-user-static", {bSuppressStdErr => true});
                 processEnd();
             }
 
