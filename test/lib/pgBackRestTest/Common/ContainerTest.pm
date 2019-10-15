@@ -49,7 +49,7 @@ use constant CERT_FAKE_SERVER_KEY                                   => CERT_FAKE
 ####################################################################################################################################
 # Container Debug - speeds container debugging by splitting each section into a separate intermediate container
 ####################################################################################################################################
-use constant CONTAINER_DEBUG                                        => false;
+use constant CONTAINER_DEBUG                                        => true;
 
 ####################################################################################################################################
 # Store cache container checksums
@@ -83,6 +83,7 @@ sub containerWrite
     my $strTempPath = shift;
     my $strOS = shift;
     my $strTitle = shift;
+    my $strImageArch = shift;
     my $strImageParent = shift;
     my $strImage = shift;
     my $strCopy = shift;
@@ -93,7 +94,7 @@ sub containerWrite
 
     $strScript =
         "# ${strTitle} Container\n" .
-        "FROM ${strImageParent}" .
+        "FROM ${strImageArch}/${strImageParent}" .
         (defined($strCopy) ? "\n\n${strCopy}" : '') .
         (defined($strScript) && $strScript ne ''?
             "\n\nRUN echo '" . (CONTAINER_DEBUG ? 'DEBUG' : 'OPTIMIZED') . " BUILD'" . $strScript : '');
@@ -300,6 +301,8 @@ sub containerBuild
 {
     my $oStorageDocker = shift;
     my $strVm = shift;
+    my $strVmHostArch = shift;
+    my $strVmArch = shift;
     my $bVmForce = shift;
 
     # Create temp path
@@ -343,6 +346,18 @@ sub containerBuild
         my $strImageParent = "$$oVm{$strOS}{&VM_IMAGE}";
         my $strImage = "${strOS}-base";
         my $strCopy = undef;
+
+        #---------------------------------------------------------------------------------------------------------------------------
+        if ($strVmHostArch ne $strVmArch)
+        {
+            system(
+                'cp -p /usr/bin/qemu-' . vmArchQemu($strVmArch) . "-static ${strTempPath}/qemu-" . vmArchQemu($strVmArch) .
+                    '-static') == 0
+                or confess &log(ERROR, 'unable to copy qemu');
+            $strCopy =
+                "# Copy QEMU\n" .
+                'COPY qemu-' . vmArchQemu($strVmArch) . "-static /usr/bin\n";
+        }
 
         #---------------------------------------------------------------------------------------------------------------------------
         my $strScript = sectionHeader() .
@@ -420,7 +435,9 @@ sub containerBuild
         my $strCertPath = 'test/certificate';
         my $strCertName = 'pgbackrest-test';
 
-        $strCopy = '# Copy Test Certificates';
+        $strCopy .=
+            (defined($strCopy) ? "\n" : '') .
+            '# Copy Test Certificates';
 
         foreach my $strFile ('-ca.crt', '.crt', '.key')
         {
@@ -534,7 +551,7 @@ sub containerBuild
         }
 
         containerWrite(
-            $oStorageDocker, $strTempPath, $strOS, 'Base', $strImageParent, $strImage, $strCopy, $strScript, $bVmForce);
+            $oStorageDocker, $strTempPath, $strOS, 'Base', $strVmArch, $strImageParent, $strImage, $strCopy, $strScript, $bVmForce);
 
         # Build image
         ###########################################################################################################################
@@ -569,10 +586,11 @@ sub containerBuild
 
         $strScript .= entryPointSetup($strOS);
 
-        containerWrite($oStorageDocker, $strTempPath, $strOS, 'Build', $strImageParent, $strImage, $strCopy, $strScript, $bVmForce);
+        containerWrite(
+        $oStorageDocker, $strTempPath, $strOS, 'Build', $strVmArch, $strImageParent, $strImage, $strCopy, $strScript, $bVmForce);
 
         # Test image
-        ########################################################################################################################
+        ############################################################################################################################
         if (!$bDeprecated)
         {
             $strImageParent = containerRepo() . ":${strOS}-base";
@@ -581,7 +599,7 @@ sub containerBuild
             $strCopy = undef;
             $strScript = '';
 
-            #---------------------------------------------------------------------------------------------------------------------------
+            #-----------------------------------------------------------------------------------------------------------------------
             $strScript .= sectionHeader() .
                 "# Create banner to make sure pgBackRest ignores it\n" .
                 "    echo '***********************************************' >  /etc/issue.net && \\\n" .
@@ -623,7 +641,8 @@ sub containerBuild
             $strScript .= entryPointSetup($strOS);
 
             containerWrite(
-                $oStorageDocker, $strTempPath, $strOS, 'Test', $strImageParent, $strImage, $strCopy, $strScript, $bVmForce);
+                $oStorageDocker, $strTempPath, $strOS, 'Test', $strVmArch, $strImageParent, $strImage, $strCopy, $strScript,
+                $bVmForce);
         }
     }
 

@@ -111,6 +111,7 @@ test.pl [options]
 
  VM Options:
    --vm                 docker container to build/test (u12, u14, co6, co7)
+   --vm-arch            vm architecture
    --vm-build           build Docker containers
    --vm-force           force a rebuild of Docker containers
    --vm-out             Show VM output (default false)
@@ -142,6 +143,7 @@ my $bQuiet = false;
 my $strPgVersion = 'minimal';
 my $bLogForce = false;
 my $strVm;
+my $strVmArch;
 my $strVmHost = VM_HOST_DEFAULT;
 my $bVmBuild = false;
 my $bVmForce = false;
@@ -180,6 +182,7 @@ GetOptions ('q|quiet' => \$bQuiet,
             'log-level=s' => \$strLogLevel,
             'log-level-test=s' => \$strLogLevelTest,
             'vm=s' => \$strVm,
+            'vm-arch=s' => \$strVmArch,
             'vm-host=s' => \$strVmHost,
             'vm-out' => \$bVmOut,
             'vm-build' => \$bVmBuild,
@@ -360,7 +363,7 @@ eval
     ################################################################################################################################
     if ($bVmBuild)
     {
-        containerBuild($oStorageBackRest, $strVm, $bVmForce);
+        containerBuild($oStorageBackRest, $strVm, VM_ARCH_AMD64, $strVmArch, $bVmForce);
         exit 0;
     }
 

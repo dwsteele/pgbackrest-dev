@@ -17,6 +17,44 @@ use pgBackRest::Common::Log;
 use pgBackRest::DbVersion;
 
 ####################################################################################################################################
+# Valid architecture list
+####################################################################################################################################
+use constant VM_ARCH_I386                                           => 'i386';
+    push @EXPORT, qw(VM_ARCH_I386);
+use constant VM_ARCH_AMD64                                          => 'amd64';
+    push @EXPORT, qw(VM_ARCH_AMD64);
+use constant VM_ARCH_PPC64LE                                        => 'ppc64le';
+    push @EXPORT, qw(VM_ARCH_PPC64LE);
+
+####################################################################################################################################
+# List of supported architectures
+####################################################################################################################################
+# qemu abbreviation for the achitecture
+use constant VM_ARCH_QEMU                                           => 'ppc64le';
+    push @EXPORT, qw(VM_ARCH_QEMU);
+
+# Docker abbreviation for the architecture
+use constant VM_ARCH_DOCKER                                         => 'ppc64le';
+    push @EXPORT, qw(VM_ARCH_DOCKER);
+
+my $rhArch =
+{
+    &VM_ARCH_PPC64LE =>
+    {
+        &VM_ARCH_DOCKER => 'ppc64le',
+        &VM_ARCH_QEMU => 'ppc64le',
+    },
+};
+
+# Helper to get qemu abbreviation
+sub vmArchQemu {my $strVmArch = shift; return $rhArch->{$strVmArch}{&VM_ARCH_QEMU}}
+push @EXPORT, qw(vmArchQemu);
+
+# Helper to get docker abbreviation
+sub vmArchDocker {my $strVmArch = shift; return $rhArch->{$strVmArch}{&VM_ARCH_DOCKER}}
+push @EXPORT, qw(vmArchDocker);
+
+####################################################################################################################################
 # VM hash keywords
 ####################################################################################################################################
 use constant VM_ARCH                                                => 'arch';
@@ -63,14 +101,6 @@ use constant VM_OS_DEBIAN                                           => 'debian';
     push @EXPORT, qw(VM_OS_DEBIAN);
 use constant VM_OS_UBUNTU                                           => 'ubuntu';
     push @EXPORT, qw(VM_OS_DEBIAN);
-
-####################################################################################################################################
-# Valid architecture list
-####################################################################################################################################
-use constant VM_ARCH_I386                                           => 'i386';
-    push @EXPORT, qw(VM_ARCH_I386);
-use constant VM_ARCH_AMD64                                          => 'amd64';
-    push @EXPORT, qw(VM_ARCH_AMD64);
 
 ####################################################################################################################################
 # Valid VM list
