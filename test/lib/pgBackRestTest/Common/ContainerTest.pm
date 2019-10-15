@@ -94,7 +94,7 @@ sub containerWrite
 
     $strScript =
         "# ${strTitle} Container\n" .
-        "FROM ${strImageArch}/${strImageParent}" .
+        "FROM " . (defined($strImageArch) ? "${strImageArch}/" : '') . "${strImageParent}" .
         (defined($strCopy) ? "\n\n${strCopy}" : '') .
         (defined($strScript) && $strScript ne ''?
             "\n\nRUN echo '" . (CONTAINER_DEBUG ? 'DEBUG' : 'OPTIMIZED') . " BUILD'" . $strScript : '');
@@ -587,7 +587,7 @@ sub containerBuild
         $strScript .= entryPointSetup($strOS);
 
         containerWrite(
-        $oStorageDocker, $strTempPath, $strOS, 'Build', $strVmArch, $strImageParent, $strImage, $strCopy, $strScript, $bVmForce);
+        $oStorageDocker, $strTempPath, $strOS, 'Build', undef, $strImageParent, $strImage, $strCopy, $strScript, $bVmForce);
 
         # Test image
         ############################################################################################################################
@@ -641,7 +641,7 @@ sub containerBuild
             $strScript .= entryPointSetup($strOS);
 
             containerWrite(
-                $oStorageDocker, $strTempPath, $strOS, 'Test', $strVmArch, $strImageParent, $strImage, $strCopy, $strScript,
+                $oStorageDocker, $strTempPath, $strOS, 'Test', undef, $strImageParent, $strImage, $strCopy, $strScript,
                 $bVmForce);
         }
     }
