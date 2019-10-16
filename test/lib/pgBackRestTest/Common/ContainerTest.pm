@@ -498,46 +498,46 @@ sub containerBuild
             else
             {
                 $strScript .=
-                    "    echo 'deb http://apt.postgresql.org/pub/repos/apt/ " .
-                    $$oVm{$strOS}{&VM_OS_REPO} . '-pgdg main' .
-                        "' >> /etc/apt/sources.list.d/pgdg.list && \\\n" .
-                    "    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \\\n" .
-                    "    apt-get update && \\\n" .
+                    # "    echo 'deb http://apt.postgresql.org/pub/repos/apt/ " .
+                    # $$oVm{$strOS}{&VM_OS_REPO} . '-pgdg main' .
+                    #     "' >> /etc/apt/sources.list.d/pgdg.list && \\\n" .
+                    # "    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \\\n" .
+                    # "    apt-get update && \\\n" .
                     "    apt-get install -y postgresql-common libpq-dev && \\\n" .
                     "    sed -i 's/^\\#create\\_main\\_cluster.*\$/create\\_main\\_cluster \\= false/' " .
                         "/etc/postgresql-common/createcluster.conf";
             }
 
-            if (defined($oOS->{&VM_DB}) && @{$oOS->{&VM_DB}} > 0)
-            {
-                $strScript .= sectionHeader() .
-                    "# Install PostgreSQL\n";
-
-                if ($$oVm{$strOS}{&VM_OS_BASE} eq VM_OS_BASE_RHEL)
-                {
-                    $strScript .= "    yum -y install";
-                }
-                else
-                {
-                    $strScript .= "    apt-get install -y";
-                }
-
-                # Construct list of databases to install
-                foreach my $strDbVersion (@{$oOS->{&VM_DB}})
-                {
-                    if ($$oVm{$strOS}{&VM_OS_BASE} eq VM_OS_BASE_RHEL)
-                    {
-                        my $strDbVersionNoDot = $strDbVersion;
-                        $strDbVersionNoDot =~ s/\.//;
-
-                        $strScript .=  " postgresql${strDbVersionNoDot}-server";
-                    }
-                    else
-                    {
-                        $strScript .= " postgresql-${strDbVersion}";
-                    }
-                }
-            }
+            # if (defined($oOS->{&VM_DB}) && @{$oOS->{&VM_DB}} > 0)
+            # {
+            #     $strScript .= sectionHeader() .
+            #         "# Install PostgreSQL\n";
+            #
+            #     if ($$oVm{$strOS}{&VM_OS_BASE} eq VM_OS_BASE_RHEL)
+            #     {
+            #         $strScript .= "    yum -y install";
+            #     }
+            #     else
+            #     {
+            #         $strScript .= "    apt-get install -y";
+            #     }
+            #
+            #     # Construct list of databases to install
+            #     foreach my $strDbVersion (@{$oOS->{&VM_DB}})
+            #     {
+            #         if ($$oVm{$strOS}{&VM_OS_BASE} eq VM_OS_BASE_RHEL)
+            #         {
+            #             my $strDbVersionNoDot = $strDbVersion;
+            #             $strDbVersionNoDot =~ s/\.//;
+            #
+            #             $strScript .=  " postgresql${strDbVersionNoDot}-server";
+            #         }
+            #         else
+            #         {
+            #             $strScript .= " postgresql-${strDbVersion}";
+            #         }
+            #     }
+            # }
         }
 
 
