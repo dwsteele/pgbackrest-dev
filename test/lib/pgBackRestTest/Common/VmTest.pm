@@ -25,16 +25,18 @@ use constant VM_ARCH_AMD64                                          => 'amd64';
     push @EXPORT, qw(VM_ARCH_AMD64);
 use constant VM_ARCH_PPC64LE                                        => 'ppc64le';
     push @EXPORT, qw(VM_ARCH_PPC64LE);
+use constant VM_ARCH_S390X                                          => 's390x';
+    push @EXPORT, qw(VM_ARCH_S390X);
 
 ####################################################################################################################################
 # List of supported architectures
 ####################################################################################################################################
 # qemu abbreviation for the achitecture
-use constant VM_ARCH_QEMU                                           => 'ppc64le';
+use constant VM_ARCH_QEMU                                           => 'qemu';
     push @EXPORT, qw(VM_ARCH_QEMU);
 
 # Docker abbreviation for the architecture
-use constant VM_ARCH_DOCKER                                         => 'ppc64le';
+use constant VM_ARCH_DOCKER                                         => 'docker';
     push @EXPORT, qw(VM_ARCH_DOCKER);
 
 my $rhArch =
@@ -43,6 +45,12 @@ my $rhArch =
     {
         &VM_ARCH_DOCKER => 'ppc64le',
         &VM_ARCH_QEMU => 'ppc64le',
+    },
+
+    &VM_ARCH_S390X =>
+    {
+        &VM_ARCH_DOCKER => 's390x',
+        &VM_ARCH_QEMU => 's390x',
     },
 };
 
