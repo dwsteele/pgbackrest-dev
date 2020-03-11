@@ -16,6 +16,9 @@ SIZING:
 ***********************************************************************************************************************************/
 #include "build.auto.h"
 
+#include <zlib.h>
+
+#include "common/compress/gz/common.h"
 #include "common/debug.h"
 #include "common/io/filter/filter.intern.h"
 #include "command/backup/pageIncremental.h"
@@ -88,6 +91,16 @@ pageIncrementalResult(THIS_VOID)
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
+
+    // z_stream stream = (z_stream){.zalloc = NULL};
+    // gzError(deflateInit2(&stream, Z_BEST_COMPRESSION, Z_DEFLATED, -GZ_WINDOW_MAX, GZ_MEMORY_MAX, Z_DEFAULT_STRATEGY));
+    // stream.avail_in = sizeof(bufferIn);
+    // stream.next_in = bufferIn;
+    // stream.avail_out = sizeof(bufferOut);
+    // stream.next_out = bufferOut;
+    // gzError(deflate(&stream, Z_FINISH));
+    // deflateEnd(&stream);
+    // TEST_LOG_FMT("size is %zu", sizeof(bufferOut) - stream.avail_out);
 
     (void)this; // !!! REMOVE
 
