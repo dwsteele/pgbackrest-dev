@@ -181,7 +181,7 @@ gzCompressNew(int level)
         };
 
         // Create gz stream
-        gzError(deflateInit2(&driver->stream, level, Z_DEFLATED, WANT_GZ | WINDOW_BITS, MEM_LEVEL, Z_DEFAULT_STRATEGY));
+        gzError(deflateInit2(&driver->stream, level, Z_DEFLATED, GZ_HEADER | GZ_WINDOW_MAX, GZ_MEMORY_MAX, Z_DEFAULT_STRATEGY));
 
         // Set free callback to ensure gz context is freed
         memContextCallbackSet(driver->memContext, gzCompressFreeResource, driver);

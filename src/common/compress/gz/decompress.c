@@ -161,7 +161,7 @@ gzDecompressNew(void)
         };
 
         // Create gz stream
-        gzError(driver->result = inflateInit2(&driver->stream, WANT_GZ | WINDOW_BITS));
+        gzError(driver->result = inflateInit2(&driver->stream, GZ_HEADER | GZ_WINDOW_MAX));
 
         // Set free callback to ensure gz context is freed
         memContextCallbackSet(driver->memContext, gzDecompressFreeResource, driver);
