@@ -1,10 +1,18 @@
 /***********************************************************************************************************************************
 Page Incremental Backup Filter
 
+TODO:
+1) Add page-incr option to manifest at least so we can error when we see future backups that have it.
+2) Right now we read beyond the size of the file as originally reported, but we could/should stop doing that
+
+SIZING:
+1) 1TB of data is 134M of bitmaps at 8 bits per page (i.e. 256 incrementals)
+
 !!! Notes:
-1) Store page bitmap in a separate file or in the backup file?
-2) Store all backups in the page bitmap, or only the current backup?
-3) Right now we read beyond the size of the file as originally reported, but we could/should stop doing that
+*) Store multiple bitmaps in a separate file.  Flush this file from time to time so resume works?
+    * File will also need to be checksummed and the checksum stored in the manifest
+    * Bitmaps may need to be fetched from prior backups if there is a reference
+    * Bitmaps will be cumulative, not just for the current backup
 ***********************************************************************************************************************************/
 #include "build.auto.h"
 
