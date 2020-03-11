@@ -555,6 +555,7 @@ unit:
         coverage:
           command/backup/backup: full
           command/backup/file: full
+          command/backup/pageIncremental: full
           command/backup/protocol: full
 
         include:
