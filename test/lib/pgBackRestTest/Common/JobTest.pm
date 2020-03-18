@@ -203,14 +203,16 @@ sub run
             {
                 if ($self->{oTest}->{&TEST_VM} ne VM_NONE)
                 {
+                    my $strBinPath = $self->{strTestPath} . '/bin/' . $self->{oTest}->{&TEST_VM} . '/' . PROJECT_EXE;
+
                     executeTest(
                         'docker run -itd -h ' . $self->{oTest}->{&TEST_VM} . "-test --name=${strImage}" .
                         " -v ${strHostTestPath}:${strVmTestPath}" .
                         ($self->{oTest}->{&TEST_C} ? " -v $self->{strGCovPath}:$self->{strGCovPath}" : '') .
                         ($self->{oTest}->{&TEST_C} ? " -v $self->{strDataPath}:$self->{strDataPath}" : '') .
-                        " -v $self->{strBackRestBase}:$self->{strBackRestBase} " .
-                        containerRepo() . ':' . $self->{oTest}->{&TEST_VM} .
-                        "-test",
+                        " -v $self->{strBackRestBase}:$self->{strBackRestBase}" .
+                        ($self->{oTest}->{&TEST_BIN_REQ} ? " -v ${strBinPath}:${strBinPath}:ro" : '') .
+                        ' ' . containerRepo() . ':' . $self->{oTest}->{&TEST_VM} . '-test',
                         {bSuppressStdErr => true});
                 }
 
@@ -231,12 +233,6 @@ sub run
 
                     # Build directory has been initialized
                     $rhBuildInit->{$self->{oTest}->{&TEST_VM}}{$self->{iVmIdx}} = true;
-                }
-
-                # If testing Perl code (or C code that calls the binary) install binary
-                if ($self->{oTest}->{&TEST_VM} ne VM_NONE && (!$self->{oTest}->{&TEST_C} || $self->{oTest}->{&TEST_BIN_REQ}))
-                {
-                    jobInstallC($self->{strBackRestBase}, $self->{oTest}->{&TEST_VM}, $strImage);
                 }
             }
         }
@@ -379,8 +375,7 @@ sub run
                 }
 
                 # Determine where the project exe is located
-                my $strProjectExePath = $self->{oTest}->{&TEST_VM} eq VM_NONE ?
-                    "$self->{strBackRestBase}/test/.vagrant/bin/$self->{oTest}->{&TEST_VM}/src/" . PROJECT_EXE : PROJECT_EXE;
+                my $strProjectExePath = "$self->{strTestPath}/bin/$self->{oTest}->{&TEST_VM}/" . PROJECT_EXE;
 
                 # Is this test running in a container?
                 my $strContainer = $self->{oTest}->{&TEST_VM} eq VM_NONE ? 'false' : 'true';
@@ -606,9 +601,10 @@ sub end
                 ($self->{oTest}->{&TEST_VM} ne VM_NONE  ? 'docker exec -i -u ' . TEST_USER . " ${strImage} " : '') .
                     "gprof $self->{strGCovPath}/test.bin $self->{strGCovPath}/gmon.out > $self->{strGCovPath}/gprof.txt");
 
-            $self->{oStorageTest}->pathCreate("$self->{strBackRestBase}/test/profile", {strMode => '0750', bIgnoreExists => true});
+            $self->{oStorageTest}->pathCreate(
+                "$self->{strBackRestBase}/test/result/profile", {strMode => '0750', bIgnoreExists => true, bCreateParent => true});
             $self->{oStorageTest}->copy(
-                "$self->{strGCovPath}/gprof.txt", "$self->{strBackRestBase}/test/profile/gprof.txt");
+                "$self->{strGCovPath}/gprof.txt", "$self->{strBackRestBase}/test/result/profile/gprof.txt");
         }
 
         # If C code generate coverage info
@@ -630,7 +626,7 @@ sub end
                 "module/$self->{oTest}->{&TEST_MODULE}/" . testRunName($self->{oTest}->{&TEST_NAME}, false) . 'Test');
 
             # Generate coverage reports for the modules
-            my $strLCovConf = $self->{strBackRestBase} . '/test/.vagrant/code/lcov.conf';
+            my $strLCovConf = $self->{strBackRestBase} . '/test/result/coverage/raw/lcov.conf';
             coverageLCovConfigGenerate($self->{oStorageTest}, $strLCovConf, $self->{bCoverageSummary});
 
             my $strLCovExeBase = "lcov --config-file=${strLCovConf}";
@@ -663,9 +659,12 @@ sub end
                 }
 
                 # Generate lcov reports
-                my $strModulePath = $self->{strBackRestBase} . "/test/.vagrant/code/${strModuleOutName}";
-                my $strLCovFile = "${strModulePath}.lcov";
-                my $strLCovTotal = $self->{strBackRestBase} . "/test/.vagrant/code/all.lcov";
+                my $strModulePath =
+                    $self->{strTestPath} . "/repo/" .
+                    (${strModuleOutName} =~ /^test\// ?
+                        'test/src/module/' . substr(${strModuleOutName}, 5) : "src/${strModuleOutName}");
+                my $strLCovFile = $self->{strBackRestBase} . "/test/result/coverage/raw/${strModuleOutName}.lcov";
+                my $strLCovTotal = $self->{strTestPath} . "/temp/all.lcov";
 
                 executeTest(
                     "${strLCovExe} --extract=${strLCovOut} */${strModuleName}.c --o=${strLCovOutTmp}");
@@ -713,7 +712,8 @@ sub end
                         # Fix source file name
                         $strCoverage =~ s/^SF\:.*$/SF:$strModulePath\.c/mg;
 
-                        $self->{oStorageTest}->put($strLCovFile, $strCoverage);
+                        $self->{oStorageTest}->put(
+                            $self->{oStorageTest}->openWrite($strLCovFile, {bPathCreate => true}), $strCoverage);
 
                         if ($self->{oStorageTest}->exists($strLCovTotal))
                         {
@@ -782,26 +782,5 @@ sub end
         {name => 'bFail', value => $bFail, trace => true}
     );
 }
-
-####################################################################################################################################
-# Install C binary
-####################################################################################################################################
-sub jobInstallC
-{
-    my $strBasePath = shift;
-    my $strVm = shift;
-    my $strImage = shift;
-
-    my $oVm = vmGet();
-    my $strBuildPath = "${strBasePath}/test/.vagrant/bin/${strVm}";
-    my $strBuildBinPath = "${strBuildPath}/src";
-
-    executeTest(
-        "docker exec -i -u root ${strImage} bash -c '" .
-        "cp ${strBuildBinPath}/" . PROJECT_EXE . ' /usr/bin/' . PROJECT_EXE . ' && ' .
-        'chmod 755 /usr/bin/' . PROJECT_EXE . "'");
-}
-
-push(@EXPORT, qw(jobInstallC));
 
 1;

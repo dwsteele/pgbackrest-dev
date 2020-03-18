@@ -11,6 +11,7 @@ use warnings FATAL => qw(all);
 use Carp qw(confess);
 use English '-no_match_vars';
 
+use Digest::SHA qw(sha1_hex);
 use Exporter qw(import);
     our @EXPORT = qw();
 use File::Basename qw(dirname);
@@ -71,6 +72,7 @@ push @EXPORT, qw(coverageLCovConfigGenerate);
 sub coverageGenerate
 {
     my $oStorage = shift;
+    my $strBasePath = shift;
     my $strCoveragePath = shift;
     my $strOutFile = shift;
 
@@ -87,8 +89,7 @@ sub coverageGenerate
             my $strCoverage = ${$oStorage->get("${strCoveragePath}/${strFileCov}")};
 
             # Show that the file is part of the coverage report even if there is no missing coverage
-            my $strFile = substr($strFileCov, 0, length($strFileCov) - 5) . '.c';
-            $rhCoverage->{$strFile} = undef;
+            my $strFile;
 
             my $iBranchLine = -1;
             my $iBranch = undef;
@@ -97,8 +98,18 @@ sub coverageGenerate
 
             foreach my $strLine (split("\n", $strCoverage))
             {
+                # Get source file name
+                if ($strLine =~ /^SF\:/)
+                {
+                    $strFile = substr($strLine, 3);
+                    $rhCoverage->{$strFile} = undef;
+
+                    # Generate a random anchor so new reports will not show links as already followed.  This is also an easy way
+                    # to create valid, disambiguos links.
+                    $rhCoverage->{$strFile}{anchor} = sha1_hex(rand(16));
+                }
                 # Check branch coverage
-                if ($strLine =~ /^BRDA\:/)
+                elsif ($strLine =~ /^BRDA\:/)
                 {
                     my @stryData = split("\,", substr($strLine, 5));
 
@@ -216,7 +227,7 @@ sub coverageGenerate
     {
         if (defined($rhCoverage->{$strFile}{line}))
         {
-            my $strC = ${$oStorage->get("${strCoveragePath}/${strFile}")};
+            my $strC = ${$oStorage->get($strFile)};
             my @stryC = split("\n", $strC);
 
             foreach my $iLine (sort(keys(%{$rhCoverage->{$strFile}{line}})))
@@ -423,11 +434,13 @@ sub coverageGenerate
         "    color: white;\n" .
         "}\n");
 
+    # File list title
     $oHtml->bodyGet()->addNew(HTML_DIV, 'title', {strContent => $strTitle});
 
     # Build the file list table
+    $oHtml->bodyGet()->addNew(HTML_DIV, 'list-table-caption');
+
     my $oTable = $oHtml->bodyGet()->addNew(HTML_TABLE, 'list-table');
-    $oTable->addNew(HTML_DIV, 'list-table-caption');
 
     my $oHeader = $oTable->addNew(HTML_TR, 'list-table-header');
     $oHeader->addNew(HTML_TH, 'list-table-header-file', {strContent => 'FILE'});
@@ -435,7 +448,19 @@ sub coverageGenerate
     foreach my $strFile (sort(keys(%{$rhCoverage})))
     {
         my $oRow = $oTable->addNew(HTML_TR, 'list-table-row-' . (defined($rhCoverage->{$strFile}{line}) ? 'uncovered' : 'covered'));
-        $oRow->addNew(HTML_TD, 'list-table-row-file', {strContent => $strFile});
+
+        # Link only created when file is uncovered
+        if (defined($rhCoverage->{$strFile}{line}))
+        {
+            $oRow->addNew(HTML_TD, 'list-table-row-file')->addNew(
+                HTML_A, undef,
+                {strContent => substr($strFile, length($strBasePath) + 1), strRef => '#' . $rhCoverage->{$strFile}{anchor}});
+        }
+        # Else just show the file name
+        else
+        {
+            $oRow->addNew(HTML_TD, 'list-table-row-file', {strContent => substr($strFile, length($strBasePath) + 1)});
+        }
     }
 
     # Report on files that are missing coverage
@@ -443,17 +468,21 @@ sub coverageGenerate
     {
         if (defined($rhCoverage->{$strFile}{line}))
         {
+            # Anchor only created when file is uncovered
+            $oHtml->bodyGet()->addNew(HTML_A, undef, {strId => $rhCoverage->{$strFile}{anchor}});
+
+            # Report table caption, i.e. the uncovered file name
+            $oHtml->bodyGet()->addNew(HTML_DIV, 'report-table-caption', {strContent => substr($strFile, length($strBasePath) + 1)});
+
             # Build the file report table
             $oTable = $oHtml->bodyGet()->addNew(HTML_TABLE, 'report-table');
-
-            $oTable->addNew(HTML_DIV, 'report-table-caption', {strContent => "${strFile}"});
 
             $oHeader = $oTable->addNew(HTML_TR, 'report-table-header');
             $oHeader->addNew(HTML_TH, 'report-table-header-line', {strContent => 'LINE'});
             $oHeader->addNew(HTML_TH, 'report-table-header-branch', {strContent => 'BRANCH'});
             $oHeader->addNew(HTML_TH, 'report-table-header-code', {strContent => 'CODE'});
 
-            my $strC = ${$oStorage->get("${strCoveragePath}/${strFile}")};
+            my $strC = ${$oStorage->get($strFile)};
             my @stryC = split("\n", $strC);
             my $iLastLine = undef;
 

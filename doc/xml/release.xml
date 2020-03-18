@@ -24,9 +24,38 @@
 
                         <p>Note that setting <br-option>compress-type=lz4</br-option> will make new backups and archive incompatible (unrestorable) with prior versions of <backrest/>.</p>
                     </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
+                            <release-item-contributor id="cynthia.shang"/>
+                            <release-item-contributor id="luca.ferrari"/>
+                        </release-item-contributor-list>
+
+                        <p>Add <br-option>--dry-run</br-option> option to the <cmd>expire</cmd> command.</p>
+
+                        <p>Use dry-run to see which backups/archive would be removed by the <cmd>expire</cmd> command without actually removing anything.</p>
+                    </release-item>
                 </release-feature-list>
 
                 <release-improvement-list>
+                    <release-item>
+                        <release-item-contributor-list>
+                             <release-item-contributor id="marc.cousin"/>
+                             <release-item-reviewer id="david.steele"/>
+                        </release-item-contributor-list>
+
+                        <p>Fix detection of keepalive options on <proper>Linux</proper>.</p>
+                    </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
+                             <release-item-contributor id="marc.cousin"/>
+                             <release-item-reviewer id="david.steele"/>
+                        </release-item-contributor-list>
+
+                        <p>Add configure host detection to set standards flags correctly.</p>
+                    </release-item>
+
                     <release-item>
                         <release-item-contributor-list>
                              <release-item-reviewer id="cynthia.shang"/>
