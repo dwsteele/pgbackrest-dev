@@ -57,6 +57,7 @@ STRING_STATIC(S3_XML_TAG_COMMON_PREFIXES_STR,                       "CommonPrefi
 STRING_STATIC(S3_XML_TAG_CONTENTS_STR,                              "Contents");
 STRING_STATIC(S3_XML_TAG_DELETE_STR,                                "Delete");
 STRING_STATIC(S3_XML_TAG_ERROR_STR,                                 "Error");
+STRING_EXTERN(S3_XML_TAG_ETAG_STR,                                  S3_XML_TAG_ETAG);
 STRING_STATIC(S3_XML_TAG_KEY_STR,                                   "Key");
 STRING_STATIC(S3_XML_TAG_LAST_MODIFIED_STR,                         "LastModified");
 STRING_STATIC(S3_XML_TAG_MESSAGE_STR,                               "Message");
@@ -552,6 +553,7 @@ storageS3Info(THIS_VOID, const String *file, StorageInfoLevel level, StorageInte
         result.type = storageTypeFile;
         result.size = cvtZToUInt64(strPtr(httpHeaderGet(httpResult.responseHeader, HTTP_HEADER_CONTENT_LENGTH_STR)));
         result.timeModified = httpLastModifiedToTime(httpHeaderGet(httpResult.responseHeader, HTTP_HEADER_LAST_MODIFIED_STR));
+        result.uid = httpHeaderGet(httpResult.responseHeader, HTTP_HEADER_ETAG_STR);
     }
 
     FUNCTION_LOG_RETURN(STORAGE_INFO, result);
@@ -613,6 +615,7 @@ storageS3InfoListCallback(StorageS3 *this, void *callbackData, const String *nam
             cvtZToUInt64(strPtr(xmlNodeContent(xmlNodeChild(xml, S3_XML_TAG_SIZE_STR, true)))) : 0;
         info.timeModified = type == storageTypeFile ?
             storageS3CvtTime(xmlNodeContent(xmlNodeChild(xml, S3_XML_TAG_LAST_MODIFIED_STR, true))) : 0;
+        info.uid = type == storageTypeFile ? xmlNodeContent(xmlNodeChild(xml, S3_XML_TAG_ETAG_STR, false)) : NULL;
     }
 
     data->callback(data->callbackData, &info);
@@ -838,6 +841,8 @@ storageS3Remove(THIS_VOID, const String *file, StorageInterfaceRemoveParam param
 /**********************************************************************************************************************************/
 static const StorageInterface storageInterfaceS3 =
 {
+    .feature = 1 << storageFeatureUID,
+
     .info = storageS3Info,
     .infoList = storageS3InfoList,
     .newRead = storageS3NewRead,

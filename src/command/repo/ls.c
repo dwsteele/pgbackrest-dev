@@ -92,6 +92,12 @@ storageListRenderCallback(void *data, const StorageInfo *info)
         {
             ioWriteStr(listData->write, strNewFmt(",\"size\":%" PRIu64, info->size));
             ioWriteStr(listData->write, strNewFmt(",\"time\":%" PRId64, (int64_t)info->timeModified));
+
+            if (info->uid != NULL)
+            {
+                ioWrite(listData->write, BUFSTRDEF(",\"uid\":"));
+                ioWriteStr(listData->write, jsonFromStr(info->uid));
+            }
         }
 
         if (info->type == storageTypeLink)

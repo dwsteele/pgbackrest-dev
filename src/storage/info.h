@@ -50,6 +50,7 @@ typedef struct StorageInfo
     StorageType type;                                               // Type file/path/link)
     uint64_t size;                                                  // Size (path/link is 0)
     time_t timeModified;                                            // Time file was last modified
+    const String *uid;                                              // Unique identifier (when storageFeatureUID set)
 
     // Set when info type >= storageInfoLevelDetail (undefined at lower levels)
     mode_t mode;                                                    // Mode of path/file/link

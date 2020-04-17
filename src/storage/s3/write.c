@@ -22,7 +22,6 @@ STRING_STATIC(S3_QUERY_UPLOAD_ID_STR,                               "uploadId");
 /***********************************************************************************************************************************
 XML tags
 ***********************************************************************************************************************************/
-STRING_STATIC(S3_XML_TAG_ETAG_STR,                                  "ETag");
 STRING_STATIC(S3_XML_TAG_UPLOAD_ID_STR,                             "UploadId");
 STRING_STATIC(S3_XML_TAG_COMPLETE_MULTIPART_UPLOAD_STR,             "CompleteMultipartUpload");
 STRING_STATIC(S3_XML_TAG_PART_STR,                                  "Part");
@@ -41,6 +40,7 @@ typedef struct StorageWriteS3
     Buffer *partBuffer;
     const String *uploadId;
     StringList *uploadPartList;
+    const String *uid;                                              // Final ETag for the object
 } StorageWriteS3;
 
 /***********************************************************************************************************************************
@@ -206,15 +206,30 @@ storageWriteS3Close(THIS_VOID)
                 }
 
                 // Finalize the multi-part upload
-                storageS3Request(
-                    this->storage, HTTP_VERB_POST_STR, this->interface.name,
-                    httpQueryAdd(httpQueryNew(), S3_QUERY_UPLOAD_ID_STR, this->uploadId), xmlDocumentBuf(partList), true, false);
+                XmlNode *xmlRoot = xmlDocumentRoot(
+                    xmlDocumentNewBuf(
+                        storageS3Request(
+                            this->storage, HTTP_VERB_POST_STR, this->interface.name,
+                            httpQueryAdd(httpQueryNew(), S3_QUERY_UPLOAD_ID_STR, this->uploadId), xmlDocumentBuf(partList), true,
+                            false).response));
+
+                MEM_CONTEXT_BEGIN(this->memContext)
+                {
+                    this->uid = strDup(xmlNodeContent(xmlNodeChild(xmlRoot, S3_XML_TAG_ETAG_STR, false)));
+                }
+                MEM_CONTEXT_END();
             }
             // Else upload all the data in a single put
             else
             {
-                storageS3Request(
+                StorageS3RequestResult httpResult = storageS3Request(
                     this->storage, HTTP_VERB_PUT_STR, this->interface.name, NULL, this->partBuffer, true, false);
+
+                MEM_CONTEXT_BEGIN(this->memContext)
+                {
+                    this->uid = strDup(httpHeaderGet(httpResult.responseHeader, HTTP_HEADER_ETAG_STR));
+                }
+                MEM_CONTEXT_END();
             }
 
             bufFree(this->partBuffer);
@@ -224,6 +239,21 @@ storageWriteS3Close(THIS_VOID)
     }
 
     FUNCTION_LOG_RETURN_VOID();
+}
+
+/**********************************************************************************************************************************/
+static const String *
+storageWriteS3Uid(void *thisVoid)
+{
+    THIS(StorageWriteS3);
+
+    FUNCTION_TEST_BEGIN();
+        FUNCTION_TEST_PARAM(STORAGE_WRITE_S3, this);
+    FUNCTION_TEST_END();
+
+    ASSERT(this != NULL);
+
+    FUNCTION_TEST_RETURN(this->uid);
 }
 
 /**********************************************************************************************************************************/
@@ -258,6 +288,8 @@ storageWriteS3New(StorageS3 *storage, const String *name, size_t partSize)
                 .createPath = true,
                 .syncFile = true,
                 .syncPath = true,
+
+                .uid = storageWriteS3Uid,
 
                 .ioInterface = (IoWriteInterface)
                 {

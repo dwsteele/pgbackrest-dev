@@ -136,7 +136,7 @@ testS3Server(void)
 
     // Zero-length file
     harnessTlsServerExpect(testS3ServerRequest(HTTP_VERB_PUT, "/file.txt", "", storageS3UriStyleHost));
-    harnessTlsServerReply(testS3ServerResponse(200, "OK", NULL, NULL));
+    harnessTlsServerReply(testS3ServerResponse(200, "OK", "etag:ppprppp", NULL));
 
     // File is written in chunks with nothing left over on close
     harnessTlsServerExpect(testS3ServerRequest(HTTP_VERB_POST, "/file.txt?uploads=", NULL, storageS3UriStyleHost));
@@ -164,7 +164,11 @@ testS3Server(void)
             "<Part><PartNumber>2</PartNumber><ETag>WxRt2</ETag></Part>"
             "</CompleteMultipartUpload>\n",
         storageS3UriStyleHost));
-    harnessTlsServerReply(testS3ServerResponse(200, "OK", NULL, NULL));
+    harnessTlsServerReply(
+        testS3ServerResponse(
+            200, "OK", NULL,
+            "<CompleteMultipartUploadOutput>"
+            "</CompleteMultipartUploadOutput>"));
 
     // File is written in chunks with something left over on close
     harnessTlsServerExpect(testS3ServerRequest(HTTP_VERB_POST, "/file.txt?uploads=", NULL, storageS3UriStyleHost));
@@ -192,7 +196,11 @@ testS3Server(void)
             "<Part><PartNumber>2</PartNumber><ETag>RR552</ETag></Part>"
             "</CompleteMultipartUpload>\n",
         storageS3UriStyleHost));
-    harnessTlsServerReply(testS3ServerResponse(200, "OK", NULL, NULL));
+    harnessTlsServerReply(
+        testS3ServerResponse(200, "OK", NULL,
+        "<CompleteMultipartUploadOutput>"
+        "<ETag>\"666789\"</ETag>"
+        "</CompleteMultipartUploadOutput>"));
 
     // storageDriverExists()
     // -------------------------------------------------------------------------------------------------------------------------
@@ -219,6 +227,7 @@ testS3Server(void)
     harnessTlsServerReply(testS3ServerResponse(
         200, "OK",
         "content-length:9999\r\n"
+        "ETag:asdlfhaowervlasjbdv\r\n"
         "Last-Modified: Wed, 21 Oct 2015 07:28:00 GMT",
         NULL));
 
@@ -242,6 +251,7 @@ testS3Server(void)
             "    <Contents>"
             "        <Key>path/to/test_file</Key>"
             "        <LastModified>2009-10-12T17:50:30.000Z</LastModified>"
+            "        <ETag>xxxyyyxxx</ETag>"
             "        <Size>787</Size>"
             "    </Contents>"
             "   <CommonPrefixes>"
@@ -817,24 +827,28 @@ testRun(void)
                 TEST_RESULT_STR_Z(storageWriteName(write), "/file.txt", "check file name");
                 TEST_RESULT_BOOL(storageWriteSyncFile(write), true, "file is synced");
                 TEST_RESULT_BOOL(storageWriteSyncPath(write), true, "path is synced");
+                TEST_RESULT_PTR(storageWriteUid(write), NULL, "    check uid");
 
                 TEST_RESULT_VOID(storageWriteS3Close(write->driver), "close file again");
 
                 // Zero-length file
                 TEST_ASSIGN(write, storageNewWriteP(s3, strNew("file.txt")), "new write file");
                 TEST_RESULT_VOID(storagePutP(write, NULL), "write zero-length file");
+                TEST_RESULT_STR_Z(storageWriteUid(write), "ppprppp", "    check uid");
 
                 // File is written in chunks with nothing left over on close
                 TEST_ASSIGN(write, storageNewWriteP(s3, strNew("file.txt")), "new write file");
                 TEST_RESULT_VOID(
                     storagePutP(write, BUFSTRDEF("12345678901234567890123456789012")),
                     "write file in chunks -- nothing left on close");
+                TEST_RESULT_PTR(storageWriteUid(write), NULL, "    check uid");
 
                 // File is written in chunks with something left over on close
                 TEST_ASSIGN(write, storageNewWriteP(s3, strNew("file.txt")), "new write file");
                 TEST_RESULT_VOID(
                     storagePutP(write, BUFSTRDEF("12345678901234567890")),
                     "write file in chunks -- something left on close");
+                TEST_RESULT_STR_Z(storageWriteUid(write), "\"666789\"", "    check uid");
 
                 // storageDriverExists()
                 // -----------------------------------------------------------------------------------------------------------------
@@ -851,6 +865,7 @@ testRun(void)
                 TEST_RESULT_UINT(info.type, storageTypeFile, "    check type");
                 TEST_RESULT_UINT(info.size, 9999, "    check exists");
                 TEST_RESULT_INT(info.timeModified, 1445412480, "    check time");
+                TEST_RESULT_STR_Z(info.uid, "asdlfhaowervlasjbdv", "    check uid");
 
                 TEST_TITLE("file exists and only checking existence");
 
@@ -859,6 +874,7 @@ testRun(void)
                 TEST_RESULT_UINT(info.type, storageTypeFile, "    check type");
                 TEST_RESULT_UINT(info.size, 0, "    check exists");
                 TEST_RESULT_INT(info.timeModified, 0, "    check time");
+                TEST_RESULT_PTR(info.uid, NULL, "    check uid");
 
                 // -----------------------------------------------------------------------------------------------------------------
                 TEST_TITLE("list basic level");
@@ -877,7 +893,7 @@ testRun(void)
                 TEST_RESULT_STR_Z(
                     callbackData.content,
                     "test_path {path}\n"
-                    "test_file {file, s=787, t=1255369830}\n",
+                    "test_file {file, s=787, t=1255369830, uid=xxxyyyxxx}\n",
                     "    check content");
 
                 // -----------------------------------------------------------------------------------------------------------------

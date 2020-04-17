@@ -268,6 +268,7 @@ storageInfo(const Storage *this, const String *fileExp, StorageInfoParam param)
         // Dup the strings into the prior context
         MEM_CONTEXT_PRIOR_BEGIN()
         {
+            result.uid = strDup(result.uid);
             result.linkDestination = strDup(result.linkDestination);
             result.user = strDup(result.user);
             result.group = strDup(result.group);
@@ -302,6 +303,7 @@ storageInfoListSortCallback(void *data, const StorageInfo *info)
         // Copy info and dup strings
         StorageInfo infoCopy = *info;
         infoCopy.name = strDup(info->name);
+        infoCopy.uid = strDup(info->uid);
         infoCopy.linkDestination = strDup(info->linkDestination);
         infoCopy.user = strLstAddIfMissing(infoData->ownerList, info->user);
         infoCopy.group = strLstAddIfMissing(infoData->ownerList, info->group);

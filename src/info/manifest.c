@@ -113,6 +113,8 @@ STRING_STATIC(MANIFEST_SECTION_TARGET_PATH_DEFAULT_STR,             "target:path
     VARIANT_STRDEF_STATIC(MANIFEST_KEY_TIMESTAMP_VAR,               MANIFEST_KEY_TIMESTAMP);
 #define MANIFEST_KEY_TYPE                                           "type"
     VARIANT_STRDEF_STATIC(MANIFEST_KEY_TYPE_VAR,                    MANIFEST_KEY_TYPE);
+#define MANIFEST_KEY_UID                                            "uid"
+    VARIANT_STRDEF_STATIC(MANIFEST_KEY_UID_VAR,                     MANIFEST_KEY_UID);
 #define MANIFEST_KEY_USER                                           "user"
     STRING_STATIC(MANIFEST_KEY_USER_STR,                            MANIFEST_KEY_USER);
     VARIANT_STRDEF_STATIC(MANIFEST_KEY_USER_VAR,                    MANIFEST_KEY_USER);
@@ -1187,7 +1189,7 @@ manifestBuildIncr(Manifest *this, const Manifest *manifestPrior, BackupType type
                 (delta || file->size == 0 || file->timestamp == filePrior->timestamp))
             {
                 manifestFileUpdate(
-                    this, file->name, file->size, filePrior->sizeRepo, filePrior->checksumSha1,
+                    this, file->name, file->size, filePrior->sizeRepo, filePrior->checksumSha1, filePrior->uid,
                     VARSTR(filePrior->reference != NULL ? filePrior->reference : manifestPrior->data.backupLabel),
                     filePrior->checksumPage, filePrior->checksumPageError, filePrior->checksumPageErrorList);
             }
@@ -1409,6 +1411,12 @@ manifestLoadCallback(void *callbackData, const String *section, const String *ke
                 memcpy(
                     file.checksumSha1, strPtr(varStr(kvGet(fileKv, MANIFEST_KEY_CHECKSUM_VAR))), HASH_TYPE_SHA1_SIZE_HEX + 1);
             }
+
+            // Unique identifier is optional
+            const Variant *uid = kvGet(fileKv, MANIFEST_KEY_UID_VAR);
+
+            if (uid != NULL)
+                file.uid = varStr(uid);
 
             const Variant *checksumPage = kvGetDefault(fileKv, MANIFEST_KEY_CHECKSUM_PAGE_VAR, NULL);
 
@@ -2092,6 +2100,9 @@ manifestSaveCallback(void *callbackData, const String *sectionNext, InfoSave *in
 
                 kvPut(fileKv, MANIFEST_KEY_TIMESTAMP_VAR, varNewUInt64((uint64_t)file->timestamp));
 
+                if (file->uid != NULL)
+                    kvPut(fileKv, MANIFEST_KEY_UID_VAR, varNewStr(file->uid));
+
                 if (!varEq(manifestOwnerVar(file->user), saveData->fileUserDefault))
                     kvPut(fileKv, MANIFEST_KEY_USER_VAR, manifestOwnerVar(file->user));
 
@@ -2542,8 +2553,8 @@ manifestFileTotal(const Manifest *this)
 
 void
 manifestFileUpdate(
-    Manifest *this, const String *name, uint64_t size, uint64_t sizeRepo, const char *checksumSha1, const Variant *reference,
-    bool checksumPage, bool checksumPageError, const VariantList *checksumPageErrorList)
+    Manifest *this, const String *name, uint64_t size, uint64_t sizeRepo, const char *checksumSha1, const String *uid,
+    const Variant *reference, bool checksumPage, bool checksumPageError, const VariantList *checksumPageErrorList)
 {
     FUNCTION_TEST_BEGIN();
         FUNCTION_TEST_PARAM(MANIFEST, this);
@@ -2551,6 +2562,7 @@ manifestFileUpdate(
         FUNCTION_TEST_PARAM(UINT64, size);
         FUNCTION_TEST_PARAM(UINT64, sizeRepo);
         FUNCTION_TEST_PARAM(STRINGZ, checksumSha1);
+        FUNCTION_TEST_PARAM(STRING, uid);
         FUNCTION_TEST_PARAM(VARIANT, reference);
         FUNCTION_TEST_PARAM(BOOL, checksumPage);
         FUNCTION_TEST_PARAM(BOOL, checksumPageError);
@@ -2579,6 +2591,9 @@ manifestFileUpdate(
         // Update checksum if set
         if (checksumSha1 != NULL)
             memcpy(file->checksumSha1, checksumSha1, HASH_TYPE_SHA1_SIZE_HEX + 1);
+
+        // Update uid if set
+        file->uid = strDup(uid);
 
         // Update repo size
         file->size = size;

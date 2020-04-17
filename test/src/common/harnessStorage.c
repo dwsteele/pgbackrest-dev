@@ -87,6 +87,9 @@ hrnStorageInfoListCallback(void *callbackData, const StorageInfo *info)
             {
                 if (!data->timestampOmit)
                     strCatFmt(data->content, ", t=%" PRIu64, (uint64_t)info->timeModified);
+
+                if (info->uid != NULL)
+                    strCatFmt(data->content, ", uid=%s", strPtr(info->uid));
             }
 
             if (info->level >= storageInfoLevelDetail && (!data->userOmit || userId() != info->userId))

@@ -53,6 +53,9 @@ bool storageWriteSyncPath(const StorageWrite *this);
 // File type
 const String *storageWriteType(const StorageWrite *this);
 
+// Unique identifier for the file, if any
+const String *storageWriteUid(const StorageWrite *this);
+
 /***********************************************************************************************************************************
 Destructor
 ***********************************************************************************************************************************/
