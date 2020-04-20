@@ -283,8 +283,10 @@ sub run
 
         $oHostDbMaster->manifestPathCreate(\%oManifest, MANIFEST_TARGET_PGDATA);
 
-        $oHostDbMaster->manifestFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, DB_FILE_PGVERSION, PG_VERSION_94,
-                                              '184473f470864e067ee3a22e64b47b0a1c356f29', $lTime, undef, true);
+        $oHostDbMaster->manifestFileCreate(
+            \%oManifest, MANIFEST_TARGET_PGDATA, DB_FILE_PGVERSION, PG_VERSION_94, '184473f470864e067ee3a22e64b47b0a1c356f29',
+            $bS3
+            $lTime, undef, true);
 
         # Load sample page
         my $tBasePage = ${storageTest()->get($self->dataPath() . '/page.bin')};

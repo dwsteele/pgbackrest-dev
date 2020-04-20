@@ -211,6 +211,7 @@ sub manifestFileCreate
     my $strFile = shift;
     my $strContent = shift;
     my $strChecksum = shift;
+    my $strUid = shift;
     my $lTime = shift;
     my $strMode = shift;
     my $bMaster = shift;
@@ -258,6 +259,11 @@ sub manifestFileCreate
     if (defined($strChecksum))
     {
         ${$oManifestRef}{&MANIFEST_SECTION_TARGET_FILE}{$strManifestKey}{checksum} = $strChecksum;
+    }
+
+    if (defined($strUid))
+    {
+        ${$oManifestRef}{&MANIFEST_SECTION_TARGET_FILE}{$strManifestKey}{uid} = $strUid;
     }
 }
 
