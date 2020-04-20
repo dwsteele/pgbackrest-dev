@@ -284,8 +284,7 @@ sub run
         $oHostDbMaster->manifestPathCreate(\%oManifest, MANIFEST_TARGET_PGDATA);
 
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, DB_FILE_PGVERSION, PG_VERSION_94, '184473f470864e067ee3a22e64b47b0a1c356f29',
-            $bS3
+            \%oManifest, MANIFEST_TARGET_PGDATA, DB_FILE_PGVERSION, PG_VERSION_94, '184473f470864e067ee3a22e64b47b0a1c356f29', $bS3,
             $lTime, undef, true);
 
         # Load sample page
@@ -296,10 +295,12 @@ sub run
         $oHostDbMaster->manifestPathCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'base');
         $oHostDbMaster->manifestPathCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'base/1');
 
-        $oHostDbMaster->manifestFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'base/1/12000', $tBasePage,
-                                              '22c98d248ff548311eda88559e4a8405ed77c003', $lTime);
-        $oHostDbMaster->manifestFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'base/1/' . DB_FILE_PGVERSION,
-                                              PG_VERSION_94, '184473f470864e067ee3a22e64b47b0a1c356f29', $lTime, '660');
+        $oHostDbMaster->manifestFileCreate(
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/1/12000', $tBasePage, '22c98d248ff548311eda88559e4a8405ed77c003',
+            $bS3, $lTime);
+        $oHostDbMaster->manifestFileCreate(
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/1/' . DB_FILE_PGVERSION, PG_VERSION_94,
+            '184473f470864e067ee3a22e64b47b0a1c356f29', $bS3, $lTime, '660');
 
         if (!$bRemote)
         {
@@ -315,9 +316,10 @@ sub run
 
         $oHostDbMaster->manifestFileCreate(
             \%oManifest, MANIFEST_TARGET_PGDATA, 'base/16384/17000', $tPageInvalid17000,
-            'e0101dd8ffb910c9c202ca35b5f828bcb9697bed', $lTime, undef, undef, '1');
-        $oHostDbMaster->manifestFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'base/16384/' . DB_FILE_PGVERSION,
-                                              PG_VERSION_94, '184473f470864e067ee3a22e64b47b0a1c356f29', $lTime);
+            'e0101dd8ffb910c9c202ca35b5f828bcb9697bed', $bS3, $lTime, undef, undef, '1');
+        $oHostDbMaster->manifestFileCreate(
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/16384/' . DB_FILE_PGVERSION, PG_VERSION_94,
+            '184473f470864e067ee3a22e64b47b0a1c356f29', $bS3, $lTime);
 
         if (!$bRemote)
         {
@@ -336,7 +338,7 @@ sub run
             pageBuild($tBasePage, 0, 0x8170, 0xFFFFFFFF, 0xFFFFFFFF);
 
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/32768/33000', $tPageValid, '7a16d165e4775f7c92e8cdf60c0af57313f0bf90',
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/32768/33000', $tPageValid, '7a16d165e4775f7c92e8cdf60c0af57313f0bf90', $bS3,
             $lTime);
 
         my $iBlockOffset = 32767 * 131072;
@@ -349,7 +351,7 @@ sub run
 
         $oHostDbMaster->manifestFileCreate(
             \%oManifest, MANIFEST_TARGET_PGDATA, 'base/32768/33000.32767', $tPageValidSeg32767,
-            '6e99b589e550e68e934fd235ccba59fe5b592a9e', $lTime);
+            '6e99b589e550e68e934fd235ccba59fe5b592a9e', $bS3, $lTime);
 
         my $tPageInvalid33001 =
             pageBuild($tBasePage, 1, 0x1b9a) .
@@ -363,17 +365,18 @@ sub run
 
         $oHostDbMaster->manifestFileCreate(
             \%oManifest, MANIFEST_TARGET_PGDATA, 'base/32768/33001', $tPageInvalid33001,
-            '6bf316f11d28c28914ea9be92c00de9bea6d9a6b', $lTime, undef, undef, '0, [3, 5], 7');
+            '6bf316f11d28c28914ea9be92c00de9bea6d9a6b', $bS3, $lTime, undef, undef, '0, [3, 5], 7');
 
-        $oHostDbMaster->manifestFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'base/32768/' . DB_FILE_PGVERSION,
-                                              PG_VERSION_94, '184473f470864e067ee3a22e64b47b0a1c356f29', $lTime);
+        $oHostDbMaster->manifestFileCreate(
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/32768/' . DB_FILE_PGVERSION, PG_VERSION_94,
+            '184473f470864e067ee3a22e64b47b0a1c356f29', $bS3, $lTime);
 
         # Create global path
         $oHostDbMaster->manifestPathCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'global');
 
         $oHostDbMaster->manifestFileCreate(
             \%oManifest, MANIFEST_TARGET_PGDATA, DB_FILE_PGCONTROL, '[replaceme]',
-            $self->archBits() == 32 ? '8107e546c59c72a8c1818fc3610d7cc1e5623660' : '4c77c900f7af0d9ab13fa9982051a42e0b637f6c',
+            $self->archBits() == 32 ? '8107e546c59c72a8c1818fc3610d7cc1e5623660' : '4c77c900f7af0d9ab13fa9982051a42e0b637f6c', $bS3,
             $lTime - 100, undef, true);
 
         # Copy pg_control
@@ -430,8 +433,9 @@ sub run
             $oHostDbMaster->dbFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'global/' . DB_FILE_PGINTERNALINIT, 'IGNORE');
 
             # Unlog and temp files to ignore (unlog _init will NOT be ignored)
-            $oHostDbMaster->manifestFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'base/32768/44000_init', $tPageValid,
-                '7a16d165e4775f7c92e8cdf60c0af57313f0bf90', $lTime);
+            $oHostDbMaster->manifestFileCreate(
+                \%oManifest, MANIFEST_TARGET_PGDATA, 'base/32768/44000_init', $tPageValid,
+                '7a16d165e4775f7c92e8cdf60c0af57313f0bf90', $bS3, $lTime);
             $oHostDbMaster->dbFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'base/32768/44000', 'IGNORE');
             $oHostDbMaster->dbFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'base/32768/t333_44000', 'IGNORE');
         }
@@ -459,27 +463,29 @@ sub run
             $oHostDbMaster->dbPath() . '/pg_config/postgresql.conf', "listen_addresses = *\n", $lTime - 100);
         testLinkCreate($oHostDbMaster->dbPath() . '/pg_config/postgresql.conf.link', './postgresql.conf');
 
-        $oHostDbMaster->manifestLinkCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'postgresql.conf',
-                                              '../pg_config/postgresql.conf', true);
+        $oHostDbMaster->manifestLinkCreate(
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'postgresql.conf', '../pg_config/postgresql.conf', $bS3, true);
 
         # Create a link to pg_hba.conf
         testFileCreate(
             $oHostDbMaster->dbPath() . '/pg_config/pg_hba.conf', "CONTENTS\n", $lTime - 100);
         testLinkCreate($oHostDbMaster->dbPath() . '/pg_config/pg_hba.conf.link', './pg_hba.conf');
 
-        $oHostDbMaster->manifestLinkCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'pg_hba.conf',
-                                              '../pg_config/pg_hba.conf', true);
+        $oHostDbMaster->manifestLinkCreate(
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'pg_hba.conf', '../pg_config/pg_hba.conf', $bS3, true);
 
         # Create stat directory link and file
         storageTest()->pathCreate($oHostDbMaster->dbPath() . '/pg_stat', {strMode => '0700', bCreateParent => true});
         $oHostDbMaster->manifestLinkCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'pg_stat', '../pg_stat');
-        $oHostDbMaster->manifestFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA . '/pg_stat', 'global.stat', 'stats',
-                                              'e350d5ce0153f3e22d5db21cf2a4eff00f3ee877', $lTime - 100, undef, true);
+        $oHostDbMaster->manifestFileCreate(
+            \%oManifest, MANIFEST_TARGET_PGDATA . '/pg_stat', 'global.stat', 'stats', 'e350d5ce0153f3e22d5db21cf2a4eff00f3ee877',
+            $bS3, $lTime - 100, undef, true);
         $oHostDbMaster->manifestPathCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'pg_clog');
 
         # Create file with special characters
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'special-!_.*\'()&!@;:+,?', undef, undef, $lTime, undef, true);
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'special-!_.*\'()&!@;:+,?', undef, undef, $bS3, $lTime, undef,
+            true);
 
         $oManifest{&MANIFEST_SECTION_BACKUP_OPTION}{&MANIFEST_KEY_PROCESS_MAX} = 1;
 
@@ -594,16 +600,16 @@ sub run
         }
 
         # Add zero-sized file
-        $oHostDbMaster->manifestFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'zero_from_start', undef,
-                                              undef, $lTime, undef, true);
+        $oHostDbMaster->manifestFileCreate(
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'zero_from_start', undef, undef, $bS3, $lTime, undef, true);
 
         # Add files for testing backups when time changes but content doesn't, and when content changes but time and size don't
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'changetime.txt', 'SIZE', '88087292ed82e26f3eb824d0bffc05ccf7a30f8d', $lTime,
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'changetime.txt', 'SIZE', '88087292ed82e26f3eb824d0bffc05ccf7a30f8d', $bS3, $lTime,
             undef, true);
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'changecontent.txt', 'CONTENT', '238a131a3e8eb98d1fc5b27d882ca40b7618fd2a', $lTime,
-            undef, true);
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'changecontent.txt', 'CONTENT', '238a131a3e8eb98d1fc5b27d882ca40b7618fd2a', $bS3,
+            $lTime, undef, true);
 
         # Create files to be excluded with the --exclude option
         $oHostBackup->configUpdate(
@@ -744,14 +750,15 @@ sub run
 
         $oHostDbMaster->manifestFileCreate(
             \%oManifest, MANIFEST_TARGET_PGTBLSPC . '/1', '16384/tablespace1.txt', 'TBLSPCB',
-            '14c44cef6287269b08d41de489fd492bb9fc795d', $lTime - 100, undef, undef, false);
-        $oHostDbMaster->manifestFileCreate(\%oManifest, MANIFEST_TARGET_PGDATA, 'badchecksum.txt', 'BADCHECKSUM',
-                                              'f927212cd08d11a42a666b2f04235398e9ceeb51', $lTime, undef, true);
+            '14c44cef6287269b08d41de489fd492bb9fc795d', $bS3, $lTime - 100, undef, undef, false);
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'changesize.txt', 'SIZE', '88087292ed82e26f3eb824d0bffc05ccf7a30f8d', $lTime,
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'badchecksum.txt', 'BADCHECKSUM', 'f927212cd08d11a42a666b2f04235398e9ceeb51', $bS3,
+            $lTime, undef, true);
+        $oHostDbMaster->manifestFileCreate(
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'changesize.txt', 'SIZE', '88087292ed82e26f3eb824d0bffc05ccf7a30f8d', $bS3, $lTime,
             undef, true);
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'zerosize.txt', '', undef, $lTime - 100, undef, true);
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'zerosize.txt', '', undef, $bS3, $lTime - 100, undef, true);
 
         # Create temp dir and file that will be ignored
         if (!$bRemote)
@@ -795,13 +802,13 @@ sub run
 
         # Change contents/size of a db file to make sure it recopies (and does not resume)
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'changesize.txt', 'SIZE+MORE', '3905d5be2ec8d67f41435dab5e0dcda3ae47455d', $lTime,
-            undef, true);
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'changesize.txt', 'SIZE+MORE', '3905d5be2ec8d67f41435dab5e0dcda3ae47455d', $bS3,
+            $lTime, undef, true);
 
         # Change contents/time of a db file to make sure it recopies (and does not resume)
         $oHostDbMaster->manifestFileCreate(
             \%oManifest, MANIFEST_TARGET_PGTBLSPC . '/1', '16384/tablespace1.txt', 'TBLSPC1',
-            'd85de07d6421d90aa9191c11c889bfde43680f0f', $lTime, undef, undef, false);
+            'd85de07d6421d90aa9191c11c889bfde43680f0f', $bS3, $lTime, undef, undef, false);
 
         # Remove the main manifest so the backup appears aborted
         forceStorageRemove(storageRepo(), "${strResumePath}/" . FILE_MANIFEST);
@@ -812,7 +819,7 @@ sub run
 
         $oHostDbMaster->manifestFileCreate(
             \%oManifest, MANIFEST_TARGET_PGTBLSPC . '/2', '32768/tablespace2.txt', 'TBLSPC2',
-            'dc7f76e43c46101b47acc55ae4d593a9e6983578', $lTime, undef, undef, false);
+            'dc7f76e43c46101b47acc55ae4d593a9e6983578', $bS3, $lTime, undef, undef, false);
 
         # Make sure pg_internal.init is ignored in tablespaces
         $oHostDbMaster->dbFileCreate(\%oManifest, MANIFEST_TARGET_PGTBLSPC . '/2', '32768/' . DB_FILE_PGINTERNALINIT, 'IGNORE');
@@ -903,13 +910,14 @@ sub run
         $oHostDbMaster->manifestReference(\%oManifest, $strBackup);
 
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/base2.txt', 'BASE2', '09b5e31766be1dba1ec27de82f975c1b6eea2a92', $lTime);
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/base2.txt', 'BASE2', '09b5e31766be1dba1ec27de82f975c1b6eea2a92', $bS3,
+            $lTime);
 
         $oHostDbMaster->manifestTablespaceDrop(\%oManifest, 1, 2);
 
         $oHostDbMaster->manifestFileCreate(
             \%oManifest, MANIFEST_TARGET_PGTBLSPC . '/2', '32768/tablespace2b.txt', 'TBLSPC2B',
-            'e324463005236d83e6e54795dbddd20a74533bf3', $lTime, undef, undef, false);
+            'e324463005236d83e6e54795dbddd20a74533bf3', $bS3, $lTime, undef, undef, false);
 
         # Munge the version to make sure it gets corrected on the next run
         $oHostBackup->manifestMunge($strBackup, {&INI_SECTION_BACKREST => {&INI_KEY_VERSION => '0.00'}}, false);
@@ -928,7 +936,7 @@ sub run
         $oHostDbMaster->manifestReference(\%oManifest, $strBackup);
 
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/16384/17000', 'BASEUPDT', '9a53d532e27785e681766c98516a5e93f096a501',
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/16384/17000', 'BASEUPDT', '9a53d532e27785e681766c98516a5e93f096a501', $bS3,
             $lTime, undef, undef, false);
 
         # Perform the backup
@@ -977,7 +985,7 @@ sub run
 
         $oHostDbMaster->manifestFileCreate(
             \%oManifest, MANIFEST_TARGET_PGTBLSPC . '/2', '32768/tablespace2c.txt', 'TBLSPCBIGGER',
-            'dfcb8679956b734706cf87259d50c88f83e80e66', $lTime, undef, undef, false);
+            'dfcb8679956b734706cf87259d50c88f83e80e66', $bS3, $lTime, undef, undef, false);
 
         $oHostBackup->backup(
             $strType, 'remove files',
@@ -1003,7 +1011,7 @@ sub run
         $oHostDbMaster->manifestReference(\%oManifest);
 
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/16384/17000', 'BASEUPDT2', '7579ada0808d7f98087a0a586d0df9de009cdc33',
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/16384/17000', 'BASEUPDT2', '7579ada0808d7f98087a0a586d0df9de009cdc33', $bS3,
             $lTime, undef, undef, false);
 
         $oManifest{&MANIFEST_SECTION_BACKUP_OPTION}{&MANIFEST_KEY_CHECKSUM_PAGE} = JSON::PP::false;
@@ -1022,7 +1030,7 @@ sub run
         $oHostDbMaster->manifestReference(\%oManifest, $strFullBackup);
 
         $oHostDbMaster->manifestFileCreate(
-            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/base2.txt', 'BASE2UPDT', 'cafac3c59553f2cfde41ce2e62e7662295f108c0',
+            \%oManifest, MANIFEST_TARGET_PGDATA, 'base/base2.txt', 'BASE2UPDT', 'cafac3c59553f2cfde41ce2e62e7662295f108c0', $bS3,
             $lTime, undef, undef, false);
 
         # Munge the prior manifest so that option-checksum-page is missing to be sure the logic works for backups before page

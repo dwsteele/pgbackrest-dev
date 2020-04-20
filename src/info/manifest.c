@@ -241,6 +241,7 @@ manifestFileAdd(Manifest *this, const ManifestFile *file)
             .size = file->size,
             .sizeRepo = file->sizeRepo,
             .timestamp = file->timestamp,
+            .uid = strDup(file->uid),
             .user = manifestOwnerCache(this, file->user),
         };
 

@@ -629,6 +629,12 @@ sub backupCompare
             }
         }
 
+        # If uid exists set it to 'present' since it is not deterministic
+        if ($oActualManifest->test(MANIFEST_SECTION_TARGET_FILE, $strFileKey, 'uid'))
+        {
+            $oActualManifest->set(MANIFEST_SECTION_TARGET_FILE, $strFileKey, 'uid', 'present');
+        }
+
         # If the backup does not have page checksums then no need to compare
         if (!$oExpectedManifest->{&MANIFEST_SECTION_BACKUP_OPTION}{&MANIFEST_KEY_CHECKSUM_PAGE})
         {
@@ -1958,6 +1964,10 @@ sub restoreCompare
                 $oActualManifest->remove(MANIFEST_SECTION_TARGET_FILE, $strName, MANIFEST_SUBKEY_CHECKSUM_PAGE);
             }
         }
+
+
+        # Remove UID -- the actual manifest cannot contain UIDs since it has not actually be run
+        delete($oExpectedManifestRef->{&MANIFEST_SECTION_TARGET_FILE}{$strName}{'uid'});
 
         if (!$self->synthetic())
         {
