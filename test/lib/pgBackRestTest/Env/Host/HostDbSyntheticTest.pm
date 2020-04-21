@@ -263,7 +263,7 @@ sub manifestFileCreate
 
     if ($bUid)
     {
-        ${$oManifestRef}{&MANIFEST_SECTION_TARGET_FILE}{$strManifestKey}{uid} = 'present';
+        ${$oManifestRef}{&MANIFEST_SECTION_TARGET_FILE}{$strManifestKey}{&MANIFEST_SUBKEY_UID} = 'present';
     }
 }
 
@@ -379,7 +379,7 @@ sub manifestLinkCreate
 
         if ($bUid)
         {
-            $oManifestRef->{$strSection}{$strManifestKey}{'uid'} = 'present';
+            $oManifestRef->{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_UID} = 'present';
         }
 
         ${$oManifestRef}{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_MASTER} =
