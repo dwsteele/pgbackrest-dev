@@ -446,9 +446,7 @@ unit:
           storage/s3/write: full
           storage/helper: full
           storage/storage: full
-
-        include:
-          - storage/write
+          storage/write: full
 
   # ********************************************************************************************************************************
   - name: protocol
