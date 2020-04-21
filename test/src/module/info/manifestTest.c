@@ -31,7 +31,7 @@ testRun(void)
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_RESULT_UINT(sizeof(ManifestLoadFound), TEST_64BIT() ? 1 : 1, "check size of ManifestLoadFound");
         TEST_RESULT_UINT(sizeof(ManifestPath), TEST_64BIT() ? 32 : 16, "check size of ManifestPath");
-        TEST_RESULT_UINT(sizeof(ManifestFile), TEST_64BIT() ? 120 : 92, "check size of ManifestFile");
+        TEST_RESULT_UINT(sizeof(ManifestFile), TEST_64BIT() ? 128 : 96, "check size of ManifestFile");
     }
 
     // *****************************************************************************************************************************
@@ -1788,8 +1788,8 @@ testRun(void)
         TEST_TITLE("manifest validation");
 
         // Munge files to produce errors
-        manifestFileUpdate(manifest, STRDEF("pg_data/postgresql.conf"), 4457, 0, NULL, NULL, false, false, NULL);
-        manifestFileUpdate(manifest, STRDEF("pg_data/base/32768/33000.32767"), 0, 0, NULL, NULL, true, false, NULL);
+        manifestFileUpdate(manifest, STRDEF("pg_data/postgresql.conf"), 4457, 0, NULL, NULL, NULL, false, false, NULL);
+        manifestFileUpdate(manifest, STRDEF("pg_data/base/32768/33000.32767"), 0, 0, NULL, NULL, NULL, true, false, NULL);
 
         TEST_ERROR(
             manifestValidate(manifest, false), FormatError,
@@ -1804,9 +1804,9 @@ testRun(void)
             "repo size must be > 0 for file 'pg_data/postgresql.conf'");
 
         // Undo changes made to files
-        manifestFileUpdate(manifest, STRDEF("pg_data/base/32768/33000.32767"), 32768, 32768, NULL, NULL, true, false, NULL);
+        manifestFileUpdate(manifest, STRDEF("pg_data/base/32768/33000.32767"), 32768, 32768, NULL, NULL, NULL, true, false, NULL);
         manifestFileUpdate(
-            manifest, STRDEF("pg_data/postgresql.conf"), 4457, 4457, "184473f470864e067ee3a22e64b47b0a1c356f29", NULL, false,
+            manifest, STRDEF("pg_data/postgresql.conf"), 4457, 4457, "184473f470864e067ee3a22e64b47b0a1c356f29", NULL, NULL, false,
             false, NULL);
 
         TEST_RESULT_VOID(manifestValidate(manifest, true), "successful validate");
@@ -1891,10 +1891,11 @@ testRun(void)
         TEST_RESULT_PTR(file, NULL, "    return default NULL");
 
         TEST_RESULT_VOID(
-            manifestFileUpdate(manifest, STRDEF("pg_data/postgresql.conf"), 4457, 4457, "", NULL, false, false, NULL),
+            manifestFileUpdate(manifest, STRDEF("pg_data/postgresql.conf"), 4457, 4457, "", NULL, NULL, false, false, NULL),
             "update file");
         TEST_RESULT_VOID(
-            manifestFileUpdate(manifest, STRDEF("pg_data/postgresql.conf"), 4457, 4457, NULL, varNewStr(NULL), false, false, NULL),
+            manifestFileUpdate(
+                manifest, STRDEF("pg_data/postgresql.conf"), 4457, 4457, NULL, NULL, varNewStr(NULL), false, false, NULL),
             "update file");
 
         // ManifestDb getters

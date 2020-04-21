@@ -525,7 +525,7 @@ testRun(void)
 
         TEST_RESULT_BOOL(
             backupProtocol(PROTOCOL_COMMAND_BACKUP_FILE_STR, paramList, server), true, "protocol backup file - skip");
-        TEST_RESULT_STR_Z(strNewBuf(serverWrite), "{\"out\":[3,0,0,null,null]}\n", "    check result");
+        TEST_RESULT_STR_Z(strNewBuf(serverWrite), "{\"out\":[3,0,0,null,null,null]}\n", "    check result");
         bufUsedSet(serverWrite, 0);
 
         // Pg file missing - ignoreMissing=false
@@ -610,7 +610,7 @@ testRun(void)
             backupProtocol(PROTOCOL_COMMAND_BACKUP_FILE_STR, paramList, server), true, "protocol backup file - pageChecksum");
         TEST_RESULT_STR_Z(
             strNewBuf(serverWrite),
-            "{\"out\":[1,12,12,\"719e82b52966b075c1ee276547e924179628fe69\",{\"align\":false,\"valid\":false}]}\n",
+            "{\"out\":[1,12,12,\"719e82b52966b075c1ee276547e924179628fe69\",{\"align\":false,\"valid\":false},null]}\n",
             "    check result");
         bufUsedSet(serverWrite, 0);
 
@@ -652,7 +652,8 @@ testRun(void)
         TEST_RESULT_BOOL(
             backupProtocol(PROTOCOL_COMMAND_BACKUP_FILE_STR, paramList, server), true, "protocol backup file - noop");
         TEST_RESULT_STR_Z(
-            strNewBuf(serverWrite), "{\"out\":[4,12,0,\"719e82b52966b075c1ee276547e924179628fe69\",null]}\n", "    check result");
+            strNewBuf(serverWrite), "{\"out\":[4,12,0,\"719e82b52966b075c1ee276547e924179628fe69\",null,null]}\n",
+            "    check result");
         bufUsedSet(serverWrite, 0);
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -793,7 +794,8 @@ testRun(void)
         TEST_RESULT_BOOL(
             backupProtocol(PROTOCOL_COMMAND_BACKUP_FILE_STR, paramList, server), true, "protocol backup file - copy, compress");
         TEST_RESULT_STR_Z(
-            strNewBuf(serverWrite), "{\"out\":[0,9,29,\"9bc8ab2dda60ef4beed07d1e19ce0676d5edde67\",null]}\n", "    check result");
+            strNewBuf(serverWrite), "{\"out\":[0,9,29,\"9bc8ab2dda60ef4beed07d1e19ce0676d5edde67\",null,null]}\n",
+            "    check result");
         bufUsedSet(serverWrite, 0);
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -912,7 +914,8 @@ testRun(void)
         TEST_RESULT_BOOL(
             backupProtocol(PROTOCOL_COMMAND_BACKUP_FILE_STR, paramList, server), true, "protocol backup file - recopy, encrypt");
         TEST_RESULT_STR_Z(
-            strNewBuf(serverWrite), "{\"out\":[2,9,32,\"9bc8ab2dda60ef4beed07d1e19ce0676d5edde67\",null]}\n", "    check result");
+            strNewBuf(serverWrite), "{\"out\":[2,9,32,\"9bc8ab2dda60ef4beed07d1e19ce0676d5edde67\",null,null]}\n",
+            "    check result");
         bufUsedSet(serverWrite, 0);
     }
 
@@ -1387,6 +1390,7 @@ testRun(void)
         varLstAdd(result, varNewUInt64(backupCopyResultNoOp));
         varLstAdd(result, varNewUInt64(0));
         varLstAdd(result, varNewUInt64(0));
+        varLstAdd(result, NULL);
         varLstAdd(result, NULL);
         varLstAdd(result, NULL);
 
