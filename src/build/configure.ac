@@ -125,6 +125,13 @@ AC_CHECK_LIB(
     [AC_CHECK_HEADER(lz4frame.h, [AC_DEFINE(HAVE_LIBLZ4) AC_SUBST(LIBS, "${LIBS} -llz4")],
         [AC_MSG_ERROR([header file <lz4frame.h> is required])])])
 
+# Check optional selinux library
+# ----------------------------------------------------------------------------------------------------------------------------------
+AC_CHECK_LIB(
+    [selinux], [setfilecon],
+    [AC_CHECK_HEADER(selinux/selinux.h, [AC_DEFINE(HAVE_LIBSELINUX) AC_SUBST(LIBS, "${LIBS} -lselinux")],
+        [AC_MSG_ERROR([header file <selinux/selinux.h> is required])])])
+
 # Write output
 # ----------------------------------------------------------------------------------------------------------------------------------
 AC_CONFIG_HEADERS([build.auto.h])

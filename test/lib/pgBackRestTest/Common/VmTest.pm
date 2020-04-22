@@ -51,6 +51,8 @@ use constant VMDEF_WITH_BACKTRACE                                   => 'with-bac
     push @EXPORT, qw(VMDEF_WITH_BACKTRACE);
 use constant VMDEF_WITH_LZ4                                         => 'with-lz4';
     push @EXPORT, qw(VMDEF_WITH_LZ4);
+use constant VMDEF_WITH_SELINUX                                     => 'with-selinux';
+    push @EXPORT, qw(VMDEF_WITH_SELINUX);
 
 ####################################################################################################################################
 # Valid OS base List
@@ -160,6 +162,7 @@ my $oyVm =
         &VM_IMAGE => 'centos:6',
         &VM_ARCH => VM_ARCH_AMD64,
         &VMDEF_PGSQL_BIN => '/usr/pgsql-{[version]}/bin',
+        &VMDEF_WITH_SELINUX => true,
 
         &VM_DB =>
         [
@@ -191,6 +194,7 @@ my $oyVm =
         &VM_IMAGE => 'centos:7',
         &VM_ARCH => VM_ARCH_AMD64,
         &VMDEF_PGSQL_BIN => '/usr/pgsql-{[version]}/bin',
+        &VMDEF_WITH_SELINUX => true,
 
         &VMDEF_DEBUG_INTEGRATION => false,
 
@@ -220,6 +224,7 @@ my $oyVm =
         &VM_ARCH => VM_ARCH_AMD64,
         &VMDEF_PGSQL_BIN => '/usr/pgsql-{[version]}/bin',
         &VMDEF_COVERAGE_C => true,
+        &VMDEF_WITH_SELINUX => true,
 
         &VMDEF_DEBUG_INTEGRATION => false,
 
@@ -607,6 +612,18 @@ sub vmWithLz4
 }
 
 push @EXPORT, qw(vmWithLz4);
+
+####################################################################################################################################
+# Does the VM support SELinux?
+####################################################################################################################################
+sub vmWithSELinux
+{
+    my $strVm = shift;
+
+    return (defined($oyVm->{$strVm}{&VMDEF_WITH_SELINUX}) ? $oyVm->{$strVm}{&VMDEF_WITH_SELINUX} : false);
+}
+
+push @EXPORT, qw(vmWithSELinux);
 
 ####################################################################################################################################
 # Will integration tests be run in debug mode?
