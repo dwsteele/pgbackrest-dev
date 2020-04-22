@@ -10,6 +10,7 @@ Posix Storage
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/xattr.h>
 #include <unistd.h>
 
 #include "common/debug.h"
