@@ -32,6 +32,8 @@ use constant TEST_CTESTDEF                                          => 'ctestdef
     push @EXPORT, qw(TEST_CTESTDEF);
 use constant TEST_CONTAINER                                         => 'container';
     push @EXPORT, qw(TEST_CONTAINER);
+use constant TEST_CONTAINER_REQUIRED                                => 'container-required';
+    push @EXPORT, qw(TEST_CONTAINER_REQUIRED);
 use constant TEST_DEBUG_UNIT_SUPPRESS                               => TESTDEF_DEBUG_UNIT_SUPPRESS;
     push @EXPORT, qw(TEST_DEBUG_UNIT_SUPPRESS);
 use constant TEST_MODULE                                            => 'module';
@@ -175,6 +177,7 @@ sub testListGet
                                         &TEST_DEBUG_UNIT_SUPPRESS => $hTest->{&TEST_DEBUG_UNIT_SUPPRESS},
                                         &TEST_CONTAINER => defined($hTest->{&TESTDEF_CONTAINER}) ?
                                             $hTest->{&TESTDEF_CONTAINER} : $hModule->{&TESTDEF_CONTAINER},
+                                        &TEST_CONTAINER_REQUIRED => $hTest->{&TESTDEF_CONTAINER_REQUIRED},
                                         &TEST_PGSQL_BIN => $strPgSqlBin,
                                         &TEST_BIN_REQ => $hTest->{&TESTDEF_BIN_REQ},
                                         &TEST_INTEGRATION => $hTest->{&TESTDEF_INTEGRATION},
