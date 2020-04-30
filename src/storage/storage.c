@@ -242,10 +242,21 @@ storageInfo(const Storage *this, const String *fileExp, StorageInfoParam param)
         FUNCTION_LOG_PARAM(BOOL, param.ignoreMissing);
         FUNCTION_LOG_PARAM(BOOL, param.followLink);
         FUNCTION_LOG_PARAM(BOOL, param.noPathEnforce);
+        FUNCTION_LOG_PARAM(BOOL, param.extAttr);
+        FUNCTION_LOG_PARAM(STRING_LIST, param.extAttrList);
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
     ASSERT(this->interface.info != NULL);
+    ASSERT(
+        (!param.extAttr && param.extAttrList == NULL) ||
+        (param.extAttr && param.extAttrList != NULL && strLstSize(param.extAttrList) > 0));
+
+    // Error if extended attributes requested but not supported
+#ifndef HAVE_XATTR
+    if (param.extAttr)
+        THROW_FMT(OptionInvalidValueError, PROJECT_NAME " not compiled with extended attribute support");
+#endif
 
     StorageInfo result = {0};
 
@@ -259,7 +270,8 @@ storageInfo(const Storage *this, const String *fileExp, StorageInfoParam param)
             param.level = storageFeature(this, storageFeatureInfoDetail) ? storageInfoLevelDetail : storageInfoLevelBasic;
 
         result = storageInterfaceInfoP(
-            this->driver, file, param.level, .followLink = param.followLink);
+            this->driver, file, param.level, .followLink = param.followLink, .extAttr = param.extAttr,
+            .extAttrList = param.extAttrList);
 
         // Error if the file missing and not ignoring
         if (!result.exists && !param.ignoreMissing)
@@ -450,12 +462,23 @@ storageInfoList(
         FUNCTION_LOG_PARAM(ENUM, param.sortOrder);
         FUNCTION_LOG_PARAM(STRING, param.expression);
         FUNCTION_LOG_PARAM(BOOL, param.recurse);
+        FUNCTION_LOG_PARAM(BOOL, param.extAttr);
+        FUNCTION_LOG_PARAM(STRING_LIST, param.extAttrList);
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
     ASSERT(callback != NULL);
     ASSERT(this->interface.infoList != NULL);
     ASSERT(!param.errorOnMissing || storageFeature(this, storageFeaturePath));
+    ASSERT(
+        (!param.extAttr && param.extAttrList == NULL) ||
+        (param.extAttr && param.extAttrList != NULL && strLstSize(param.extAttrList) > 0));
+
+    // Error if extended attributes requested but not supported
+#ifndef HAVE_XATTR
+    if (param.extAttr)
+        THROW_FMT(OptionInvalidValueError, PROJECT_NAME " not compiled with extended attribute support");
+#endif
 
     bool result = false;
 

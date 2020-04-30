@@ -119,6 +119,8 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
         FUNCTION_LOG_PARAM(STRING, file);
         FUNCTION_LOG_PARAM(ENUM, level);
         FUNCTION_LOG_PARAM(BOOL, param.followLink);
+        FUNCTION_LOG_PARAM(BOOL, param.extAttr);
+        FUNCTION_LOG_PARAM(STRING_LIST, param.extAttrList);
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
@@ -179,7 +181,17 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
             }
 
 #ifdef HAVE_XATTR
-            (void)storagePosixInfoXAttr;
+        if (param.extAttr)
+        {
+            result.extAttr = kvNew();
+
+            for (unsigned int extAttrIdx = 0; extAttrIdx < strLstSize(param.extAttrList); extAttrIdx++)
+            {
+                const String *extAttrName = strLstGet(param.extAttrList, extAttrIdx);
+
+                kvPut(result.extAttr, VARSTR(extAttrName), VARSTR(storagePosixInfoXAttr(strPtr(file), strPtr(extAttrName))));
+            }
+        }
 #endif // HAVE_XATTR
         }
     }
@@ -633,7 +645,7 @@ static const StorageInterface storageInterfacePosix =
 Storage *
 storagePosixNewInternal(
     const String *type, const String *path, mode_t modeFile, mode_t modePath, bool write,
-    StoragePathExpressionCallback pathExpressionFunction, bool extAttr, const StringList *extAttrList, bool pathSync)
+    StoragePathExpressionCallback pathExpressionFunction, bool pathSync)
 {
     FUNCTION_LOG_BEGIN(logLevelDebug);
         FUNCTION_LOG_PARAM(STRING, type);
@@ -642,8 +654,6 @@ storagePosixNewInternal(
         FUNCTION_LOG_PARAM(MODE, modePath);
         FUNCTION_LOG_PARAM(BOOL, write);
         FUNCTION_LOG_PARAM(FUNCTIONP, pathExpressionFunction);
-        FUNCTION_LOG_PARAM(BOOL, extAttr);
-        FUNCTION_LOG_PARAM(STRING_LIST, extAttrList);
         FUNCTION_LOG_PARAM(BOOL, pathSync);
     FUNCTION_LOG_END();
 
@@ -666,8 +676,6 @@ storagePosixNewInternal(
         {
             .memContext = MEM_CONTEXT_NEW(),
             .interface = storageInterfacePosix,
-            .extAttr = extAttr,
-            .extAttrList = strLstDup(extAttrList),
         };
 
         // Disable path sync when not supported
@@ -682,12 +690,6 @@ storagePosixNewInternal(
 #endif
                 1 << storageFeatureHardLink | 1 << storageFeatureSymLink | 1 << storageFeaturePathSync |
                 1 << storageFeatureInfoDetail;
-
-        // Error if extended attributes requested but not supported
-#ifndef HAVE_XATTR
-        if (extAttr)
-            THROW_FMT(OptionInvalidValueError, PROJECT_NAME " not compiled with extended attribute support");
-#endif
 
         this = storageNew(type, path, modeFile, modePath, write, pathExpressionFunction, driver, driver->interface);
     }
@@ -705,14 +707,11 @@ storagePosixNew(const String *path, StoragePosixNewParam param)
         FUNCTION_LOG_PARAM(MODE, param.modePath);
         FUNCTION_LOG_PARAM(BOOL, param.write);
         FUNCTION_LOG_PARAM(FUNCTIONP, param.pathExpressionFunction);
-        FUNCTION_LOG_PARAM(BOOL, param.extAttr);
-        FUNCTION_LOG_PARAM(STRING_LIST, param.extAttrList);
     FUNCTION_LOG_END();
 
     FUNCTION_LOG_RETURN(
         STORAGE,
         storagePosixNewInternal(
             STORAGE_POSIX_TYPE_STR, path, param.modeFile == 0 ? STORAGE_MODE_FILE_DEFAULT : param.modeFile,
-            param.modePath == 0 ? STORAGE_MODE_PATH_DEFAULT : param.modePath, param.write, param.pathExpressionFunction,
-            param.extAttr, param.extAttrList, true));
+            param.modePath == 0 ? STORAGE_MODE_PATH_DEFAULT : param.modePath, param.write, param.pathExpressionFunction, true));
 }

@@ -51,6 +51,8 @@ use constant VMDEF_WITH_BACKTRACE                                   => 'with-bac
     push @EXPORT, qw(VMDEF_WITH_BACKTRACE);
 use constant VMDEF_WITH_LZ4                                         => 'with-lz4';
     push @EXPORT, qw(VMDEF_WITH_LZ4);
+use constant VMDEF_WITH_EXT_ATTR                                    => 'with-ext-attr';
+    push @EXPORT, qw(VMDEF_WITH_EXT_ATTR);
 
 ####################################################################################################################################
 # Valid OS base List
@@ -402,6 +404,7 @@ my $oyVm =
         &VMDEF_PGSQL_BIN => '/usr/lib/postgresql/{[version]}/bin',
 
         &VMDEF_WITH_BACKTRACE => true,
+        &VMDEF_WITH_EXT_ATTR => true,
 
         &VM_DB =>
         [
@@ -607,6 +610,18 @@ sub vmWithLz4
 }
 
 push @EXPORT, qw(vmWithLz4);
+
+####################################################################################################################################
+# Does the VM support extended attributes?
+####################################################################################################################################
+sub vmWithExtAttr
+{
+    my $strVm = shift;
+
+    return (defined($oyVm->{$strVm}{&VMDEF_WITH_EXT_ATTR}) ? $oyVm->{$strVm}{&VMDEF_WITH_EXT_ATTR} : false);
+}
+
+push @EXPORT, qw(vmWithExtAttr);
 
 ####################################################################################################################################
 # Will integration tests be run in debug mode?

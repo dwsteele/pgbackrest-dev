@@ -12,7 +12,7 @@ Constructors
 ***********************************************************************************************************************************/
 Storage *storagePosixNewInternal(
     const String *type, const String *path, mode_t modeFile, mode_t modePath, bool write,
-    StoragePathExpressionCallback pathExpressionFunction, bool extAttr, const StringList *extAttrList, bool pathSync);
+    StoragePathExpressionCallback pathExpressionFunction, bool pathSync);
 
 /***********************************************************************************************************************************
 Functions
