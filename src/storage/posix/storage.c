@@ -12,10 +12,9 @@ Posix Storage
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifdef HAVE_LIBSELINUX
-#include <selinux/selinux.h>
+#ifdef HAVE_XATTR
 #include <sys/xattr.h>
-#endif // HAVE_LIBSELINUX
+#endif // HAVE_XATTR
 
 #include "common/debug.h"
 #include "common/log.h"
@@ -45,10 +44,12 @@ struct StoragePosix
 {
     STORAGE_COMMON_MEMBER;
     MemContext *memContext;                                         // Object memory context
+    bool extAttr;                                                   // Will info functions return extended attributes?
+    StringList *extAttrList;                                        // List of extended attributes to return from info functions
 };
 
 /**********************************************************************************************************************************/
-#ifdef HAVE_LIBSELINUX
+#ifdef HAVE_XATTR
 
 static String *
 storagePosixInfoXAttr(const String *path, const String *name)
@@ -100,55 +101,13 @@ storagePosixInfoXAttr(const String *path, const String *name)
             }
         }
         while (getResult == -1);
-        //
-    	// size = getxattr(path, XATTR_NAME_SELINUX, NULL, 0);
-        //
-        //
-    	// char *buf;
-    	// ssize_t size;
-    	// ssize_t ret;
-        //
-    	// size = INITCONTEXTLEN + 1;
-    	// buf = malloc(size);
-    	// if (!buf)
-    	// 	return -1;
-    	// memset(buf, 0, size);
-        //
-    	// ret = getxattr(path, XATTR_NAME_SELINUX, buf, size - 1);
-    	// if (ret < 0 && errno == ERANGE) {
-    	// 	char *newbuf;
-        //
-    	// 	size = getxattr(path, XATTR_NAME_SELINUX, NULL, 0);
-    	// 	if (size < 0)
-    	// 		goto out;
-        //
-    	// 	size++;
-    	// 	newbuf = realloc(buf, size);
-    	// 	if (!newbuf)
-    	// 		goto out;
-        //
-    	// 	buf = newbuf;
-    	// 	memset(buf, 0, size);
-    	// 	ret = getxattr(path, XATTR_NAME_SELINUX, buf, size - 1);
-    	// }
-        //   out:
-    	// if (ret == 0) {
-    	// 	/* Re-map empty attribute values to errors. */
-    	// 	errno = ENOTSUP;
-    	// 	ret = -1;
-    	// }
-    	// if (ret < 0)
-    	// 	free(buf);
-    	// else
-    	// 	*context = buf;
-    	// return ret;
     }
     MEM_CONTEXT_TEMP_END();
 
     FUNCTION_LOG_RETURN(STRING, result);
 }
 
-#endif // HAVE_LIBSELINUX
+#endif // HAVE_XATTR
 
 static StorageInfo
 storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageInterfaceInfoParam param)
@@ -219,9 +178,9 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
                 result.linkDestination = strNewN(linkDestination, (size_t)linkDestinationSize);
             }
 
-#ifdef HAVE_LIBSELINUX
+#ifdef HAVE_XATTR
             (void)storagePosixInfoXAttr;
-#endif // HAVE_LIBSELINUX
+#endif // HAVE_XATTR
         }
     }
 
@@ -674,7 +633,7 @@ static const StorageInterface storageInterfacePosix =
 Storage *
 storagePosixNewInternal(
     const String *type, const String *path, mode_t modeFile, mode_t modePath, bool write,
-    StoragePathExpressionCallback pathExpressionFunction, bool pathSync)
+    StoragePathExpressionCallback pathExpressionFunction, bool extAttr, const StringList *extAttrList, bool pathSync)
 {
     FUNCTION_LOG_BEGIN(logLevelDebug);
         FUNCTION_LOG_PARAM(STRING, type);
@@ -683,6 +642,8 @@ storagePosixNewInternal(
         FUNCTION_LOG_PARAM(MODE, modePath);
         FUNCTION_LOG_PARAM(BOOL, write);
         FUNCTION_LOG_PARAM(FUNCTIONP, pathExpressionFunction);
+        FUNCTION_LOG_PARAM(BOOL, extAttr);
+        FUNCTION_LOG_PARAM(STRING_LIST, extAttrList);
         FUNCTION_LOG_PARAM(BOOL, pathSync);
     FUNCTION_LOG_END();
 
@@ -705,6 +666,8 @@ storagePosixNewInternal(
         {
             .memContext = MEM_CONTEXT_NEW(),
             .interface = storageInterfacePosix,
+            .extAttr = extAttr,
+            .extAttrList = strLstDup(extAttrList),
         };
 
         // Disable path sync when not supported
@@ -714,8 +677,17 @@ storagePosixNewInternal(
         // If this is a posix driver then add link features
         if (strEq(type, STORAGE_POSIX_TYPE_STR))
             driver->interface.feature |=
+#ifdef HAVE_XATTR
+                1 << storageFeatureExtAttr |
+#endif
                 1 << storageFeatureHardLink | 1 << storageFeatureSymLink | 1 << storageFeaturePathSync |
                 1 << storageFeatureInfoDetail;
+
+        // Error if extended attributes requested but not supported
+#ifndef HAVE_XATTR
+        if (extAttr)
+            THROW_FMT(OptionInvalidValueError, PROJECT_NAME " not compiled with extended attribute support");
+#endif
 
         this = storageNew(type, path, modeFile, modePath, write, pathExpressionFunction, driver, driver->interface);
     }
@@ -733,11 +705,14 @@ storagePosixNew(const String *path, StoragePosixNewParam param)
         FUNCTION_LOG_PARAM(MODE, param.modePath);
         FUNCTION_LOG_PARAM(BOOL, param.write);
         FUNCTION_LOG_PARAM(FUNCTIONP, param.pathExpressionFunction);
+        FUNCTION_LOG_PARAM(BOOL, param.extAttr);
+        FUNCTION_LOG_PARAM(STRING_LIST, param.extAttrList);
     FUNCTION_LOG_END();
 
     FUNCTION_LOG_RETURN(
         STORAGE,
         storagePosixNewInternal(
             STORAGE_POSIX_TYPE_STR, path, param.modeFile == 0 ? STORAGE_MODE_FILE_DEFAULT : param.modeFile,
-            param.modePath == 0 ? STORAGE_MODE_PATH_DEFAULT : param.modePath, param.write, param.pathExpressionFunction, true));
+            param.modePath == 0 ? STORAGE_MODE_PATH_DEFAULT : param.modePath, param.write, param.pathExpressionFunction,
+            param.extAttr, param.extAttrList, true));
 }

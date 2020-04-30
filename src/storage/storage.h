@@ -53,6 +53,9 @@ typedef enum
 
     // Does the storage support detailed info, i.e. user, group, mode, link destination, etc.
     storageFeatureInfoDetail,
+
+    // Does the storage support extended attributes? Extended attributes will be reported at storageInfoLevelDetail.
+    storageFeatureExtAttr,
 } StorageFeature;
 
 /***********************************************************************************************************************************

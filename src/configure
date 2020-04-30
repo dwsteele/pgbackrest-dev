@@ -4141,7 +4141,7 @@ fi
 # ----------------------------------------------------------------------------------------------------------------------------------
 ac_fn_c_check_func "$LINENO" "lgetxattr" "ac_cv_func_lgetxattr"
 if test "x$ac_cv_func_lgetxattr" = xyes; then :
-  $as_echo "#define HAVE_LXATTR 1" >>confdefs.h
+  $as_echo "#define HAVE_XATTR 1" >>confdefs.h
 
 fi
 
@@ -5424,4 +5424,4 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
-# Generated from src/build/configure.ac sha1 9fda052dde9953687217416e048600ef30ac8d96
+# Generated from src/build/configure.ac sha1 8a45676e1b9633e471d41e92c729f1ee622eb5ac

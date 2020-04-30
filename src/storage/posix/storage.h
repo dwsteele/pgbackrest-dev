@@ -24,8 +24,10 @@ typedef struct StoragePosixNewParam
 {
     VAR_PARAM_HEADER;
     bool write;
+    bool extAttr;
     mode_t modeFile;
     mode_t modePath;
+    const StringList *extAttrList;
     StoragePathExpressionCallback *pathExpressionFunction;
 } StoragePosixNewParam;
 
