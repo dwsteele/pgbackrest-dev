@@ -519,7 +519,6 @@ sub run
                     "HARNESSFLAGS=${strHarnessFlags}\n" .
                     "TESTFLAGS=${strTestFlags}\n" .
                     "LDFLAGS=-lcrypto -lssl -lxml2 -lz" .
-                        (vmWithSELinux($self->{oTest}->{&TEST_VM}) ? ' -lselinux' : '') .
                         (vmWithLz4($self->{oTest}->{&TEST_VM}) ? ' -llz4' : '') .
                         (vmCoverageC($self->{oTest}->{&TEST_VM}) && $self->{bCoverageUnit} ? " -lgcov" : '') .
                         (vmWithBackTrace($self->{oTest}->{&TEST_VM}) && $self->{bBackTrace} ? ' -lbacktrace' : '') .

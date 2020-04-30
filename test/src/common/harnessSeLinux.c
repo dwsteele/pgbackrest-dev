@@ -5,27 +5,44 @@ sudo setcap cap_sys_admin+eip /usr/sbin/setfilecon
 setfilecon system_u:object_r:tmp_t:s0 foo.log
 getfilecon foo.log
 ***********************************************************************************************************************************/
-// #include <fcntl.h>
-// #include <unistd.h>
-// #include <regex.h>
-// #include <stdio.h>
-// #include <string.h>
-//
-// #include "common/log.h"
-// #include "common/memContext.h"
-// #include "common/regExp.h"
-// #include "common/type/stringList.h"
-//
-// #include "common/harnessDebug.h"
-// #include "common/harnessTest.h"
+#include <stdlib.h>
+
+#include "common/assert.h"
 
 /***********************************************************************************************************************************
-Shim for SELinux setfilecon()
+Shim for SELinux selinux_trans_to_raw_context()
 ***********************************************************************************************************************************/
-int setfilecon(const char *path, const char *context)
+int
+selinux_trans_to_raw_context(const char *trans, char **rawp)
 {
-    (void)path;
-    (void)context;
+    ASSERT(trans != NULL);
+    ASSERT(rawp != NULL);
+
+    // (void)trans;
+    // (void)rawp;
 
     return 0;
+}
+
+/***********************************************************************************************************************************
+Shim for SELinux selinux_raw_to_trans_context()
+***********************************************************************************************************************************/
+int
+selinux_raw_to_trans_context(const char *raw, char **transp)
+{
+    ASSERT(raw != NULL);
+    ASSERT(transp != NULL);
+
+    // (void)raw;
+    // (void)transp;
+
+    return 0;
+}
+
+/***********************************************************************************************************************************
+Shim for freecon()
+***********************************************************************************************************************************/
+void freecon(char *con)
+{
+    free(con);
 }
