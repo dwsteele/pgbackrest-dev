@@ -6,6 +6,7 @@ Test Posix Storage
 
 #include "common/io/io.h"
 #include "common/time.h"
+#include "common/type/json.h"
 #include "storage/read.h"
 #include "storage/write.h"
 
@@ -197,11 +198,22 @@ testRun(void)
             "path not enforced");
 
         // -------------------------------------------------------------------------------------------------------------------------
+        StringList *extAttrList = strLstNew();
+        strLstAddZ(extAttrList, "user.pgb");
+        strLstAddZ(extAttrList, "user.bogus");
+
         struct utimbuf utimeTest = {.actime = 1000000000, .modtime = 1555160000};
         THROW_ON_SYS_ERROR_FMT(utime(testPath(), &utimeTest) != 0, FileWriteError, "unable to set time for '%s'", testPath());
-        TEST_RESULT_VOID(storagePosixInfoXAttrSet(STR(testPath()), STRDEF("user.pgb"), BUFSTRDEF("path")), "set path xattr");
+#ifdef HAVE_XATTR
+        TEST_RESULT_VOID(storagePosixInfoXAttrSet(STR(testPath()), STRDEF("user.pgb"), BUFSTRDEF("XpathX")), "set path xattr");
+#endif // HAVE_XATTR
 
-        TEST_ASSIGN(info, storageInfoP(storageTest, strNew(testPath())), "get path info");
+        TEST_ASSIGN(
+            info, storageInfoP(storageTest, strNew(testPath())
+#ifdef HAVE_XATTR
+            , .extAttr = true, .extAttrList = extAttrList
+#endif // HAVE_XATTR
+            ), "get path info");
         TEST_RESULT_PTR(info.name, NULL, "    name is not set");
         TEST_RESULT_BOOL(info.exists, true, "    check exists");
         TEST_RESULT_INT(info.type, storageTypePath, "    check type");
@@ -213,6 +225,11 @@ testRun(void)
         TEST_RESULT_STR_Z(info.user, testUser(), "    check user");
         TEST_RESULT_UINT(info.groupId, getgid(), "    check group id");
         TEST_RESULT_STR_Z(info.group, testGroup(), "    check group");
+#ifdef HAVE_XATTR
+        TEST_RESULT_STR_Z(jsonFromKv(info.extAttr), "{\"user.bogus\":null,\"user.pgb\":\"XpathX\"}", "    check ext attr");
+#else
+        TEST_RESULT_PTR(info.extAttr, NULL, "    check null ext attr");
+#endif // HAVE_XATTR
 
         // -------------------------------------------------------------------------------------------------------------------------
         const Buffer *buffer = BUFSTRDEF("TESTFILE");
@@ -233,6 +250,7 @@ testRun(void)
         TEST_RESULT_PTR(info.linkDestination, NULL, "    no link destination");
         TEST_RESULT_STR(info.user, NULL, "    check user");
         TEST_RESULT_STR(info.group, NULL, "    check group");
+        TEST_RESULT_PTR(info.extAttr, NULL, "    check null ext attr");
 
         storageRemoveP(storageTest, fileName, .errorOnMissing = true);
 
@@ -240,7 +258,12 @@ testRun(void)
         String *linkName = strNewFmt("%s/testlink", testPath());
         TEST_RESULT_INT(system(strPtr(strNewFmt("ln -s /tmp %s", strPtr(linkName)))), 0, "create link");
 
-        TEST_ASSIGN(info, storageInfoP(storageTest, linkName), "get link info");
+        TEST_ASSIGN(
+            info, storageInfoP(storageTest, linkName
+#ifdef HAVE_XATTR
+            , .extAttr = true, .extAttrList = extAttrList
+#endif // HAVE_XATTR
+            ), "get link info");
         TEST_RESULT_PTR(info.name, NULL, "    name is not set");
         TEST_RESULT_BOOL(info.exists, true, "    check exists");
         TEST_RESULT_INT(info.type, storageTypeLink, "    check type");
@@ -249,6 +272,11 @@ testRun(void)
         TEST_RESULT_STR_Z(info.linkDestination, "/tmp", "    check link destination");
         TEST_RESULT_STR_Z(info.user, testUser(), "    check user");
         TEST_RESULT_STR_Z(info.group, testGroup(), "    check group");
+#ifdef HAVE_XATTR
+        TEST_RESULT_STR_Z(jsonFromKv(info.extAttr), "{\"user.bogus\":null,\"user.pgb\":null}", "    check ext attr");
+#else
+        TEST_RESULT_PTR(info.extAttr, NULL, "    check null ext attr");
+#endif // HAVE_XATTR
 
         TEST_ASSIGN(info, storageInfoP(storageTest, linkName, .followLink = true), "get info from path pointed to by link");
         TEST_RESULT_PTR(info.name, NULL, "    name is not set");
@@ -259,6 +287,7 @@ testRun(void)
         TEST_RESULT_STR(info.linkDestination, NULL, "    check link destination");
         TEST_RESULT_STR_Z(info.user, "root", "    check user");
         TEST_RESULT_STR_Z(info.group, "root", "    check group");
+        TEST_RESULT_PTR(info.extAttr, NULL, "    check null ext attr");
 
         storageRemoveP(storageTest, linkName, .errorOnMissing = true);
 

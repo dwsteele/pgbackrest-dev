@@ -91,6 +91,7 @@ storagePosixInfoXAttr(const String *path, const String *name)
             }
             else
             {
+                bufUsedSet(buffer, (size_t)getResult);
                 bufPtr(buffer)[getResult] = '\0';
 
                 MEM_CONTEXT_PRIOR_BEGIN()

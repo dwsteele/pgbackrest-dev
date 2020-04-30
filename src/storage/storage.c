@@ -283,6 +283,7 @@ storageInfo(const Storage *this, const String *fileExp, StorageInfoParam param)
             result.linkDestination = strDup(result.linkDestination);
             result.user = strDup(result.user);
             result.group = strDup(result.group);
+            result.extAttr = result.extAttr == NULL ? NULL : kvDup(result.extAttr);
         }
         MEM_CONTEXT_PRIOR_END();
     }
