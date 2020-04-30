@@ -12,6 +12,11 @@ Posix Storage
 #include <sys/stat.h>
 #include <unistd.h>
 
+#ifdef HAVE_LIBSELINUX
+#include <selinux/selinux.h>
+#include <sys/xattr.h>
+#endif // HAVE_LIBSELINUX
+
 #include "common/debug.h"
 #include "common/log.h"
 #include "common/memContext.h"
@@ -43,6 +48,108 @@ struct StoragePosix
 };
 
 /**********************************************************************************************************************************/
+#ifdef HAVE_LIBSELINUX
+
+static String *
+storagePosixInfoXAttr(const String *path, const String *name)
+{
+    FUNCTION_LOG_BEGIN(logLevelTrace);
+        FUNCTION_LOG_PARAM(STRING, path);
+        FUNCTION_LOG_PARAM(STRING, name);
+    FUNCTION_LOG_END();
+
+    String *result = NULL;
+
+    MEM_CONTEXT_TEMP_BEGIN()
+    {
+        Buffer *buffer = bufNew(256);
+        ssize_t getResult;
+
+        do
+        {
+            getResult = getxattr(strPtr(path), strPtr(name), bufPtr(buffer), bufSize(buffer) - 1);
+
+            if (getResult == -1)
+            {
+                // !!! THIS SHOULD BE ENOATTR BUT THAT REQUIRES A SPECIAL PACKAGE TO BE INSTALLED
+                if (errno == ENODATA)
+                    break;
+
+                if (errno == ERANGE)
+                {
+                    ssize_t size = getxattr(strPtr(path), strPtr(name), NULL, 0);
+
+                    THROW_ON_SYS_ERROR_FMT(
+                        size == -1, FileReadError, "unable to get xattr '%s' size for path '%s'", strPtr(name), strPtr(path));
+
+                    bufResize(buffer, (size_t)size + 1);
+                }
+
+                THROW_SYS_ERROR_CODE_FMT(
+                    errno, FileReadError, "unable to get xattr '%s' for path '%s'", strPtr(name), strPtr(path));
+            }
+            else
+            {
+                bufPtr(buffer)[getResult] = '\0';
+
+                MEM_CONTEXT_PRIOR_BEGIN()
+                {
+                    result = strNewBuf(buffer);
+                }
+                MEM_CONTEXT_PRIOR_END();
+            }
+        }
+        while (getResult == -1);
+        //
+    	// size = getxattr(path, XATTR_NAME_SELINUX, NULL, 0);
+        //
+        //
+    	// char *buf;
+    	// ssize_t size;
+    	// ssize_t ret;
+        //
+    	// size = INITCONTEXTLEN + 1;
+    	// buf = malloc(size);
+    	// if (!buf)
+    	// 	return -1;
+    	// memset(buf, 0, size);
+        //
+    	// ret = getxattr(path, XATTR_NAME_SELINUX, buf, size - 1);
+    	// if (ret < 0 && errno == ERANGE) {
+    	// 	char *newbuf;
+        //
+    	// 	size = getxattr(path, XATTR_NAME_SELINUX, NULL, 0);
+    	// 	if (size < 0)
+    	// 		goto out;
+        //
+    	// 	size++;
+    	// 	newbuf = realloc(buf, size);
+    	// 	if (!newbuf)
+    	// 		goto out;
+        //
+    	// 	buf = newbuf;
+    	// 	memset(buf, 0, size);
+    	// 	ret = getxattr(path, XATTR_NAME_SELINUX, buf, size - 1);
+    	// }
+        //   out:
+    	// if (ret == 0) {
+    	// 	/* Re-map empty attribute values to errors. */
+    	// 	errno = ENOTSUP;
+    	// 	ret = -1;
+    	// }
+    	// if (ret < 0)
+    	// 	free(buf);
+    	// else
+    	// 	*context = buf;
+    	// return ret;
+    }
+    MEM_CONTEXT_TEMP_END();
+
+    FUNCTION_LOG_RETURN(STRING, result);
+}
+
+#endif // HAVE_LIBSELINUX
+
 static StorageInfo
 storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageInterfaceInfoParam param)
 {
@@ -111,6 +218,10 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
 
                 result.linkDestination = strNewN(linkDestination, (size_t)linkDestinationSize);
             }
+
+#ifdef HAVE_LIBSELINUX
+            (void)storagePosixInfoXAttr;
+#endif // HAVE_LIBSELINUX
         }
     }
 

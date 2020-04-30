@@ -125,6 +125,10 @@ AC_CHECK_LIB(
     [AC_CHECK_HEADER(lz4frame.h, [AC_DEFINE(HAVE_LIBLZ4) AC_SUBST(LIBS, "${LIBS} -llz4")],
         [AC_MSG_ERROR([header file <lz4frame.h> is required])])])
 
+# Check optional xattr functions
+# ----------------------------------------------------------------------------------------------------------------------------------
+AC_CHECK_FUNC(lgetxattr, [AC_DEFINE(HAVE_LXATTR)])
+
 # Write output
 # ----------------------------------------------------------------------------------------------------------------------------------
 AC_CONFIG_HEADERS([build.auto.h])
