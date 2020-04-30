@@ -107,6 +107,26 @@ storagePosixInfoXAttr(const String *path, const String *name)
     FUNCTION_LOG_RETURN(STRING, result);
 }
 
+static void
+storagePosixInfoXAttrSet(const String *path, const String *name, const Buffer *value)
+{
+    FUNCTION_LOG_BEGIN(logLevelTrace);
+        FUNCTION_LOG_PARAM(STRING, path);
+        FUNCTION_LOG_PARAM(STRING, name);
+        FUNCTION_LOG_PARAM(BUFFER, value);
+    FUNCTION_LOG_END();
+
+    ASSERT(path != NULL);
+    ASSERT(name != NULL);
+    ASSERT(value != NULL);
+
+    THROW_ON_SYS_ERROR_FMT(
+        lsetxattr(strPtr(path), strPtr(name), bufPtrConst(value), bufSize(value), 0), FileWriteError,
+        "unable to set xattr '%s' on '%s'", strPtr(name), strPtr(path));
+
+    FUNCTION_LOG_RETURN_VOID();
+}
+
 #endif // HAVE_XATTR
 
 static StorageInfo
@@ -183,15 +203,19 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
 #ifdef HAVE_XATTR
         if (param.extAttr)
         {
-            result.extAttr = kvNew();
+            KeyValue *extAttrKv = kvNew();
 
             for (unsigned int extAttrIdx = 0; extAttrIdx < strLstSize(param.extAttrList); extAttrIdx++)
             {
                 const String *extAttrName = strLstGet(param.extAttrList, extAttrIdx);
 
-                kvPut(result.extAttr, VARSTR(extAttrName), VARSTR(storagePosixInfoXAttr(strPtr(file), strPtr(extAttrName))));
+                kvPut(extAttrKv, VARSTR(extAttrName), VARSTR(storagePosixInfoXAttr(file, extAttrName)));
             }
+
+            result.extAttr = extAttrKv;
         }
+
+        (void)storagePosixInfoXAttrSet; // !!! REMOVE WHEN IMPLEMENTED
 #endif // HAVE_XATTR
         }
     }

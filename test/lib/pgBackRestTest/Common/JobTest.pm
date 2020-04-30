@@ -440,6 +440,7 @@ sub run
                 my $strBuildAutoH =
                     ($self->{oTest}->{&TEST_VM} ne VM_CO6 ? "#define HAVE_STATIC_ASSERT\n" : '') .
                     "#define HAVE_BUILTIN_TYPES_COMPATIBLE_P\n" .
+                    (vmWithExtAttr($self->{oTest}->{&TEST_VM}) ? '#define HAVE_XATTR' : '') . "\n" .
                     (vmWithLz4($self->{oTest}->{&TEST_VM}) ? '#define HAVE_LIBLZ4' : '') . "\n";
 
                 buildPutDiffers($self->{oStorageTest}, "$self->{strGCovPath}/" . BUILD_AUTO_H, $strBuildAutoH);

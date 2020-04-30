@@ -199,6 +199,7 @@ testRun(void)
         // -------------------------------------------------------------------------------------------------------------------------
         struct utimbuf utimeTest = {.actime = 1000000000, .modtime = 1555160000};
         THROW_ON_SYS_ERROR_FMT(utime(testPath(), &utimeTest) != 0, FileWriteError, "unable to set time for '%s'", testPath());
+        TEST_RESULT_VOID(storagePosixInfoXAttrSet(STR(testPath()), STRDEF("user.pgb"), BUFSTRDEF("path")), "set path xattr");
 
         TEST_ASSIGN(info, storageInfoP(storageTest, strNew(testPath())), "get path info");
         TEST_RESULT_PTR(info.name, NULL, "    name is not set");
