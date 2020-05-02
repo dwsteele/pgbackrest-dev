@@ -77,10 +77,10 @@ testRun(void)
             "    check output");
 
         // -------------------------------------------------------------------------------------------------------------------------
-        TEST_TITLE("file with uid");
+        TEST_TITLE("file with/without uid"); // !!! REMOVE THESE TESTS ONCE POSIX DRIVER DOES UIDS
 
         output = bufNew(0);
-        StorageListRenderCallbackData data = {.write = ioBufferWriteNew(output), .json = true, .first = true};
+        StorageListRenderCallbackData data = {.write = ioBufferWriteNew(output), .json = true, .first = true, .uid = true};
         ioWriteOpen(data.write);
 
         TEST_RESULT_VOID(
@@ -90,6 +90,19 @@ testRun(void)
 
         TEST_RESULT_STR_Z(
             strNewBuf(output), "\"testuid\":{\"type\":\"file\",\"size\":0,\"time\":0,\"uid\":\"\\\"xUIDx\\\"\"}",
+            "    check output");
+
+        output = bufNew(0);
+        data = (StorageListRenderCallbackData){.write = ioBufferWriteNew(output), .json = true, .first = true};
+        ioWriteOpen(data.write);
+
+        TEST_RESULT_VOID(
+            storageListRenderCallback(&data, &(StorageInfo){.name = STRDEF("testuid"), .uid = STRDEF("\"xUIDx\"")}),
+            "render callback");
+        ioWriteFlush(data.write);
+
+        TEST_RESULT_STR_Z(
+            strNewBuf(output), "\"testuid\":{\"type\":\"file\",\"size\":0,\"time\":0}",
             "    check output");
 
         // Add path and file

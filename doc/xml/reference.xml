@@ -1248,6 +1248,15 @@
 
                         <example>desc</example>
                     </option>
+
+                    <!-- OPERATION - LS COMMAND - UID OPTION -->
+                    <option id="uid" name="Include Unique Indentifier">
+                        <summary>Include unique identifier.</summary>
+
+                        <text>Include the unique identifier (if any) in <proper>JSON</proper> output.</text>
+
+                        <example>y</example>
+                    </option>
                 </option-list>
 
                 <command-example-list>

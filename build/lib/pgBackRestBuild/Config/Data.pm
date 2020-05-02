@@ -136,6 +136,7 @@ use constant CFGOPT_IGNORE_MISSING                                  => 'ignore-m
 use constant CFGOPT_RAW                                             => 'raw';
 use constant CFGOPT_RECURSE                                         => 'recurse';
 use constant CFGOPT_SORT                                            => 'sort';
+use constant CFGOPT_UID                                             => 'uid';
 
 # General options
 #-----------------------------------------------------------------------------------------------------------------------------------
@@ -1065,6 +1066,16 @@ my %hConfigDefine =
             'asc',
             'desc',
         ],
+        &CFGDEF_COMMAND =>
+        {
+            &CFGCMD_REPO_LS => {},
+        }
+    },
+
+    &CFGOPT_UID =>
+    {
+        &CFGDEF_TYPE => CFGDEF_TYPE_BOOLEAN,
+        &CFGDEF_DEFAULT => false,
         &CFGDEF_COMMAND =>
         {
             &CFGCMD_REPO_LS => {},

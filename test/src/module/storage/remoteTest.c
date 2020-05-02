@@ -244,7 +244,7 @@ testRun(void)
             strNewBuf(serverWrite),
             hrnReplaceKey(
                 "{\"out\":true}\n"
-                ".f\n.1555160001\n.6\n"
+                ".f\n.1555160001\n.6\n.null\n"
                 "{}\n"),
             "check result");
 
@@ -263,7 +263,7 @@ testRun(void)
             strNewBuf(serverWrite),
             hrnReplaceKey(
                 "{\"out\":true}\n"
-                ".f\n.1555160001\n.6\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.416\n"
+                ".f\n.1555160001\n.6\n.null\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.416\n"
                 "{}\n"),
             "check result");
 
@@ -323,7 +323,7 @@ testRun(void)
             strNewBuf(serverWrite),
             hrnReplaceKey(
                 ".\".\"\n.p\n.1555160000\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.488\n"
-                ".\"test\"\n.f\n.1555160001\n.6\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.416\n"
+                ".\"test\"\n.f\n.1555160001\n.6\n.null\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.416\n"
                 ".\n"
                 "{\"out\":true}\n"),
             "check result");
@@ -576,7 +576,8 @@ testRun(void)
         TEST_RESULT_STR_Z(
             strNewBuf(serverWrite),
             "{}\n"
-            "{\"out\":{\"buffer\":null,\"size\":18}}\n",
+            "{\"out\":{\"buffer\":null,\"size\":18}}\n"
+            "{\"out\":null}\n",
             "check result");
 
         TEST_RESULT_STR_Z(

@@ -2434,6 +2434,13 @@ static const struct option optionList[] =
         .has_arg = required_argument,
         .val = PARSE_OPTION_FLAG | cfgOptType,
     },
+
+    // uid option
+    // -----------------------------------------------------------------------------------------------------------------------------
+    {
+        .name = CFGOPT_UID,
+        .val = PARSE_OPTION_FLAG | cfgOptUid,
+    },
     // Terminate option list
     {
         .name = NULL
@@ -2607,6 +2614,7 @@ static const ConfigOption optionResolveOrder[] =
     cfgOptTcpKeepAliveIdle,
     cfgOptTcpKeepAliveInterval,
     cfgOptType,
+    cfgOptUid,
     cfgOptArchiveCheck,
     cfgOptArchiveCopy,
     cfgOptForce,

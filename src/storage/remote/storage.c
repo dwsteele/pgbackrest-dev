@@ -69,7 +69,10 @@ storageRemoteInfoParse(ProtocolClient *client, StorageInfo *info)
     info->timeModified = (time_t)jsonToUInt64(protocolClientReadLine(client));
 
     if (info->type == storageTypeFile)
+    {
         info->size = jsonToUInt64(protocolClientReadLine(client));
+        info->uid = jsonToStr(protocolClientReadLine(client));
+    }
 
     if (info->level >= storageInfoLevelDetail)
     {

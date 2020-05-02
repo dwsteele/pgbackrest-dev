@@ -22,6 +22,7 @@ typedef struct StorageListRenderCallbackData
     IoWrite *write;                                                 // Where to write output
     bool json;                                                      // Is this json output?
     bool first;                                                     // Is this the first item?
+    bool uid;                                                       // Is the uid output?
 } StorageListRenderCallbackData;
 
 void
@@ -93,7 +94,7 @@ storageListRenderCallback(void *data, const StorageInfo *info)
             ioWriteStr(listData->write, strNewFmt(",\"size\":%" PRIu64, info->size));
             ioWriteStr(listData->write, strNewFmt(",\"time\":%" PRId64, (int64_t)info->timeModified));
 
-            if (info->uid != NULL)
+            if (info->uid != NULL && listData->uid)
             {
                 ioWrite(listData->write, BUFSTRDEF(",\"uid\":"));
                 ioWriteStr(listData->write, jsonFromStr(info->uid));
@@ -149,6 +150,7 @@ storageListRender(IoWrite *write)
         .write = write,
         .json = json,
         .first = true,
+        .uid = cfgOptionBool(cfgOptUid),
     };
 
     ioWriteOpen(data.write);

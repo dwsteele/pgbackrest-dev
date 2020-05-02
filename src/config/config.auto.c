@@ -466,6 +466,7 @@ STRING_EXTERN(CFGOPT_TCP_KEEP_ALIVE_COUNT_STR,                      CFGOPT_TCP_K
 STRING_EXTERN(CFGOPT_TCP_KEEP_ALIVE_IDLE_STR,                       CFGOPT_TCP_KEEP_ALIVE_IDLE);
 STRING_EXTERN(CFGOPT_TCP_KEEP_ALIVE_INTERVAL_STR,                   CFGOPT_TCP_KEEP_ALIVE_INTERVAL);
 STRING_EXTERN(CFGOPT_TYPE_STR,                                      CFGOPT_TYPE);
+STRING_EXTERN(CFGOPT_UID_STR,                                       CFGOPT_UID);
 
 /***********************************************************************************************************************************
 Option data
@@ -1934,5 +1935,13 @@ static ConfigOptionData configOptionData[CFG_OPTION_TOTAL] = CONFIG_OPTION_LIST
         CONFIG_OPTION_NAME(CFGOPT_TYPE)
         CONFIG_OPTION_INDEX(0)
         CONFIG_OPTION_DEFINE_ID(cfgDefOptType)
+    )
+
+    //------------------------------------------------------------------------------------------------------------------------------
+    CONFIG_OPTION
+    (
+        CONFIG_OPTION_NAME(CFGOPT_UID)
+        CONFIG_OPTION_INDEX(0)
+        CONFIG_OPTION_DEFINE_ID(cfgDefOptUid)
     )
 )

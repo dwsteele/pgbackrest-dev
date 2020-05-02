@@ -145,7 +145,10 @@ storageRemoteInfoWrite(ProtocolServer *server, const StorageInfo *info)
     protocolServerWriteLine(server, jsonFromInt64(info->timeModified));
 
     if (info->type == storageTypeFile)
+    {
         protocolServerWriteLine(server, jsonFromUInt64(info->size));
+        protocolServerWriteLine(server, jsonFromStr(info->uid));
+    }
 
     if (info->level >= storageInfoLevelDetail)
     {
@@ -280,13 +283,13 @@ storageRemoteProtocol(const String *command, const VariantList *paramList, Proto
         else if (strEq(command, PROTOCOL_COMMAND_STORAGE_OPEN_WRITE_STR))
         {
             // Create the write object
-            IoWrite *fileWrite = storageWriteIo(
-                storageInterfaceNewWriteP(
-                    driver, varStr(varLstGet(paramList, 0)), .modeFile = varUIntForce(varLstGet(paramList, 1)),
-                    .modePath = varUIntForce(varLstGet(paramList, 2)), .user = varStr(varLstGet(paramList, 3)),
-                    .group = varStr(varLstGet(paramList, 4)), .timeModified = (time_t)varUInt64Force(varLstGet(paramList, 5)),
-                    .createPath = varBool(varLstGet(paramList, 6)), .syncFile = varBool(varLstGet(paramList, 7)),
-                    .syncPath = varBool(varLstGet(paramList, 8)), .atomic = varBool(varLstGet(paramList, 9))));
+            StorageWrite *storageWrite = storageInterfaceNewWriteP(
+                driver, varStr(varLstGet(paramList, 0)), .modeFile = varUIntForce(varLstGet(paramList, 1)),
+                .modePath = varUIntForce(varLstGet(paramList, 2)), .user = varStr(varLstGet(paramList, 3)),
+                .group = varStr(varLstGet(paramList, 4)), .timeModified = (time_t)varUInt64Force(varLstGet(paramList, 5)),
+                .createPath = varBool(varLstGet(paramList, 6)), .syncFile = varBool(varLstGet(paramList, 7)),
+                .syncPath = varBool(varLstGet(paramList, 8)), .atomic = varBool(varLstGet(paramList, 9)));
+            IoWrite *fileWrite = storageWriteIo(storageWrite);
 
             // Set filter group based on passed filters
             storageRemoteFilterGroup(ioWriteFilterGroup(fileWrite), varLstGet(paramList, 10));
@@ -329,6 +332,7 @@ storageRemoteProtocol(const String *command, const VariantList *paramList, Proto
 
                     // Push filter results
                     protocolServerResponse(server, ioFilterGroupResultAll(ioWriteFilterGroup(fileWrite)));
+                    protocolServerResponse(server, VARSTR(storageWriteUid(storageWrite)));
                 }
                 // Write was aborted so free the file
                 else

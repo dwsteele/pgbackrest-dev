@@ -158,6 +158,7 @@ typedef enum
     cfgDefOptTcpKeepAliveIdle,
     cfgDefOptTcpKeepAliveInterval,
     cfgDefOptType,
+    cfgDefOptUid,
 } ConfigDefineOption;
 
 #endif

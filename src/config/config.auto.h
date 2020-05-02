@@ -419,8 +419,10 @@ Option constants
     STRING_DECLARE(CFGOPT_TCP_KEEP_ALIVE_INTERVAL_STR);
 #define CFGOPT_TYPE                                                 "type"
     STRING_DECLARE(CFGOPT_TYPE_STR);
+#define CFGOPT_UID                                                  "uid"
+    STRING_DECLARE(CFGOPT_UID_STR);
 
-#define CFG_OPTION_TOTAL                                            183
+#define CFG_OPTION_TOTAL                                            184
 
 /***********************************************************************************************************************************
 Command enum
@@ -637,6 +639,7 @@ typedef enum
     cfgOptTcpKeepAliveIdle,
     cfgOptTcpKeepAliveInterval,
     cfgOptType,
+    cfgOptUid,
 } ConfigOption;
 
 #endif
