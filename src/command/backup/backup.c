@@ -39,7 +39,6 @@ Backup Command
 Backup constants
 ***********************************************************************************************************************************/
 #define BACKUP_PATH_HISTORY                                         "backup.history"
-#define BACKUP_LINK_LATEST                                          "latest"
 
 /**********************************************************************************************************************************
 Generate a unique backup label that does not contain a timestamp from a previous backup
@@ -244,13 +243,13 @@ backupInit(const InfoBackup *infoBackup)
             result->pgIdStandby = dbInfo.standbyId;
             result->dbStandby = dbInfo.standby;
             result->storageStandby = storagePgId(result->pgIdStandby);
-            result->hostStandby = cfgOptionStr(cfgOptPgHost + result->pgIdStandby - 1);
+            result->hostStandby = cfgOptionStrNull(cfgOptPgHost + result->pgIdStandby - 1);
         }
     }
 
     // Add primary info
     result->storagePrimary = storagePgId(result->pgIdPrimary);
-    result->hostPrimary = cfgOptionStr(cfgOptPgHost + result->pgIdPrimary - 1);
+    result->hostPrimary = cfgOptionStrNull(cfgOptPgHost + result->pgIdPrimary - 1);
 
     // Get pg_control info from the primary
     PgControl pgControl = pgControlFromFile(result->storagePrimary);
@@ -1757,7 +1756,7 @@ backupArchiveCheckCopy(Manifest *manifest, unsigned int walSegmentSize, const St
             // Loop through all the segments in the lsn range
             InfoArchive *infoArchive = infoArchiveLoadFile(
                 storageRepo(), INFO_ARCHIVE_PATH_FILE_STR, cipherType(cfgOptionStr(cfgOptRepoCipherType)),
-                cfgOptionStr(cfgOptRepoCipherPass));
+                cfgOptionStrNull(cfgOptRepoCipherPass));
             const String *archiveId = infoArchiveId(infoArchive);
 
             StringList *walSegmentList = pgLsnRangeToWalSegmentList(
@@ -1904,21 +1903,7 @@ backupComplete(InfoBackup *const infoBackup, Manifest *const manifest)
         // Create a symlink to the most recent backup if supported.  This link is purely informational for the user and is never
         // used by us since symlinks are not supported on all storage types.
         // -------------------------------------------------------------------------------------------------------------------------
-        const String *const latestLink = storagePathP(storageRepo(), STRDEF(STORAGE_REPO_BACKUP "/" BACKUP_LINK_LATEST));
-
-        // Remove an existing latest link/file in case symlink capabilities have changed
-        storageRemoveP(storageRepoWrite(), latestLink);
-
-        if (storageFeature(storageRepoWrite(), storageFeatureSymLink))
-        {
-            THROW_ON_SYS_ERROR_FMT(
-                symlink(strPtr(backupLabel), strPtr(latestLink)) == -1, FileOpenError,
-                "unable to create symlink '%s' to '%s'", strPtr(latestLink), strPtr(backupLabel));
-        }
-
-        // Sync backup path if required
-        if (storageFeature(storageRepoWrite(), storageFeaturePathSync))
-            storagePathSyncP(storageRepoWrite(), STORAGE_REPO_BACKUP_STR);
+        backupLinkLatest(backupLabel);
 
         // Add manifest and save backup.info (infoBackupSaveFile() is responsible for proper syncing)
         // -------------------------------------------------------------------------------------------------------------------------
@@ -1926,7 +1911,7 @@ backupComplete(InfoBackup *const infoBackup, Manifest *const manifest)
 
         infoBackupSaveFile(
             infoBackup, storageRepoWrite(), INFO_BACKUP_PATH_FILE_STR, cipherType(cfgOptionStr(cfgOptRepoCipherType)),
-            cfgOptionStr(cfgOptRepoCipherPass));
+            cfgOptionStrNull(cfgOptRepoCipherPass));
     }
     MEM_CONTEXT_TEMP_END();
 
@@ -1950,7 +1935,7 @@ cmdBackup(void)
         // Load backup.info
         InfoBackup *infoBackup = infoBackupLoadFileReconstruct(
             storageRepo(), INFO_BACKUP_PATH_FILE_STR, cipherType(cfgOptionStr(cfgOptRepoCipherType)),
-            cfgOptionStr(cfgOptRepoCipherPass));
+            cfgOptionStrNull(cfgOptRepoCipherPass));
         InfoPgData infoPg = infoPgDataCurrent(infoBackupPg(infoBackup));
         const String *cipherPassBackup = infoPgCipherPass(infoBackupPg(infoBackup));
 

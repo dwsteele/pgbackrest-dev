@@ -148,8 +148,7 @@ testRun(void)
     FUNCTION_HARNESS_VOID();
 
     // Create default storage object for testing
-    Storage *storageTest = storagePosixNew(
-        strNew(testPath()), STORAGE_MODE_FILE_DEFAULT, STORAGE_MODE_PATH_DEFAULT, true, NULL);
+    Storage *storageTest = storagePosixNewP(strNew(testPath()), .write = true);
 
     // *****************************************************************************************************************************
     if (testBegin("restoreFile()"))
@@ -2267,6 +2266,11 @@ testRun(void)
         strLstAddZ(argList, "--link-map=pg_hba.conf=../config/pg_hba.conf");
         strLstAddZ(argList, "--db-include=16384");
         harnessCfgLoad(cfgCmdRestore, argList);
+
+        // Move pg1-path and put a link in its place. This tests that restore works when pg1-path is a symlink yet should be
+        // completely invisible in the manifest and logging.
+        TEST_SYSTEM_FMT("mv %s %s-data", strPtr(pgPath), strPtr(pgPath));
+        TEST_SYSTEM_FMT("ln -s %s-data %s ", strPtr(pgPath), strPtr(pgPath));
 
         // Write recovery.conf so we don't get a preserve warning
         storagePutP(storageNewWriteP(storagePgWrite(), PG_FILE_RECOVERYCONF_STR), BUFSTRDEF("Some Settings"));
