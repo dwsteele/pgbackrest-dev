@@ -53,11 +53,13 @@ testBackupValidateCallback(void *callbackData, const StorageInfo *info)
         {
             strCat(data->content, "file");
 
-            // Calculate checksum/size and decompress if needed
+            // Calculate checksum/uid/size and decompress if needed
             // ---------------------------------------------------------------------------------------------------------------------
             StorageRead *read = storageNewReadP(
                 data->storage,
                 data->path != NULL ? strNewFmt("%s/%s", strPtr(data->path), strPtr(info->name)) : info->name);
+
+            ioFilterGroupAdd(ioReadFilterGroup(storageReadIo(read)), cryptoHashNew(HASH_TYPE_SHA1_STR));
 
             if (data->manifestData->backupOptionCompressType != compressTypeNone)
             {
@@ -70,14 +72,22 @@ testBackupValidateCallback(void *callbackData, const StorageInfo *info)
             ioFilterGroupAdd(ioReadFilterGroup(storageReadIo(read)), cryptoHashNew(HASH_TYPE_SHA1_STR));
 
             uint64_t size = bufUsed(storageGetP(read));
+            const String *uid = varStr(
+                varLstGet(varVarLst(ioFilterGroupResult(ioReadFilterGroup(storageReadIo(read)), CRYPTO_HASH_FILTER_TYPE_STR)), 0));
             const String *checksum = varStr(
-                ioFilterGroupResult(ioReadFilterGroup(storageReadIo(read)), CRYPTO_HASH_FILTER_TYPE_STR));
+                varLstGet(varVarLst(ioFilterGroupResult(ioReadFilterGroup(storageReadIo(read)), CRYPTO_HASH_FILTER_TYPE_STR)), 1));
 
             strCatFmt(data->content, ", s=%" PRIu64, size);
 
             // Check against the manifest
             // ---------------------------------------------------------------------------------------------------------------------
             const ManifestFile *file = manifestFileFind(data->manifest, manifestName);
+
+            // Test UID. Since UID is not deterministic we'll always remove it after it has been tested.
+            if (!strEq(uid, file->uid))
+                THROW_FMT(AssertError, "calculated uid '%s' does match manifest uid '%s'", strPtr(uid), strPtr(file->uid));
+
+            ((ManifestFile *)file)->uid = NULL;
 
             // Test size and repo-size. If compressed then set the repo-size to size so it will not be in test output. Even the same
             // compression algorithm can give slightly different results based on the version so repo-size is not deterministic for
@@ -609,7 +619,8 @@ testRun(void)
             backupProtocol(PROTOCOL_COMMAND_BACKUP_FILE_STR, paramList, server), true, "protocol backup file - pageChecksum");
         TEST_RESULT_STR_Z(
             strNewBuf(serverWrite),
-            "{\"out\":[1,12,12,\"719e82b52966b075c1ee276547e924179628fe69\",{\"align\":false,\"valid\":false},null]}\n",
+            "{\"out\":[1,12,12,\"719e82b52966b075c1ee276547e924179628fe69\",{\"align\":false,\"valid\":false}"
+                ",\"719e82b52966b075c1ee276547e924179628fe69\"]}\n",
             "    check result");
         bufUsedSet(serverWrite, 0);
 
@@ -913,7 +924,8 @@ testRun(void)
         TEST_RESULT_BOOL(
             backupProtocol(PROTOCOL_COMMAND_BACKUP_FILE_STR, paramList, server), true, "protocol backup file - recopy, encrypt");
         TEST_RESULT_STR_Z(
-            strNewBuf(serverWrite), "{\"out\":[2,9,32,\"9bc8ab2dda60ef4beed07d1e19ce0676d5edde67\",null,null]}\n",
+            strNewFmt("%spresent%s", strPtr(strSubN(strNewBuf(serverWrite), 0, 64)), strPtr(strSub(strNewBuf(serverWrite), 104))),
+            "{\"out\":[2,9,32,\"9bc8ab2dda60ef4beed07d1e19ce0676d5edde67\",null,\"present\"]}\n",
             "    check result");
         bufUsedSet(serverWrite, 0);
     }
@@ -1646,6 +1658,8 @@ testRun(void)
             strcpy(
                 ((ManifestFile *)manifestFileFind(manifestResume, STRDEF("pg_data/PG_VERSION")))->checksumSha1,
                 "06d06bb31b570b94d7b4325f511f853dbe771c21");
+            ((ManifestFile *)manifestFileFind(manifestResume, STRDEF("pg_data/PG_VERSION")))->uid =
+                STRDEF("06d06bb31b570b94d7b4325f511f853dbe771c21");
 
             // Save the resume manifest
             manifestSave(

@@ -211,7 +211,6 @@ sub manifestFileCreate
     my $strFile = shift;
     my $strContent = shift;
     my $strChecksum = shift;
-    my $bUid = shift;
     my $lTime = shift;
     my $strMode = shift;
     my $bMaster = shift;
@@ -261,10 +260,7 @@ sub manifestFileCreate
         ${$oManifestRef}{&MANIFEST_SECTION_TARGET_FILE}{$strManifestKey}{checksum} = $strChecksum;
     }
 
-    if ($bUid)
-    {
-        ${$oManifestRef}{&MANIFEST_SECTION_TARGET_FILE}{$strManifestKey}{&MANIFEST_SUBKEY_UID} = 'present';
-    }
+    ${$oManifestRef}{&MANIFEST_SECTION_TARGET_FILE}{$strManifestKey}{&MANIFEST_SUBKEY_UID} = JSON::PP::true;
 }
 
 ####################################################################################################################################
@@ -330,7 +326,6 @@ sub manifestLinkCreate
     my $strPath = shift;
     my $strFile = shift;
     my $strDestination = shift;
-    my $bUid = shift;
     my $bMaster = shift;
 
     # Determine the manifest key
@@ -376,12 +371,7 @@ sub manifestLinkCreate
         ${$oManifestRef}{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_SIZE} = $oStat->size;
         ${$oManifestRef}{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_TIMESTAMP} = $oStat->mtime;
         (${$oManifestRef}{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_CHECKSUM}) = storageTest()->hashSize($strDestinationFile);
-
-        if ($bUid)
-        {
-            $oManifestRef->{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_UID} = 'present';
-        }
-
+        $oManifestRef->{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_UID} = JSON::PP::true;
         ${$oManifestRef}{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_MASTER} =
             defined($bMaster) ? ($bMaster ? JSON::PP::true : JSON::PP::false) : JSON::PP::false;
 

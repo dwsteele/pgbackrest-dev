@@ -7,6 +7,7 @@ Storage Test Harness
 #include "common/compress/helper.h"
 #include "common/user.h"
 #include "storage/storage.h"
+#include "storage/storage.intern.h"
 
 #include "common/harnessStorage.h"
 

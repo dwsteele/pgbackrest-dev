@@ -629,11 +629,13 @@ sub backupCompare
             }
         }
 
-        # If uid exists set it to 'present' since it is not deterministic
-        if ($oActualManifest->test(MANIFEST_SECTION_TARGET_FILE, $strFileKey, MANIFEST_SUBKEY_UID))
+        # Set UID to true since it is not deterministic
+        if (!$oActualManifest->test(MANIFEST_SECTION_TARGET_FILE, $strFileKey, MANIFEST_SUBKEY_UID))
         {
-            $oActualManifest->set(MANIFEST_SECTION_TARGET_FILE, $strFileKey, MANIFEST_SUBKEY_UID, 'present');
+            confess "missing uid for ${strFileKey}";
         }
+
+        $oActualManifest->boolSet(MANIFEST_SECTION_TARGET_FILE, $strFileKey, MANIFEST_SUBKEY_UID, true);
 
         # If the backup does not have page checksums then no need to compare
         if (!$oExpectedManifest->{&MANIFEST_SECTION_BACKUP_OPTION}{&MANIFEST_KEY_CHECKSUM_PAGE})

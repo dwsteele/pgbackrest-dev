@@ -2333,6 +2333,10 @@ manifestValidate(Manifest *this, bool strict)
             // These are strict checks to be performed only after a backup and before the final manifest save
             if (strict)
             {
+                // All files must have a uid
+                if (file->uid == NULL)
+                    strCatFmt(error, "\nmissing uid for file '%s'", strPtr(file->name));
+
                 // Zero-length files must have a specific checksum
                 if (file->size == 0 && !strEqZ(HASH_TYPE_SHA1_ZERO_STR, file->checksumSha1))
                     strCatFmt(error, "\ninvalid checksum '%s' for zero size file '%s'", file->checksumSha1, strPtr(file->name));

@@ -45,6 +45,7 @@ storageWriteNew(void *driver, const StorageWriteInterface *interface)
 
     ASSERT(driver != NULL);
     ASSERT(interface != NULL);
+    ASSERT(interface->uid != NULL);
 
     StorageWrite *this = memNew(sizeof(StorageWrite));
 
@@ -186,8 +187,7 @@ storageWriteUid(const StorageWrite *this)
 
     ASSERT(this != NULL);
 
-    if (this->interface->uid != NULL)
-        FUNCTION_TEST_RETURN(this->interface->uid(this->driver));
+    FUNCTION_TEST_RETURN(this->interface->uid(this->driver));
 
     FUNCTION_TEST_RETURN(NULL);
 }

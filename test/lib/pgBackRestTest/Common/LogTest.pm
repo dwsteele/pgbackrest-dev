@@ -445,12 +445,12 @@ sub regExpReplaceAll
         '[0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}\:[0-9]{2}\:[0-9]{2}$', false);
     $strLine = $self->regExpReplace($strLine, 'SIZE', "size\"[ ]{0,1}:[ ]{0,1}[0-9]+", '[0-9]+$', false);
 
-    # Change uid to "present" since it is not deterministic. This does not seem to work with a regular expression
+    # Change uid to true since it is not deterministic. This does not seem to work with a regular expression
     my $iUidIdx = index($strLine, '"uid":"');
 
     if ($iUidIdx != -1)
     {
-        $strLine = substr($strLine, 0, $iUidIdx) . '"uid":"present"' . substr($strLine, $iUidIdx + 44);
+        $strLine = substr($strLine, 0, $iUidIdx) . '"uid":true}';
     }
 
     $strLine = $self->regExpReplace($strLine, 'DELTA', "delta\"[ ]{0,1}:[ ]{0,1}[0-9]+", '[0-9]+$', false);
