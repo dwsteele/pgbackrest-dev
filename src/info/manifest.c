@@ -2604,7 +2604,8 @@ manifestFileUpdate(
             memcpy(file->checksumSha1, checksumSha1, HASH_TYPE_SHA1_SIZE_HEX + 1);
 
         // Update uid if set
-        file->uid = strDup(uid);
+        if (uid != NULL)
+            file->uid = strDup(uid);
 
         // Update repo size
         file->size = size;
