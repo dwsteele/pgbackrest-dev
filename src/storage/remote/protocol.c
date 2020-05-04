@@ -332,6 +332,8 @@ storageRemoteProtocol(const String *command, const VariantList *paramList, Proto
 
                     // Push filter results
                     protocolServerResponse(server, ioFilterGroupResultAll(ioWriteFilterGroup(fileWrite)));
+
+                    // Push uid
                     protocolServerResponse(server, VARSTR(storageWriteUid(storageWrite)));
                 }
                 // Write was aborted so free the file

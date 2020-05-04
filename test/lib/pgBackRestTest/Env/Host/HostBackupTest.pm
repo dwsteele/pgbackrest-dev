@@ -629,13 +629,13 @@ sub backupCompare
             }
         }
 
-        # Set UID to true since it is not deterministic
+        # Remove UID since it is not deterministic but error if it does not exist
         if (!$oActualManifest->test(MANIFEST_SECTION_TARGET_FILE, $strFileKey, MANIFEST_SUBKEY_UID))
         {
             confess "missing uid for ${strFileKey}";
         }
 
-        $oActualManifest->boolSet(MANIFEST_SECTION_TARGET_FILE, $strFileKey, MANIFEST_SUBKEY_UID, true);
+        $oActualManifest->remove(MANIFEST_SECTION_TARGET_FILE, $strFileKey, MANIFEST_SUBKEY_UID);
 
         # If the backup does not have page checksums then no need to compare
         if (!$oExpectedManifest->{&MANIFEST_SECTION_BACKUP_OPTION}{&MANIFEST_KEY_CHECKSUM_PAGE})
@@ -1970,7 +1970,7 @@ sub restoreCompare
         }
 
 
-        # Remove UID -- the actual manifest cannot contain UIDs since it has not actually be run
+        # Remove UID -- the actual manifest cannot contain UIDs since it has not actually been run
         delete($oExpectedManifestRef->{&MANIFEST_SECTION_TARGET_FILE}{$strName}{&MANIFEST_SUBKEY_UID});
 
         if (!$self->synthetic())

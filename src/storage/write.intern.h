@@ -35,7 +35,7 @@ typedef struct StorageWriteInterface
     time_t timeModified;                                            // Time file was last modified
     const String *user;                                             // User that owns the file
 
-    StorageWriteInterfaceUid *uid;                                  // Unique identifier for the file, if any
+    StorageWriteInterfaceUid *uid;                                  // Unique identifier for the file
 
     IoWriteInterface ioInterface;
 } StorageWriteInterface;

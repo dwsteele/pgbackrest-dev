@@ -259,8 +259,6 @@ sub manifestFileCreate
     {
         ${$oManifestRef}{&MANIFEST_SECTION_TARGET_FILE}{$strManifestKey}{checksum} = $strChecksum;
     }
-
-    ${$oManifestRef}{&MANIFEST_SECTION_TARGET_FILE}{$strManifestKey}{&MANIFEST_SUBKEY_UID} = JSON::PP::true;
 }
 
 ####################################################################################################################################
@@ -371,7 +369,6 @@ sub manifestLinkCreate
         ${$oManifestRef}{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_SIZE} = $oStat->size;
         ${$oManifestRef}{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_TIMESTAMP} = $oStat->mtime;
         (${$oManifestRef}{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_CHECKSUM}) = storageTest()->hashSize($strDestinationFile);
-        $oManifestRef->{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_UID} = JSON::PP::true;
         ${$oManifestRef}{$strSection}{$strManifestKey}{&MANIFEST_SUBKEY_MASTER} =
             defined($bMaster) ? ($bMaster ? JSON::PP::true : JSON::PP::false) : JSON::PP::false;
 

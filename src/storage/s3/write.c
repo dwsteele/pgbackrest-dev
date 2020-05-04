@@ -188,6 +188,8 @@ storageWriteS3Close(THIS_VOID)
     {
         MEM_CONTEXT_TEMP_BEGIN()
         {
+            const String *eTag = NULL;
+
             // If a multi-part upload was started we need to finish that way
             if (this->uploadId != NULL)
             {
@@ -213,11 +215,7 @@ storageWriteS3Close(THIS_VOID)
                             httpQueryAdd(httpQueryNew(), S3_QUERY_UPLOAD_ID_STR, this->uploadId), xmlDocumentBuf(partList), true,
                             false).response));
 
-                MEM_CONTEXT_BEGIN(this->memContext)
-                {
-                    this->uid = strDup(xmlNodeContent(xmlNodeChild(xmlRoot, S3_XML_TAG_ETAG_STR, false)));
-                }
-                MEM_CONTEXT_END();
+                eTag = xmlNodeContent(xmlNodeChild(xmlRoot, S3_XML_TAG_ETAG_STR, false));
             }
             // Else upload all the data in a single put
             else
@@ -225,12 +223,17 @@ storageWriteS3Close(THIS_VOID)
                 StorageS3RequestResult httpResult = storageS3Request(
                     this->storage, HTTP_VERB_PUT_STR, this->interface.name, NULL, this->partBuffer, true, false);
 
-                MEM_CONTEXT_BEGIN(this->memContext)
-                {
-                    this->uid = strDup(httpHeaderGet(httpResult.responseHeader, HTTP_HEADER_ETAG_STR));
-                }
-                MEM_CONTEXT_END();
+                eTag = httpHeaderGet(httpResult.responseHeader, HTTP_HEADER_ETAG_STR);
             }
+
+            MEM_CONTEXT_BEGIN(this->memContext)
+            {
+                CHECK(eTag != NULL);
+                CHECK(strBeginsWith(eTag, QUOTE_STR) && strEndsWith(eTag, QUOTE_STR));
+
+                this->uid = strSubN(eTag, 1, strSize(eTag) - 2);
+            }
+            MEM_CONTEXT_END();
 
             bufFree(this->partBuffer);
             this->partBuffer = NULL;
