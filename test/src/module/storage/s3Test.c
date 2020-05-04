@@ -166,9 +166,9 @@ testS3Server(void)
         storageS3UriStyleHost));
     harnessTlsServerReply(
         testS3ServerResponse(
-            200, "OK", NULL,
+            200, "OK", "etag:\"chunknothingleft\"",
             "<CompleteMultipartUploadOutput>"
-            "<ETag>\"chunknothingleft\"</ETag>"
+            "<ETag>chunknothingleft</ETag>"
             "</CompleteMultipartUploadOutput>"));
 
     // File is written in chunks with something left over on close

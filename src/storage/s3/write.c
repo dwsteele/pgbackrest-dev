@@ -208,14 +208,21 @@ storageWriteS3Close(THIS_VOID)
                 }
 
                 // Finalize the multi-part upload
-                XmlNode *xmlRoot = xmlDocumentRoot(
-                    xmlDocumentNewBuf(
-                        storageS3Request(
-                            this->storage, HTTP_VERB_POST_STR, this->interface.name,
-                            httpQueryAdd(httpQueryNew(), S3_QUERY_UPLOAD_ID_STR, this->uploadId), xmlDocumentBuf(partList), true,
-                            false).response));
+                StorageS3RequestResult httpResult = storageS3Request(
+                    this->storage, HTTP_VERB_POST_STR, this->interface.name,
+                    httpQueryAdd(httpQueryNew(), S3_QUERY_UPLOAD_ID_STR, this->uploadId), xmlDocumentBuf(partList), true,
+                    false);
 
-                eTag = xmlNodeContent(xmlNodeChild(xmlRoot, S3_XML_TAG_ETAG_STR, false));
+                // First check for an eTag header and if it is missing then check the XML. The reason for this is that Minio has a
+                // bug where it does not properly quote the XML ETag. We could just strip it but that would require checking that
+                // the server is Minio.
+                eTag = httpHeaderGet(httpResult.responseHeader, HTTP_HEADER_ETAG_STR);
+
+                if (eTag == NULL)
+                {
+                    eTag = xmlNodeContent(
+                        xmlNodeChild(xmlDocumentRoot(xmlDocumentNewBuf(httpResult.response)), S3_XML_TAG_ETAG_STR, false));
+                }
             }
             // Else upload all the data in a single put
             else
@@ -226,11 +233,12 @@ storageWriteS3Close(THIS_VOID)
                 eTag = httpHeaderGet(httpResult.responseHeader, HTTP_HEADER_ETAG_STR);
             }
 
+            // Validate the ETag and create the UID by stripping off the quotes
+            CHECK(eTag != NULL);
+            CHECK(strBeginsWith(eTag, QUOTE_STR) && strEndsWith(eTag, QUOTE_STR));
+
             MEM_CONTEXT_BEGIN(this->memContext)
             {
-                CHECK(eTag != NULL);
-                CHECK(strBeginsWith(eTag, QUOTE_STR) && strEndsWith(eTag, QUOTE_STR));
-
                 this->uid = strSubN(eTag, 1, strSize(eTag) - 2);
             }
             MEM_CONTEXT_END();
