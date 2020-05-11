@@ -9,19 +9,26 @@ getfilecon foo.log
 
 #include "common/assert.h"
 
+#include "common/harnessDebug.h"
+
 /***********************************************************************************************************************************
 Shim for SELinux selinux_trans_to_raw_context()
 ***********************************************************************************************************************************/
 int
 selinux_trans_to_raw_context(const char *trans, char **rawp)
 {
+    FUNCTION_HARNESS_BEGIN();
+        FUNCTION_HARNESS_PARAM(STRINGZ, trans);
+        FUNCTION_HARNESS_PARAM_P(STRINGZ, rawp);
+    FUNCTION_HARNESS_END();
+
     ASSERT(trans != NULL);
     ASSERT(rawp != NULL);
 
-    // (void)trans;
-    // (void)rawp;
+    (void)trans;
+    (void)rawp;
 
-    return 0;
+    FUNCTION_HARNESS_RESULT(INT, 0);
 }
 
 /***********************************************************************************************************************************
@@ -30,13 +37,18 @@ Shim for SELinux selinux_raw_to_trans_context()
 int
 selinux_raw_to_trans_context(const char *raw, char **transp)
 {
+    FUNCTION_HARNESS_BEGIN();
+        FUNCTION_HARNESS_PARAM(STRINGZ, raw);
+        FUNCTION_HARNESS_PARAM_P(STRINGZ, transp);
+    FUNCTION_HARNESS_END();
+
     ASSERT(raw != NULL);
     ASSERT(transp != NULL);
 
-    // (void)raw;
-    // (void)transp;
+    (void)raw;
+    (void)transp;
 
-    return 0;
+    FUNCTION_HARNESS_RESULT(INT, 0);
 }
 
 /***********************************************************************************************************************************
@@ -44,5 +56,11 @@ Shim for freecon()
 ***********************************************************************************************************************************/
 void freecon(char *con)
 {
+    FUNCTION_HARNESS_BEGIN();
+        FUNCTION_HARNESS_PARAM(STRINGZ, con);
+    FUNCTION_HARNESS_END();
+
     free(con);
+
+    FUNCTION_HARNESS_RESULT_VOID();
 }

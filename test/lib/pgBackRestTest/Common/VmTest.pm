@@ -227,7 +227,6 @@ my $oyVm =
         &VM_ARCH => VM_ARCH_AMD64,
         &VMDEF_PGSQL_BIN => '/usr/pgsql-{[version]}/bin',
         &VMDEF_COVERAGE_C => true,
-        &VMDEF_WITH_SELINUX => true,
 
         &VMDEF_DEBUG_INTEGRATION => false,
         &VMDEF_WITH_ZST => true,
