@@ -240,7 +240,6 @@ unit:
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: io-tls
         total: 5
-        containerReq: true
 
         coverage:
           common/io/tls/client: full
@@ -262,15 +261,21 @@ unit:
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: compress
-        total: 3
+        total: 5
 
         coverage:
+          common/compress/bz2/common: full
+          common/compress/bz2/compress: full
+          common/compress/bz2/decompress: full
           common/compress/gz/common: full
           common/compress/gz/compress: full
           common/compress/gz/decompress: full
           common/compress/lz4/common: full
           common/compress/lz4/compress: full
           common/compress/lz4/decompress: full
+          common/compress/zst/common: full
+          common/compress/zst/compress: full
+          common/compress/zst/decompress: full
           common/compress/helper: full
 
       # ----------------------------------------------------------------------------------------------------------------------------
@@ -405,7 +410,6 @@ unit:
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: posix
         total: 21
-        containerReq: true
 
         coverage:
           storage/posix/read: full
@@ -607,7 +611,7 @@ unit:
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: expire
-        total: 8
+        total: 9
 
         coverage:
           command/expire/expire: full
@@ -646,7 +650,6 @@ unit:
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: restore
         total: 12
-        containerReq: true
         binReq: true
 
         coverage:

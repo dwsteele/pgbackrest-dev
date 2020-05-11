@@ -260,6 +260,9 @@ sub run
 
         if ($self->{oTest}->{&TEST_C})
         {
+            # Build filename for valgrind suppressions
+            my $strValgrindSuppress = $self->{strGCovPath} . '/test/valgrind.suppress.' . $self->{oTest}->{&TEST_VM};
+
             $strCommand =
                 ($self->{oTest}->{&TEST_VM} ne VM_NONE  ? 'docker exec -i -u ' . TEST_USER . " ${strImage} " : '') .
                 "bash -l -c '" .
@@ -269,9 +272,11 @@ sub run
                 # Create test path if not mounted to the host
                 ($bContainerRequired ? "mkdir -p -m 770 ${strVmTestPath} && " : '') .
                 "make -j $self->{iBuildMax} -s 2>&1 &&" .
+                # Test with valgrind when requested
                 ($self->{oTest}->{&TEST_VM} ne VM_CO6 && $self->{bValgrindUnit} &&
                     $self->{oTest}->{&TEST_TYPE} ne TESTDEF_PERFORMANCE ?
-                    " valgrind -q --gen-suppressions=all --suppressions=$self->{strGCovPath}/test/valgrind.suppress" .
+                    ' valgrind -q --gen-suppressions=all ' .
+                    ($self->{oStorageTest}->exists($strValgrindSuppress) ? " --suppressions=${strValgrindSuppress}" : '') .
                     " --leak-check=full --leak-resolution=high --error-exitcode=25" : '') .
                 " ./test.bin 2>&1'";
         }
@@ -450,8 +455,9 @@ sub run
                 my $strBuildAutoH =
                     ($self->{oTest}->{&TEST_VM} ne VM_CO6 ? "#define HAVE_STATIC_ASSERT\n" : '') .
                     "#define HAVE_BUILTIN_TYPES_COMPATIBLE_P\n" .
+                    (vmWithLz4($self->{oTest}->{&TEST_VM}) ? '#define HAVE_LIBLZ4' : '') . "\n" .
                     (vmWithExtAttr($self->{oTest}->{&TEST_VM}) ? '#define HAVE_XATTR' : '') . "\n" .
-                    (vmWithLz4($self->{oTest}->{&TEST_VM}) ? '#define HAVE_LIBLZ4' : '') . "\n";
+                    (vmWithZst($self->{oTest}->{&TEST_VM}) ? '#define HAVE_LIBZST' : '') . "\n";
 
                 buildPutDiffers($self->{oStorageTest}, "$self->{strGCovPath}/" . BUILD_AUTO_H, $strBuildAutoH);
 
@@ -506,6 +512,7 @@ sub run
                     (($self->{bOptimize} && ($self->{bProfile} || $bPerformance)) ? '-O2' : $strNoOptimizeFlags) .
                     (!$self->{bDebugTestTrace} && $self->{bDebug} ? ' -DDEBUG_TEST_TRACE' : '') .
                     (vmCoverageC($self->{oTest}->{&TEST_VM}) && $self->{bCoverageUnit} ? ' -fprofile-arcs -ftest-coverage' : '') .
+                    ($self->{oTest}->{&TEST_VM} eq VM_NONE ? '' : " -DTEST_CONTAINER_REQUIRED") .
                     ($self->{oTest}->{&TEST_CTESTDEF} ? " $self->{oTest}->{&TEST_CTESTDEF}" : '');
 
                 buildPutDiffers(
@@ -528,8 +535,9 @@ sub run
                     "BUILDFLAGS=${strBuildFlags}\n" .
                     "HARNESSFLAGS=${strHarnessFlags}\n" .
                     "TESTFLAGS=${strTestFlags}\n" .
-                    "LDFLAGS=-lcrypto -lssl -lxml2 -lz" .
+                    "LDFLAGS=-lcrypto -lssl -lxml2 -lz -lbz2" .
                         (vmWithLz4($self->{oTest}->{&TEST_VM}) ? ' -llz4' : '') .
+                        (vmWithZst($self->{oTest}->{&TEST_VM}) ? ' -lzstd' : '') .
                         (vmCoverageC($self->{oTest}->{&TEST_VM}) && $self->{bCoverageUnit} ? " -lgcov" : '') .
                         (vmWithBackTrace($self->{oTest}->{&TEST_VM}) && $self->{bBackTrace} ? ' -lbacktrace' : '') .
                     "\n" .
@@ -642,7 +650,8 @@ sub end
         if ($iExitStatus == 0 && $self->{oTest}->{&TEST_C} && vmCoverageC($self->{oTest}->{&TEST_VM}) && $self->{bCoverageUnit})
         {
             coverageExtract(
-                $self->{oStorageTest}, $self->{oTest}->{&TEST_MODULE}, $self->{oTest}->{&TEST_NAME}, $self->{bCoverageSummary},
+                $self->{oStorageTest}, $self->{oTest}->{&TEST_MODULE}, $self->{oTest}->{&TEST_NAME},
+                $self->{oTest}->{&TEST_VM} ne VM_NONE, $self->{bCoverageSummary},
                 $self->{oTest}->{&TEST_VM} eq VM_NONE ? undef : $strImage, $self->{strTestPath}, "$self->{strTestPath}/temp",
                 $self->{strGCovPath}, $self->{strBackRestBase} . '/test/result');
         }

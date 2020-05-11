@@ -4085,6 +4085,64 @@ fi
 
 
 
+# Check required bzip2 library
+# ----------------------------------------------------------------------------------------------------------------------------------
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
+$as_echo_n "checking for BZ2_bzCompress in -lbz2... " >&6; }
+if ${ac_cv_lib_bz2_BZ2_bzCompress+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lbz2  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char BZ2_bzCompress ();
+int
+main ()
+{
+return BZ2_bzCompress ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_bz2_BZ2_bzCompress=yes
+else
+  ac_cv_lib_bz2_BZ2_bzCompress=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
+$as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
+if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBBZ2 1
+_ACEOF
+
+  LIBS="-lbz2 $LIBS"
+
+else
+  as_fn_error $? "library 'bz2' is required" "$LINENO" 5
+fi
+
+ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_bzlib_h" = xyes; then :
+
+else
+  as_fn_error $? "header file <bzlib.h> is required" "$LINENO" 5
+fi
+
+
+
 # Check optional lz4 library
 # ----------------------------------------------------------------------------------------------------------------------------------
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LZ4F_isError in -llz4" >&5
@@ -4131,6 +4189,75 @@ if test "x$ac_cv_header_lz4frame_h" = xyes; then :
 
 else
   as_fn_error $? "header file <lz4frame.h> is required" "$LINENO" 5
+fi
+
+
+fi
+
+
+# Check optional zst library. Ignore any versions below 1.0.
+# ----------------------------------------------------------------------------------------------------------------------------------
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZSTD_isError in -lzstd" >&5
+$as_echo_n "checking for ZSTD_isError in -lzstd... " >&6; }
+if ${ac_cv_lib_zstd_ZSTD_isError+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lzstd  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ZSTD_isError ();
+int
+main ()
+{
+return ZSTD_isError ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_zstd_ZSTD_isError=yes
+else
+  ac_cv_lib_zstd_ZSTD_isError=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_zstd_ZSTD_isError" >&5
+$as_echo "$ac_cv_lib_zstd_ZSTD_isError" >&6; }
+if test "x$ac_cv_lib_zstd_ZSTD_isError" = xyes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "zstd.h" "ac_cv_header_zstd_h" "$ac_includes_default"
+if test "x$ac_cv_header_zstd_h" = xyes; then :
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <zstd.h>
+int
+main ()
+{
+#if ZSTD_VERSION_MAJOR < 1
+                    #error "ZSTD_VERSION_MAJOR must be >= 1"
+                    #endif
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  $as_echo "#define HAVE_LIBZST 1" >>confdefs.h
+ LIBS="${LIBS} -lzstd"
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+else
+  as_fn_error $? "header file <zstd.h> is required" "$LINENO" 5
 fi
 
 
@@ -5424,4 +5551,4 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
-# Generated from src/build/configure.ac sha1 8a45676e1b9633e471d41e92c729f1ee622eb5ac
+# Generated from src/build/configure.ac sha1 534cc18b1467f024dc9f731d317dc32871e9f581
