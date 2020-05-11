@@ -27,6 +27,8 @@ use constant TESTDEF_INTEGRATION                                    => 'integrat
     push @EXPORT, qw(TESTDEF_INTEGRATION);
 use constant TESTDEF_PERFORMANCE                                    => 'performance';
     push @EXPORT, qw(TESTDEF_PERFORMANCE);
+use constant TESTDEF_SHIM                                           => 'shim';
+    push @EXPORT, qw(TESTDEF_SHIM);
 use constant TESTDEF_UNIT                                           => 'unit';
     push @EXPORT, qw(TESTDEF_UNIT);
 
@@ -186,6 +188,27 @@ sub testDefLoad
 
                         # Add to coverage list
                         push(@{$hCoverageList->{$strCodeModule}}, {strModule=> $strModule, strTest => $strTest});
+                    }
+                }
+
+                # Set shim list
+                foreach my $strShim (sort(keys(%{$hTestDef->{&TESTDEF_SHIM}})))
+                {
+                    my $strShimModule = $hTestDef->{&TESTDEF_SHIM}->{$strShim}{module};
+
+                    if (!defined($strShimModule))
+                    {
+                        confess &log(ERROR, "module for shim '${strShim}' must be defined");
+                    }
+
+                    $hTestDefHash->{$strModule}{$strTest}{&TESTDEF_SHIM}{$strShimModule} =
+                        defined($hModuleTest->{&TESTDEF_COVERAGE}{$strShimModule}) ? true : false;
+                    $hTestDefHash->{$strModule}{$strTest}{&TESTDEF_SHIM}{$strShim} =
+                        !$hTestDefHash->{$strModule}{$strTest}{&TESTDEF_SHIM}{$strShimModule};
+
+                    if ($hTestDefHash->{$strModule}{$strTest}{&TESTDEF_SHIM}{$strShimModule})
+                    {
+                        &log(WARN, "SHIM $strModule/$strTest, $strShim, $strShimModule");
                     }
                 }
 

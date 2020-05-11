@@ -328,6 +328,7 @@ sub run
                     next if $strFile =~ /test\.c$/;
 
                     if (!defined($hTestCoverage->{$strFileNoExt}) && !grep(/^$strFileNoExt$/, @{$hTest->{&TESTDEF_INCLUDE}}) &&
+                        (!defined($hTest->{&TESTDEF_SHIM}{$strFileNoExt}) || $hTest->{&TESTDEF_SHIM}{$strFileNoExt}) &&
                         $strFile !~ /^test\/module\/[^\/]*\/.*Test\.c$/)
                     {
                         push(@stryCFile, "${strFile}");

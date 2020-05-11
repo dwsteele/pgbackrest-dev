@@ -12,10 +12,6 @@ Posix Storage
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifdef HAVE_XATTR
-#include <sys/xattr.h>
-#endif // HAVE_XATTR
-
 #ifdef HAVE_LIBSELINUX
 #include <selinux/selinux.h>
 #endif // HAVE_LIBSELINUX
@@ -28,6 +24,7 @@ Posix Storage
 #include "storage/posix/read.h"
 #include "storage/posix/storage.intern.h"
 #include "storage/posix/write.h"
+#include "storage/posix/xattr.h"
 
 /***********************************************************************************************************************************
 Storage type
@@ -53,87 +50,6 @@ struct StoragePosix
 };
 
 /**********************************************************************************************************************************/
-#ifdef HAVE_XATTR
-
-static String *
-storagePosixInfoXAttr(const String *path, const String *name)
-{
-    FUNCTION_LOG_BEGIN(logLevelTrace);
-        FUNCTION_LOG_PARAM(STRING, path);
-        FUNCTION_LOG_PARAM(STRING, name);
-    FUNCTION_LOG_END();
-
-    String *result = NULL;
-
-    MEM_CONTEXT_TEMP_BEGIN()
-    {
-        Buffer *buffer = bufNew(256);
-        ssize_t getResult;
-
-        do
-        {
-            getResult = getxattr(strPtr(path), strPtr(name), bufPtr(buffer), bufSize(buffer) - 1);
-
-            if (getResult == -1)
-            {
-                // !!! THIS SHOULD BE ENOATTR BUT THAT REQUIRES A SPECIAL PACKAGE TO BE INSTALLED
-                if (errno == ENODATA)
-                    break;
-
-                if (errno == ERANGE)
-                {
-                    ssize_t size = getxattr(strPtr(path), strPtr(name), NULL, 0);
-
-                    THROW_ON_SYS_ERROR_FMT(
-                        size == -1, FileReadError, "unable to get xattr '%s' size for path '%s'", strPtr(name), strPtr(path));
-
-                    bufResize(buffer, (size_t)size + 1);
-                }
-
-                THROW_SYS_ERROR_CODE_FMT(
-                    errno, FileReadError, "unable to get xattr '%s' for path '%s'", strPtr(name), strPtr(path));
-            }
-            else
-            {
-                bufUsedSet(buffer, (size_t)getResult);
-                bufPtr(buffer)[getResult] = '\0';
-
-                MEM_CONTEXT_PRIOR_BEGIN()
-                {
-                    result = strNewBuf(buffer);
-                }
-                MEM_CONTEXT_PRIOR_END();
-            }
-        }
-        while (getResult == -1);
-    }
-    MEM_CONTEXT_TEMP_END();
-
-    FUNCTION_LOG_RETURN(STRING, result);
-}
-
-static void
-storagePosixInfoXAttrSet(const String *path, const String *name, const Buffer *value)
-{
-    FUNCTION_LOG_BEGIN(logLevelTrace);
-        FUNCTION_LOG_PARAM(STRING, path);
-        FUNCTION_LOG_PARAM(STRING, name);
-        FUNCTION_LOG_PARAM(BUFFER, value);
-    FUNCTION_LOG_END();
-
-    ASSERT(path != NULL);
-    ASSERT(name != NULL);
-    ASSERT(value != NULL);
-
-    THROW_ON_SYS_ERROR_FMT(
-        lsetxattr(strPtr(path), strPtr(name), bufPtrConst(value), bufSize(value), 0), FileWriteError,
-        "unable to set xattr '%s' on '%s'", strPtr(name), strPtr(path));
-
-    FUNCTION_LOG_RETURN_VOID();
-}
-
-#endif // HAVE_XATTR
-
 static StorageInfo
 storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageInterfaceInfoParam param)
 {
@@ -219,8 +135,6 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
 
             result.extAttr = extAttrKv;
         }
-
-        (void)storagePosixInfoXAttrSet; // !!! REMOVE WHEN IMPLEMENTED
 #endif // HAVE_XATTR
         }
     }

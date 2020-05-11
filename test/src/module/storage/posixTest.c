@@ -13,6 +13,7 @@ Test Posix Storage
 #include "common/harnessConfig.h"
 #include "common/harnessFork.h"
 #include "common/harnessStorage.h"
+#include "common/harnessXattr.h"
 
 /***********************************************************************************************************************************
 Test function for path expression
