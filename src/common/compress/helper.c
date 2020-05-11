@@ -6,12 +6,18 @@ Compression Helper
 #include <string.h>
 
 #include "common/compress/helper.h"
+#include "common/compress/bz2/common.h"
+#include "common/compress/bz2/compress.h"
+#include "common/compress/bz2/decompress.h"
 #include "common/compress/gz/common.h"
 #include "common/compress/gz/compress.h"
 #include "common/compress/gz/decompress.h"
 #include "common/compress/lz4/common.h"
 #include "common/compress/lz4/compress.h"
 #include "common/compress/lz4/decompress.h"
+#include "common/compress/zst/common.h"
+#include "common/compress/zst/compress.h"
+#include "common/compress/zst/decompress.h"
 #include "common/debug.h"
 #include "common/log.h"
 #include "version.h"
@@ -22,8 +28,6 @@ Compression type constants
 #define COMPRESS_TYPE_NONE                                          "none"
 
 // Constants for currently unsupported compression types
-#define ZST_EXT                                                     "zst"
-#define BZ2_EXT                                                     "bz2"
 #define XZ_EXT                                                      "xz"
 
 /***********************************************************************************************************************************
@@ -43,6 +47,15 @@ static const struct CompressHelperLocal
     {
         .type = STRDEF(COMPRESS_TYPE_NONE),
         .ext = STRDEF(""),
+    },
+    {
+        .type = STRDEF(BZ2_EXT),
+        .ext = STRDEF("." BZ2_EXT),
+        .compressType = BZ2_COMPRESS_FILTER_TYPE,
+        .compressNew = bz2CompressNew,
+        .decompressType = BZ2_DECOMPRESS_FILTER_TYPE,
+        .decompressNew = bz2DecompressNew,
+        .levelDefault = 9,
     },
     {
         .type = STRDEF(GZ_EXT),
@@ -67,6 +80,13 @@ static const struct CompressHelperLocal
     {
         .type = STRDEF(ZST_EXT),
         .ext = STRDEF("." ZST_EXT),
+#ifdef HAVE_LIBZST
+        .compressType = ZST_COMPRESS_FILTER_TYPE,
+        .compressNew = zstCompressNew,
+        .decompressType = ZST_DECOMPRESS_FILTER_TYPE,
+        .decompressNew = zstDecompressNew,
+        .levelDefault = 3,
+#endif
     },
     {
         .type = STRDEF(XZ_EXT),

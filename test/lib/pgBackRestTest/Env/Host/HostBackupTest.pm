@@ -95,10 +95,14 @@ use constant CFGOPTVAL_RESTORE_TYPE_XID                             => 'xid';
 
 use constant NONE                                                   => 'none';
     push @EXPORT, qw(NONE);
+use constant BZ2                                                    => 'bz2';
+    push @EXPORT, qw(BZ2);
 use constant GZ                                                     => 'gz';
     push @EXPORT, qw(GZ);
 use constant LZ4                                                    => 'lz4';
     push @EXPORT, qw(LZ4);
+use constant ZST                                                    => 'zst';
+    push @EXPORT, qw(ZST);
 
 ####################################################################################################################################
 # new

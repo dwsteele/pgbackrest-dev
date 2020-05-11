@@ -352,7 +352,7 @@ restoreManifestMap(Manifest *manifest)
         // Remap tablespaces
         // -------------------------------------------------------------------------------------------------------------------------
         KeyValue *tablespaceMap = varKv(cfgOption(cfgOptTablespaceMap));
-        const String *tablespaceMapAllPath = cfgOptionStr(cfgOptTablespaceMapAll);
+        const String *tablespaceMapAllPath = cfgOptionStrNull(cfgOptTablespaceMapAll);
 
         if (tablespaceMap != NULL || tablespaceMapAllPath != NULL)
         {
@@ -607,11 +607,11 @@ restoreManifestOwner(Manifest *manifest)
             StorageInfo pathInfo = storageInfoP(storagePg(), manifestTargetBase(manifest)->path);
 
             // If user/group is null then set it to root
-            if (pathInfo.user == NULL)
-                pathInfo.user = userName();
+            if (pathInfo.user == NULL)                                                                              // {vm_covered}
+                pathInfo.user = userName();                                                                         // {vm_covered}
 
-            if (pathInfo.group == NULL)
-                pathInfo.group = groupName();
+            if (pathInfo.group == NULL)                                                                             // {vm_covered}
+                pathInfo.group = groupName();                                                                       // {vm_covered}
 
             if (userNull || groupNull)
             {
@@ -2017,7 +2017,7 @@ cmdRestore(void)
         // Load backup.info
         InfoBackup *infoBackup = infoBackupLoadFile(
             storageRepo(), INFO_BACKUP_PATH_FILE_STR, cipherType(cfgOptionStr(cfgOptRepoCipherType)),
-            cfgOptionStr(cfgOptRepoCipherPass));
+            cfgOptionStrNull(cfgOptRepoCipherPass));
 
         // Get the backup set
         const String *backupSet = restoreBackupSet(infoBackup);

@@ -12,9 +12,12 @@ Posix Storage
 #include <sys/stat.h>
 #include <unistd.h>
 
+#ifdef HAVE_XATTR
+#include <sys/xattr.h>
+#endif // HAVE_XATTR
+
 #ifdef HAVE_LIBSELINUX
 #include <selinux/selinux.h>
-#include <sys/xattr.h>
 #endif // HAVE_LIBSELINUX
 
 #include "common/debug.h"
@@ -45,10 +48,12 @@ struct StoragePosix
 {
     STORAGE_COMMON_MEMBER;
     MemContext *memContext;                                         // Object memory context
+    bool extAttr;                                                   // Will info functions return extended attributes?
+    StringList *extAttrList;                                        // List of extended attributes to return from info functions
 };
 
 /**********************************************************************************************************************************/
-#ifdef HAVE_LIBSELINUX
+#ifdef HAVE_XATTR
 
 static String *
 storagePosixInfoXAttr(const String *path, const String *name)
@@ -90,6 +95,7 @@ storagePosixInfoXAttr(const String *path, const String *name)
             }
             else
             {
+                bufUsedSet(buffer, (size_t)getResult);
                 bufPtr(buffer)[getResult] = '\0';
 
                 MEM_CONTEXT_PRIOR_BEGIN()
@@ -100,55 +106,33 @@ storagePosixInfoXAttr(const String *path, const String *name)
             }
         }
         while (getResult == -1);
-        //
-    	// size = getxattr(path, XATTR_NAME_SELINUX, NULL, 0);
-        //
-        //
-    	// char *buf;
-    	// ssize_t size;
-    	// ssize_t ret;
-        //
-    	// size = INITCONTEXTLEN + 1;
-    	// buf = malloc(size);
-    	// if (!buf)
-    	// 	return -1;
-    	// memset(buf, 0, size);
-        //
-    	// ret = getxattr(path, XATTR_NAME_SELINUX, buf, size - 1);
-    	// if (ret < 0 && errno == ERANGE) {
-    	// 	char *newbuf;
-        //
-    	// 	size = getxattr(path, XATTR_NAME_SELINUX, NULL, 0);
-    	// 	if (size < 0)
-    	// 		goto out;
-        //
-    	// 	size++;
-    	// 	newbuf = realloc(buf, size);
-    	// 	if (!newbuf)
-    	// 		goto out;
-        //
-    	// 	buf = newbuf;
-    	// 	memset(buf, 0, size);
-    	// 	ret = getxattr(path, XATTR_NAME_SELINUX, buf, size - 1);
-    	// }
-        //   out:
-    	// if (ret == 0) {
-    	// 	/* Re-map empty attribute values to errors. */
-    	// 	errno = ENOTSUP;
-    	// 	ret = -1;
-    	// }
-    	// if (ret < 0)
-    	// 	free(buf);
-    	// else
-    	// 	*context = buf;
-    	// return ret;
     }
     MEM_CONTEXT_TEMP_END();
 
     FUNCTION_LOG_RETURN(STRING, result);
 }
 
-#endif // HAVE_LIBSELINUX
+static void
+storagePosixInfoXAttrSet(const String *path, const String *name, const Buffer *value)
+{
+    FUNCTION_LOG_BEGIN(logLevelTrace);
+        FUNCTION_LOG_PARAM(STRING, path);
+        FUNCTION_LOG_PARAM(STRING, name);
+        FUNCTION_LOG_PARAM(BUFFER, value);
+    FUNCTION_LOG_END();
+
+    ASSERT(path != NULL);
+    ASSERT(name != NULL);
+    ASSERT(value != NULL);
+
+    THROW_ON_SYS_ERROR_FMT(
+        lsetxattr(strPtr(path), strPtr(name), bufPtrConst(value), bufSize(value), 0), FileWriteError,
+        "unable to set xattr '%s' on '%s'", strPtr(name), strPtr(path));
+
+    FUNCTION_LOG_RETURN_VOID();
+}
+
+#endif // HAVE_XATTR
 
 static StorageInfo
 storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageInterfaceInfoParam param)
@@ -160,6 +144,8 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
         FUNCTION_LOG_PARAM(STRING, file);
         FUNCTION_LOG_PARAM(ENUM, level);
         FUNCTION_LOG_PARAM(BOOL, param.followLink);
+        FUNCTION_LOG_PARAM(BOOL, param.extAttr);
+        FUNCTION_LOG_PARAM(STRING_LIST, param.extAttrList);
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
@@ -172,8 +158,8 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
 
     if ((param.followLink ? stat(strPtr(file), &statFile) : lstat(strPtr(file), &statFile)) == -1)
     {
-        if (errno != ENOENT)
-            THROW_SYS_ERROR_FMT(FileOpenError, STORAGE_ERROR_INFO, strPtr(file));
+        if (errno != ENOENT)                                                                                        // {vm_covered}
+            THROW_SYS_ERROR_FMT(FileOpenError, STORAGE_ERROR_INFO, strPtr(file));                                   // {vm_covered}
     }
     // On success the file exists
     else
@@ -219,9 +205,23 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
                 result.linkDestination = strNewN(linkDestination, (size_t)linkDestinationSize);
             }
 
-#ifdef HAVE_LIBSELINUX
-            (void)storagePosixInfoXAttr;
-#endif // HAVE_LIBSELINUX
+#ifdef HAVE_XATTR
+        if (param.extAttr)
+        {
+            KeyValue *extAttrKv = kvNew();
+
+            for (unsigned int extAttrIdx = 0; extAttrIdx < strLstSize(param.extAttrList); extAttrIdx++)
+            {
+                const String *extAttrName = strLstGet(param.extAttrList, extAttrIdx);
+
+                kvPut(extAttrKv, VARSTR(extAttrName), VARSTR(storagePosixInfoXAttr(file, extAttrName)));
+            }
+
+            result.extAttr = extAttrKv;
+        }
+
+        (void)storagePosixInfoXAttrSet; // !!! REMOVE WHEN IMPLEMENTED
+#endif // HAVE_XATTR
         }
     }
 
@@ -291,8 +291,8 @@ storagePosixInfoList(
     // If the directory could not be opened process errors and report missing directories
     if (dir == NULL)
     {
-        if (errno != ENOENT)
-            THROW_SYS_ERROR_FMT(PathOpenError, STORAGE_ERROR_LIST_INFO, strPtr(path));
+        if (errno != ENOENT)                                                                                        // {vm_covered}
+            THROW_SYS_ERROR_FMT(PathOpenError, STORAGE_ERROR_LIST_INFO, strPtr(path));                              // {vm_covered}
     }
     else
     {
@@ -388,12 +388,15 @@ storagePosixMove(THIS_VOID, StorageRead *source, StorageWrite *destination, Stor
                 result = storageInterfaceMoveP(this, source, destination);
             }
             // Else the destination is on a different device so a copy will be needed
-            else if (errno == EXDEV)
+            else if (errno == EXDEV)                                                                                // {vm_covered}
             {
                 result = false;
             }
             else
-                THROW_SYS_ERROR_FMT(FileMoveError, "unable to move '%s' to '%s'", strPtr(sourceFile), strPtr(destinationFile));
+            {
+                THROW_SYS_ERROR_FMT(                                                                                // {vm_covered}
+                    FileMoveError, "unable to move '%s' to '%s'", strPtr(sourceFile), strPtr(destinationFile));     // {vm_covered}
+            }
         }
         // Sync paths on success
         else
@@ -522,7 +525,7 @@ storagePosixPathRemoveCallback(void *callbackData, const StorageInfo *info)
         String *file = strNewFmt("%s/%s", strPtr(data->path), strPtr(info->name));
 
         // Rather than stat the file to discover what type it is, just try to unlink it and see what happens
-        if (unlink(strPtr(file)) == -1)
+        if (unlink(strPtr(file)) == -1)                                                                             // {vm_covered}
         {
             // These errors indicate that the entry is actually a path so we'll try to delete it that way
             if (errno == EPERM || errno == EISDIR)              // {uncovered_branch - no EPERM on tested systems}
@@ -531,7 +534,7 @@ storagePosixPathRemoveCallback(void *callbackData, const StorageInfo *info)
             }
             // Else error
             else
-                THROW_SYS_ERROR_FMT(PathRemoveError, STORAGE_ERROR_PATH_REMOVE_FILE, strPtr(file));
+                THROW_SYS_ERROR_FMT(PathRemoveError, STORAGE_ERROR_PATH_REMOVE_FILE, strPtr(file));                 // {vm_covered}
         }
     }
 
@@ -573,8 +576,8 @@ storagePosixPathRemove(THIS_VOID, const String *path, bool recurse, StorageInter
         // Delete the path
         if (rmdir(strPtr(path)) == -1)
         {
-            if (errno != ENOENT)
-                THROW_SYS_ERROR_FMT(PathRemoveError, STORAGE_ERROR_PATH_REMOVE, strPtr(path));
+            if (errno != ENOENT)                                                                                    // {vm_covered}
+                THROW_SYS_ERROR_FMT(PathRemoveError, STORAGE_ERROR_PATH_REMOVE, strPtr(path));                      // {vm_covered}
 
             // Path does not exist
             result = false;
@@ -606,10 +609,10 @@ storagePosixPathSync(THIS_VOID, const String *path, StorageInterfacePathSyncPara
     // Handle errors
     if (handle == -1)
     {
-        if (errno == ENOENT)
+        if (errno == ENOENT)                                                                                        // {vm_covered}
             THROW_FMT(PathMissingError, STORAGE_ERROR_PATH_SYNC_MISSING, strPtr(path));
         else
-            THROW_SYS_ERROR_FMT(PathOpenError, STORAGE_ERROR_PATH_SYNC_OPEN, strPtr(path));
+            THROW_SYS_ERROR_FMT(PathOpenError, STORAGE_ERROR_PATH_SYNC_OPEN, strPtr(path));                         // {vm_covered}
     }
     else
     {
@@ -648,8 +651,8 @@ storagePosixRemove(THIS_VOID, const String *file, StorageInterfaceRemoveParam pa
     // Attempt to unlink the file
     if (unlink(strPtr(file)) == -1)
     {
-        if (param.errorOnMissing || errno != ENOENT)
-            THROW_SYS_ERROR_FMT(FileRemoveError, "unable to remove '%s'", strPtr(file));
+        if (param.errorOnMissing || errno != ENOENT)                                                                // {vm_covered}
+            THROW_SYS_ERROR_FMT(FileRemoveError, "unable to remove '%s'", strPtr(file));                            // {vm_covered}
     }
 
     FUNCTION_LOG_RETURN_VOID();
@@ -714,6 +717,9 @@ storagePosixNewInternal(
         // If this is a posix driver then add link features
         if (strEq(type, STORAGE_POSIX_TYPE_STR))
             driver->interface.feature |=
+#ifdef HAVE_XATTR
+                1 << storageFeatureExtAttr |
+#endif
                 1 << storageFeatureHardLink | 1 << storageFeatureSymLink | 1 << storageFeaturePathSync |
                 1 << storageFeatureInfoDetail;
 
@@ -725,17 +731,19 @@ storagePosixNewInternal(
 }
 
 Storage *
-storagePosixNew(
-    const String *path, mode_t modeFile, mode_t modePath, bool write, StoragePathExpressionCallback pathExpressionFunction)
+storagePosixNew(const String *path, StoragePosixNewParam param)
 {
     FUNCTION_LOG_BEGIN(logLevelDebug);
         FUNCTION_LOG_PARAM(STRING, path);
-        FUNCTION_LOG_PARAM(MODE, modeFile);
-        FUNCTION_LOG_PARAM(MODE, modePath);
-        FUNCTION_LOG_PARAM(BOOL, write);
-        FUNCTION_LOG_PARAM(FUNCTIONP, pathExpressionFunction);
+        FUNCTION_LOG_PARAM(MODE, param.modeFile);
+        FUNCTION_LOG_PARAM(MODE, param.modePath);
+        FUNCTION_LOG_PARAM(BOOL, param.write);
+        FUNCTION_LOG_PARAM(FUNCTIONP, param.pathExpressionFunction);
     FUNCTION_LOG_END();
 
     FUNCTION_LOG_RETURN(
-        STORAGE, storagePosixNewInternal(STORAGE_POSIX_TYPE_STR, path, modeFile, modePath, write, pathExpressionFunction, true));
+        STORAGE,
+        storagePosixNewInternal(
+            STORAGE_POSIX_TYPE_STR, path, param.modeFile == 0 ? STORAGE_MODE_FILE_DEFAULT : param.modeFile,
+            param.modePath == 0 ? STORAGE_MODE_PATH_DEFAULT : param.modePath, param.write, param.pathExpressionFunction, true));
 }

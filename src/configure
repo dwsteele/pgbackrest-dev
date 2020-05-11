@@ -1681,6 +1681,73 @@ $as_echo "$ac_res" >&6; }
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
 } # ac_fn_c_check_header_compile
+
+# ac_fn_c_check_func LINENO FUNC VAR
+# ----------------------------------
+# Tests whether FUNC exists, setting the cache variable VAR accordingly
+ac_fn_c_check_func ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+/* Define $2 to an innocuous variant, in case <limits.h> declares $2.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $2 innocuous_$2
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $2 (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef $2
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char $2 ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined __stub_$2 || defined __stub___$2
+choke me
+#endif
+
+int
+main ()
+{
+return $2 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$3=yes"
+else
+  eval "$3=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_c_check_func
 cat >config.log <<_ACEOF
 This file contains any messages produced by compilers while
 running configure, to aid debugging if configure makes a mistake.
@@ -4018,6 +4085,64 @@ fi
 
 
 
+# Check required bzip2 library
+# ----------------------------------------------------------------------------------------------------------------------------------
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
+$as_echo_n "checking for BZ2_bzCompress in -lbz2... " >&6; }
+if ${ac_cv_lib_bz2_BZ2_bzCompress+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lbz2  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char BZ2_bzCompress ();
+int
+main ()
+{
+return BZ2_bzCompress ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_bz2_BZ2_bzCompress=yes
+else
+  ac_cv_lib_bz2_BZ2_bzCompress=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
+$as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
+if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBBZ2 1
+_ACEOF
+
+  LIBS="-lbz2 $LIBS"
+
+else
+  as_fn_error $? "library 'bz2' is required" "$LINENO" 5
+fi
+
+ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_bzlib_h" = xyes; then :
+
+else
+  as_fn_error $? "header file <bzlib.h> is required" "$LINENO" 5
+fi
+
+
+
 # Check optional lz4 library
 # ----------------------------------------------------------------------------------------------------------------------------------
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LZ4F_isError in -llz4" >&5
@@ -4066,6 +4191,84 @@ else
   as_fn_error $? "header file <lz4frame.h> is required" "$LINENO" 5
 fi
 
+
+fi
+
+
+# Check optional zst library. Ignore any versions below 1.0.
+# ----------------------------------------------------------------------------------------------------------------------------------
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZSTD_isError in -lzstd" >&5
+$as_echo_n "checking for ZSTD_isError in -lzstd... " >&6; }
+if ${ac_cv_lib_zstd_ZSTD_isError+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lzstd  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ZSTD_isError ();
+int
+main ()
+{
+return ZSTD_isError ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_zstd_ZSTD_isError=yes
+else
+  ac_cv_lib_zstd_ZSTD_isError=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_zstd_ZSTD_isError" >&5
+$as_echo "$ac_cv_lib_zstd_ZSTD_isError" >&6; }
+if test "x$ac_cv_lib_zstd_ZSTD_isError" = xyes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "zstd.h" "ac_cv_header_zstd_h" "$ac_includes_default"
+if test "x$ac_cv_header_zstd_h" = xyes; then :
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <zstd.h>
+int
+main ()
+{
+#if ZSTD_VERSION_MAJOR < 1
+                    #error "ZSTD_VERSION_MAJOR must be >= 1"
+                    #endif
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  $as_echo "#define HAVE_LIBZST 1" >>confdefs.h
+ LIBS="${LIBS} -lzstd"
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+else
+  as_fn_error $? "header file <zstd.h> is required" "$LINENO" 5
+fi
+
+
+fi
+
+
+# Check optional xattr functions
+# ----------------------------------------------------------------------------------------------------------------------------------
+ac_fn_c_check_func "$LINENO" "lgetxattr" "ac_cv_func_lgetxattr"
+if test "x$ac_cv_func_lgetxattr" = xyes; then :
+  $as_echo "#define HAVE_XATTR 1" >>confdefs.h
 
 fi
 
@@ -5400,4 +5603,4 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
-# Generated from src/build/configure.ac sha1 d3843081e609080b1f81048327db5b1fc4f8b9ed
+# Generated from src/build/configure.ac sha1 91fa0dd7adceb50d6526fc153f7b6aaaf9831dfe
