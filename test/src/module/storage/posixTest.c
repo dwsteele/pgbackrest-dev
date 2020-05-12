@@ -323,6 +323,7 @@ testRun(void)
         storageRemoveP(storageTest, linkName, .errorOnMissing = true);
 
         // -------------------------------------------------------------------------------------------------------------------------
+#ifdef HAVE_LIBSELINUX
         TEST_TITLE("SELinux errors");
 
         TEST_ERROR(
@@ -331,6 +332,7 @@ testRun(void)
         TEST_ERROR(
             storagePosixSelContextRawToTrans(STRDEF("error")), KernelError,
             "unable to convert raw context 'error' to translated");
+#endif // HAVE_LIBSELINUX
 
         // -------------------------------------------------------------------------------------------------------------------------
         String *pipeName = strNewFmt("%s/testpipe", testPath());
