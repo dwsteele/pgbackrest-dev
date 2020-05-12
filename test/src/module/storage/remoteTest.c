@@ -63,7 +63,7 @@ testRun(void)
         TEST_ASSIGN(storageRemote, storageRepoGet(strNew(STORAGE_TYPE_POSIX), false), "get remote repo storage");
         TEST_RESULT_UINT(
             storageInterface(storageRemote).feature, storageInterface(storageTest).feature
-#ifdef HAVE_XATTR
+#ifndef HAVE_XATTR
             ^ 1 << storageFeatureExtAttr
 #endif // HAVE_XATTR
             , "    check features");
@@ -79,7 +79,7 @@ testRun(void)
             strNewBuf(serverWrite),
             strNewFmt(
                 ".\"%s/repo\"\n.%" PRIu64 "\n{}\n", testPath(), storageInterface(storageTest).feature
-#ifdef HAVE_XATTR
+#ifndef HAVE_XATTR
             ^ 1 << storageFeatureExtAttr
 #endif // HAVE_XATTR
             ), "check result");

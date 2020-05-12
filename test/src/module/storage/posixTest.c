@@ -237,7 +237,7 @@ testRun(void)
 #ifdef HAVE_XATTR
         TEST_RESULT_STR_Z(jsonFromKv(info.extAttr), "{\"user.bogus\":null,\"user.pgb\":\"XpathX\"}", "    check ext attr");
         TEST_RESULT_PTR(info.selContext, NULL, "    check null SELinux context");
-#else
+#else // HAVE_XATTR
         TEST_RESULT_PTR(info.extAttr, NULL, "    check null ext attr");
         TEST_RESULT_PTR(info.selContext, NULL, "    check null SELinux context");
 #endif // HAVE_XATTR
@@ -299,12 +299,17 @@ testRun(void)
         TEST_RESULT_STR_Z(info.group, testGroup(), "    check group");
 #ifdef HAVE_XATTR
         TEST_RESULT_STR_Z(
-            jsonFromKv(info.extAttr), "{\"security.selinux\":\"ycontexty\",\"user.bogus\":null,\"user.pgb\":null}",
+            jsonFromKv(info.extAttr),
+            "{"
+#ifdef HAVE_LIBSELINUX
+            "\"security.selinux\":\"ycontexty\","
+#endif // HAVE_LIBSELINUX
+            "\"user.bogus\":null,\"user.pgb\":null}",
             "    check ext attr");
 #ifdef HAVE_LIBSELINUX
         TEST_RESULT_STR_Z(info.selContext, "ycontexty", "    check SELinuxContext");
 #endif // HAVE_LIBSELINUX
-#else
+#else // HAVE_XATTR
         TEST_RESULT_PTR(info.extAttr, NULL, "    check null ext attr");
         TEST_RESULT_PTR(info.selContext, NULL, "    check null SELinux context");
 #endif // HAVE_XATTR
