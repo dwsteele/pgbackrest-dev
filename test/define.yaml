@@ -428,6 +428,7 @@ unit:
 
         coverage:
           storage/posix/read: full
+          storage/posix/selinux: full
           storage/posix/storage: full
           storage/posix/write: full
 

@@ -145,6 +145,7 @@ SRCS = \
 	storage/posix/read.c \
 	storage/posix/storage.c \
 	storage/posix/write.c \
+	storage/posix/selinux.c \
 	storage/posix/xattr.c \
 	storage/remote/read.c \
 	storage/remote/protocol.c \

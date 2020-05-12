@@ -77,6 +77,9 @@ typedef struct StorageInterfaceInfoParam
 
     // List of extended attributes to include in detailed output
     const StringList *extAttrList;
+
+    // Should the SELinux context be included in detailed output?
+    bool selContext;
 } StorageInterfaceInfoParam;
 
 typedef StorageInfo StorageInterfaceInfo(
@@ -94,12 +97,6 @@ typedef struct StorageInterfaceNewReadParam
 
     // Is the file compressible? This is used when the file must be moved across a network and temporary compression is helpful.
     bool compressible;
-
-    // Should extended attributes be included in detailed output?
-    bool extAttr;
-
-    // List of extended attributes to include in detailed output
-    const StringList *extAttrList;
 
     // Limit bytes read from the file. NULL for no limit.
     const Variant *limit;
@@ -166,6 +163,15 @@ typedef struct StorageInterfaceInfoListParam
     // using the prefix returned from regExpPrefix(). This may cause extra results to be sent to the callback but won't exclude
     // anything that matches the expression exactly.
     const String *expression;
+
+    // Should extended attributes be included in detailed output?
+    bool extAttr;
+
+    // List of extended attributes to include in detailed output
+    const StringList *extAttrList;
+
+    // Should the SELinux context be included in detailed output?
+    bool selContext;
 } StorageInterfaceInfoListParam;
 
 typedef bool StorageInterfaceInfoList(

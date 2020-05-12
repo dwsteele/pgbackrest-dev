@@ -244,6 +244,7 @@ storageInfo(const Storage *this, const String *fileExp, StorageInfoParam param)
         FUNCTION_LOG_PARAM(BOOL, param.noPathEnforce);
         FUNCTION_LOG_PARAM(BOOL, param.extAttr);
         FUNCTION_LOG_PARAM(STRING_LIST, param.extAttrList);
+        FUNCTION_LOG_PARAM(BOOL, param.selContext);
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
@@ -256,6 +257,12 @@ storageInfo(const Storage *this, const String *fileExp, StorageInfoParam param)
 #ifndef HAVE_XATTR
     if (param.extAttr)
         THROW_FMT(OptionInvalidValueError, PROJECT_NAME " not compiled with extended attribute support");
+#endif
+
+    // Error if SELinux context requested but not supported
+#ifndef HAVE_LIBSELINUX
+    if (param.selContext)
+        THROW_FMT(OptionInvalidValueError, PROJECT_NAME " not compiled with SELinux support");
 #endif
 
     StorageInfo result = {0};
@@ -271,7 +278,7 @@ storageInfo(const Storage *this, const String *fileExp, StorageInfoParam param)
 
         result = storageInterfaceInfoP(
             this->driver, file, param.level, .followLink = param.followLink, .extAttr = param.extAttr,
-            .extAttrList = param.extAttrList);
+            .extAttrList = param.extAttrList, .selContext = param.selContext);
 
         // Error if the file missing and not ignoring
         if (!result.exists && !param.ignoreMissing)
@@ -284,6 +291,7 @@ storageInfo(const Storage *this, const String *fileExp, StorageInfoParam param)
             result.user = strDup(result.user);
             result.group = strDup(result.group);
             result.extAttr = result.extAttr == NULL ? NULL : kvDup(result.extAttr);
+            result.selContext = strDup(result.selContext);
         }
         MEM_CONTEXT_PRIOR_END();
     }
@@ -318,6 +326,8 @@ storageInfoListSortCallback(void *data, const StorageInfo *info)
         infoCopy.linkDestination = strDup(info->linkDestination);
         infoCopy.user = strLstAddIfMissing(infoData->ownerList, info->user);
         infoCopy.group = strLstAddIfMissing(infoData->ownerList, info->group);
+        infoCopy.extAttr = info->extAttr == NULL ? NULL : kvDup(info->extAttr);
+        infoCopy.selContext = strDup(info->selContext);
 
         lstAdd(infoData->infoList, &infoCopy);
     }
@@ -328,7 +338,8 @@ storageInfoListSortCallback(void *data, const StorageInfo *info)
 
 static bool
 storageInfoListSort(
-    const Storage *this, const String *path, StorageInfoLevel level, const String *expression, SortOrder sortOrder,
+    const Storage *this, const String *path, StorageInfoLevel level, const String *expression, bool extAttr,
+    const StringList *extAttrList, bool selContext, SortOrder sortOrder,
     StorageInfoListCallback callback, void *callbackData)
 {
     FUNCTION_LOG_BEGIN(logLevelTrace);
@@ -336,6 +347,9 @@ storageInfoListSort(
         FUNCTION_LOG_PARAM(STRING, path);
         FUNCTION_LOG_PARAM(ENUM, level);
         FUNCTION_LOG_PARAM(STRING, expression);
+        FUNCTION_LOG_PARAM(BOOL, extAttr);
+        FUNCTION_LOG_PARAM(STRING_LIST, extAttrList);
+        FUNCTION_LOG_PARAM(BOOL, selContext);
         FUNCTION_LOG_PARAM(ENUM, sortOrder);
         FUNCTION_LOG_PARAM(FUNCTIONP, callback);
         FUNCTION_LOG_PARAM_P(VOID, callbackData);
@@ -351,7 +365,9 @@ storageInfoListSort(
         // If no sorting then use the callback directly
         if (sortOrder == sortOrderNone)
         {
-            result = storageInterfaceInfoListP(this->driver, path, level, callback, callbackData, .expression = expression);
+            result = storageInterfaceInfoListP(
+                this->driver, path, level, callback, callbackData, .expression = expression, .extAttr = extAttr,
+                .extAttrList = extAttrList, .selContext = selContext);
         }
         // Else sort the info before sending it to the callback
         else
@@ -393,6 +409,9 @@ typedef struct StorageInfoListData
     void *callbackData;                                             // Original callback data
     const String *expression;                                       // Filter for names
     RegExp *regExp;                                                 // Compiled filter for names
+    bool extAttr;                                                   // Are extended attributes required?
+    const StringList *extAttrList;                                  // Extended attributes to return
+    bool selContext;                                                // Is the SELinux context required?
     bool recurse;                                                   // Should we recurse?
     SortOrder sortOrder;                                            // Sort order
     const String *path;                                             // Top-level path for info
@@ -439,7 +458,7 @@ storageInfoListCallback(void *data, const StorageInfo *info)
 
             storageInfoListSort(
                 data.storage, strNewFmt("%s/%s", strPtr(data.path), strPtr(data.subPath)), infoUpdate.level, data.expression,
-                data.sortOrder, storageInfoListCallback, &data);
+                data.extAttr, data.extAttrList, data.selContext, data.sortOrder, storageInfoListCallback, &data);
         }
 
         if (listData->sortOrder == sortOrderDesc)
@@ -465,6 +484,7 @@ storageInfoList(
         FUNCTION_LOG_PARAM(BOOL, param.recurse);
         FUNCTION_LOG_PARAM(BOOL, param.extAttr);
         FUNCTION_LOG_PARAM(STRING_LIST, param.extAttrList);
+        FUNCTION_LOG_PARAM(BOOL, param.selContext);
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
@@ -479,6 +499,12 @@ storageInfoList(
 #ifndef HAVE_XATTR
     if (param.extAttr)
         THROW_FMT(OptionInvalidValueError, PROJECT_NAME " not compiled with extended attribute support");
+#endif
+
+    // Error if SELinux context requested but not supported
+#ifndef HAVE_LIBSELINUX
+    if (param.selContext)
+        THROW_FMT(OptionInvalidValueError, PROJECT_NAME " not compiled with SELinux support");
 #endif
 
     bool result = false;
@@ -501,6 +527,9 @@ storageInfoList(
                 .callbackFunction = callback,
                 .callbackData = callbackData,
                 .expression = param.expression,
+                .extAttr = param.extAttr,
+                .extAttrList = param.extAttrList,
+                .selContext = param.selContext,
                 .sortOrder = param.sortOrder,
                 .recurse = param.recurse,
                 .path = path,
@@ -510,10 +539,15 @@ storageInfoList(
                 data.regExp = regExpNew(param.expression);
 
             result = storageInfoListSort(
-                this, path, param.level, param.expression, param.sortOrder, storageInfoListCallback, &data);
+                this, path, param.level, param.expression, param.extAttr, param.extAttrList, param.selContext, param.sortOrder,
+                storageInfoListCallback, &data);
         }
         else
-            result = storageInfoListSort(this, path, param.level, NULL, param.sortOrder, callback, callbackData);
+        {
+            result = storageInfoListSort(
+                this, path, param.level, NULL, param.extAttr, param.extAttrList, param.selContext, param.sortOrder, callback,
+                callbackData);
+        }
 
         if (!result && param.errorOnMissing)
             THROW_FMT(PathMissingError, STORAGE_ERROR_LIST_INFO_MISSING, strPtr(path));

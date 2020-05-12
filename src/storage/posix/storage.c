@@ -12,16 +12,13 @@ Posix Storage
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifdef HAVE_LIBSELINUX
-#include <selinux/selinux.h>
-#endif // HAVE_LIBSELINUX
-
 #include "common/debug.h"
 #include "common/log.h"
 #include "common/memContext.h"
 #include "common/regExp.h"
 #include "common/user.h"
 #include "storage/posix/read.h"
+#include "storage/posix/selinux.h"
 #include "storage/posix/storage.intern.h"
 #include "storage/posix/write.h"
 #include "storage/posix/xattr.h"
@@ -62,6 +59,7 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
         FUNCTION_LOG_PARAM(BOOL, param.followLink);
         FUNCTION_LOG_PARAM(BOOL, param.extAttr);
         FUNCTION_LOG_PARAM(STRING_LIST, param.extAttrList);
+        FUNCTION_LOG_PARAM(BOOL, param.selContext);
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
@@ -122,19 +120,40 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
             }
 
 #ifdef HAVE_XATTR
-        if (param.extAttr)
-        {
-            KeyValue *extAttrKv = kvNew();
-
-            for (unsigned int extAttrIdx = 0; extAttrIdx < strLstSize(param.extAttrList); extAttrIdx++)
+            if (param.extAttr
+#ifdef HAVE_LIBSELINUX
+                || param.selContext
+#endif // HAVE_LIBSELINUX
+                )
             {
-                const String *extAttrName = strLstGet(param.extAttrList, extAttrIdx);
+                KeyValue *extAttrKv = kvNew();
 
-                kvPut(extAttrKv, VARSTR(extAttrName), VARSTR(storagePosixInfoXAttr(file, extAttrName)));
+#ifdef HAVE_LIBSELINUX
+                if (param.extAttr)
+                {
+#endif // HAVE_LIBSELINUX
+                    for (unsigned int extAttrIdx = 0; extAttrIdx < strLstSize(param.extAttrList); extAttrIdx++)
+                    {
+                        const String *extAttrName = strLstGet(param.extAttrList, extAttrIdx);
+
+                        kvPut(extAttrKv, VARSTR(extAttrName), VARSTR(storagePosixInfoXAttr(file, extAttrName)));
+                    }
+#ifdef HAVE_LIBSELINUX
+                }
+
+                if (param.selContext)
+                {
+                    // Get raw context
+                    String *selContextRaw = storagePosixInfoXAttr(file, STORAGE_POSIX_SELINUX_CONTEXT_XATTR_STR);
+                    kvPut(extAttrKv, VARSTR(STORAGE_POSIX_SELINUX_CONTEXT_XATTR_STR), VARSTR(selContextRaw));
+
+                    // Set translated context
+                    result.selContext = storagePosixSelContextRawToTrans(selContextRaw);
+                }
+#endif // HAVE_LIBSELINUX
+
+                result.extAttr = extAttrKv;
             }
-
-            result.extAttr = extAttrKv;
-        }
 #endif // HAVE_XATTR
         }
     }
@@ -148,14 +167,17 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
 // get complete test coverage this function must be split out.
 static void
 storagePosixInfoListEntry(
-    StoragePosix *this, const String *path, const String *name, StorageInfoLevel level, StorageInfoListCallback callback,
-    void *callbackData)
+    StoragePosix *this, const String *path, const String *name, StorageInfoLevel level, bool extAttr, const StringList *extAttrList,
+    bool selContext, StorageInfoListCallback callback, void *callbackData)
 {
     FUNCTION_TEST_BEGIN();
         FUNCTION_TEST_PARAM(STORAGE_POSIX, this);
         FUNCTION_TEST_PARAM(STRING, path);
         FUNCTION_TEST_PARAM(STRING, name);
         FUNCTION_TEST_PARAM(ENUM, level);
+        FUNCTION_TEST_PARAM(BOOL, extAttr);
+        FUNCTION_TEST_PARAM(STRING_LIST, extAttrList);
+        FUNCTION_TEST_PARAM(BOOL, selContext);
         FUNCTION_TEST_PARAM(FUNCTIONP, callback);
         FUNCTION_TEST_PARAM_P(VOID, callbackData);
     FUNCTION_TEST_END();
@@ -166,7 +188,8 @@ storagePosixInfoListEntry(
     ASSERT(callback != NULL);
 
     StorageInfo storageInfo = storageInterfaceInfoP(
-        this, strEq(name, DOT_STR) ? strDup(path) : strNewFmt("%s/%s", strPtr(path), strPtr(name)), level);
+        this, strEq(name, DOT_STR) ? strDup(path) : strNewFmt("%s/%s", strPtr(path), strPtr(name)), level, .extAttr = extAttr,
+        .extAttrList = extAttrList, .selContext = selContext);
 
     if (storageInfo.exists)
     {
@@ -190,7 +213,9 @@ storagePosixInfoList(
         FUNCTION_LOG_PARAM(ENUM, level);
         FUNCTION_LOG_PARAM(FUNCTIONP, callback);
         FUNCTION_LOG_PARAM_P(VOID, callbackData);
-        (void)param;                                                // No parameters are used
+        FUNCTION_LOG_PARAM(BOOL, param.extAttr);
+        FUNCTION_LOG_PARAM(STRING_LIST, param.extAttrList);
+        FUNCTION_LOG_PARAM(BOOL, param.selContext);
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
@@ -235,7 +260,11 @@ storagePosixInfoList(
                         }
                         // Else more info is required which requires a call to stat()
                         else
-                            storagePosixInfoListEntry(this, path, name, level, callback, callbackData);
+                        {
+                            storagePosixInfoListEntry(
+                                this, path, name, level, param.extAttr, param.extAttrList, param.selContext, callback,
+                                callbackData);
+                        }
                     }
 
                     // Get next entry

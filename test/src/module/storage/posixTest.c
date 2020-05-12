@@ -236,8 +236,10 @@ testRun(void)
         TEST_RESULT_STR_Z(info.group, testGroup(), "    check group");
 #ifdef HAVE_XATTR
         TEST_RESULT_STR_Z(jsonFromKv(info.extAttr), "{\"user.bogus\":null,\"user.pgb\":\"XpathX\"}", "    check ext attr");
+        TEST_RESULT_PTR(info.selContext, NULL, "    check null SELinux context");
 #else
         TEST_RESULT_PTR(info.extAttr, NULL, "    check null ext attr");
+        TEST_RESULT_PTR(info.selContext, NULL, "    check null SELinux context");
 #endif // HAVE_XATTR
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -263,6 +265,7 @@ testRun(void)
         TEST_RESULT_STR(info.user, NULL, "    check user");
         TEST_RESULT_STR(info.group, NULL, "    check group");
         TEST_RESULT_PTR(info.extAttr, NULL, "    check null ext attr");
+        TEST_RESULT_PTR(info.selContext, NULL, "    check null SELinux context");
 #endif // TEST_CONTAINER_REQUIRED
 
         storageRemoveP(storageTest, fileName, .errorOnMissing = true);
@@ -271,10 +274,19 @@ testRun(void)
         String *linkName = strNewFmt("%s/testlink", testPath());
         TEST_RESULT_INT(system(strPtr(strNewFmt("ln -s /tmp %s", strPtr(linkName)))), 0, "create link");
 
+#ifdef HAVE_LIBSELINUX
+        TEST_RESULT_VOID(
+            storagePosixInfoXAttrSet(linkName, STORAGE_POSIX_SELINUX_CONTEXT_XATTR_STR, BUFSTRDEF("ycontexty")),
+            "set SELinux context");
+#endif // HAVE_LIBSELINUX
+
         TEST_ASSIGN(
             info, storageInfoP(storageTest, linkName
 #ifdef HAVE_XATTR
             , .extAttr = true, .extAttrList = extAttrList
+#ifdef HAVE_LIBSELINUX
+            , .selContext = true
+#endif // HAVE_LIBSELINUX
 #endif // HAVE_XATTR
             ), "get link info");
         TEST_RESULT_PTR(info.name, NULL, "    name is not set");
@@ -286,9 +298,15 @@ testRun(void)
         TEST_RESULT_STR_Z(info.user, testUser(), "    check user");
         TEST_RESULT_STR_Z(info.group, testGroup(), "    check group");
 #ifdef HAVE_XATTR
-        TEST_RESULT_STR_Z(jsonFromKv(info.extAttr), "{\"user.bogus\":null,\"user.pgb\":null}", "    check ext attr");
+        TEST_RESULT_STR_Z(
+            jsonFromKv(info.extAttr), "{\"security.selinux\":\"ycontexty\",\"user.bogus\":null,\"user.pgb\":null}",
+            "    check ext attr");
+#ifdef HAVE_LIBSELINUX
+        TEST_RESULT_STR_Z(info.selContext, "ycontexty", "    check SELinuxContext");
+#endif // HAVE_LIBSELINUX
 #else
         TEST_RESULT_PTR(info.extAttr, NULL, "    check null ext attr");
+        TEST_RESULT_PTR(info.selContext, NULL, "    check null SELinux context");
 #endif // HAVE_XATTR
 
         TEST_ASSIGN(info, storageInfoP(storageTest, linkName, .followLink = true), "get info from path pointed to by link");
@@ -303,6 +321,16 @@ testRun(void)
         TEST_RESULT_PTR(info.extAttr, NULL, "    check null ext attr");
 
         storageRemoveP(storageTest, linkName, .errorOnMissing = true);
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        TEST_TITLE("SELinux errors");
+
+        TEST_ERROR(
+            storagePosixSelContextTransToRaw(STRDEF("ERROR")), KernelError,
+            "unable to convert translated context 'ERROR' to raw");
+        TEST_ERROR(
+            storagePosixSelContextRawToTrans(STRDEF("error")), KernelError,
+            "unable to convert raw context 'error' to translated");
 
         // -------------------------------------------------------------------------------------------------------------------------
         String *pipeName = strNewFmt("%s/testpipe", testPath());
@@ -356,7 +384,7 @@ testRun(void)
         TEST_RESULT_VOID(
             storagePosixInfoListEntry(
                 (StoragePosix *)storageDriver(storageTest), strNew("pg"), strNew("missing"), storageInfoLevelBasic,
-                hrnStorageInfoListCallback, &callbackData),
+                false, NULL, false, hrnStorageInfoListCallback, &callbackData),
             "missing path");
         TEST_RESULT_STR_Z(callbackData.content, "", "    check content");
 

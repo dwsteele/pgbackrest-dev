@@ -411,6 +411,7 @@ my $oyVm =
 
         &VMDEF_WITH_BACKTRACE => true,
         &VMDEF_WITH_EXT_ATTR => true,
+        &VMDEF_WITH_SELINUX => true,
         &VMDEF_WITH_ZST => true,
 
         &VM_DB =>

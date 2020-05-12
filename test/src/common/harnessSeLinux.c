@@ -6,6 +6,7 @@ setfilecon system_u:object_r:tmp_t:s0 foo.log
 getfilecon foo.log
 ***********************************************************************************************************************************/
 #include <stdlib.h>
+#include <string.h>
 
 #include "common/assert.h"
 
@@ -25,8 +26,12 @@ selinux_trans_to_raw_context(const char *trans, char **rawp)
     ASSERT(trans != NULL);
     ASSERT(rawp != NULL);
 
-    (void)trans;
-    (void)rawp;
+    if (strcmp(trans, "ERROR") == 0)
+        FUNCTION_HARNESS_RESULT(INT, -1);
+
+    *rawp = malloc(strlen(trans) + 1);
+
+    strcpy(*rawp, trans);
 
     FUNCTION_HARNESS_RESULT(INT, 0);
 }
@@ -45,8 +50,12 @@ selinux_raw_to_trans_context(const char *raw, char **transp)
     ASSERT(raw != NULL);
     ASSERT(transp != NULL);
 
-    (void)raw;
-    (void)transp;
+    if (strcmp(raw, "error") == 0)
+        FUNCTION_HARNESS_RESULT(INT, -1);
+
+    *transp = malloc(strlen(raw) + 1);
+
+    strcpy(*transp, raw);
 
     FUNCTION_HARNESS_RESULT(INT, 0);
 }

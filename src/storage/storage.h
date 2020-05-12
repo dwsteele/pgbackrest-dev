@@ -101,6 +101,7 @@ typedef struct StorageInfoParam
     bool noPathEnforce;
     bool extAttr;
     const StringList *extAttrList;
+    bool selContext;
 } StorageInfoParam;
 
 #define storageInfoP(this, fileExp, ...)                                                                                           \
@@ -121,6 +122,7 @@ typedef struct StorageInfoListParam
     SortOrder sortOrder;
     const String *expression;
     const StringList *extAttrList;
+    bool selContext;
 } StorageInfoListParam;
 
 #define storageInfoListP(this, fileExp, callback, callbackData, ...)                                                               \
