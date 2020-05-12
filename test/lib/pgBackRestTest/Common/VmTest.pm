@@ -229,7 +229,6 @@ my $oyVm =
         &VMDEF_COVERAGE_C => true,
 
         &VMDEF_DEBUG_INTEGRATION => false,
-        &VMDEF_WITH_EXT_ATTR => true,
         &VMDEF_WITH_SELINUX => true,
         &VMDEF_WITH_ZST => true,
 
@@ -411,7 +410,6 @@ my $oyVm =
         &VMDEF_PGSQL_BIN => '/usr/lib/postgresql/{[version]}/bin',
 
         &VMDEF_WITH_BACKTRACE => true,
-        &VMDEF_WITH_EXT_ATTR => true,
         &VMDEF_WITH_SELINUX => true,
         &VMDEF_WITH_ZST => true,
 
@@ -586,7 +584,7 @@ sub vmWithExtAttr
 {
     my $strVm = shift;
 
-    return (defined($oyVm->{$strVm}{&VMDEF_WITH_EXT_ATTR}) ? $oyVm->{$strVm}{&VMDEF_WITH_EXT_ATTR} : false);
+    return (defined($oyVm->{$strVm}{&VMDEF_WITH_EXT_ATTR}) ? $oyVm->{$strVm}{&VMDEF_WITH_EXT_ATTR} : true);
 }
 
 push @EXPORT, qw(vmWithExtAttr);

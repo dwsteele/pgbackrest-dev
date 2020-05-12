@@ -9,6 +9,7 @@ SELinux Functions
 
 #include "common/debug.h"
 #include "common/log.h"
+#include "common/macro.h"
 #include "common/memContext.h"
 #include "storage/posix/selinux.h"
 
