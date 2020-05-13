@@ -5,6 +5,7 @@ sudo setcap cap_sys_admin+eip /usr/sbin/setfilecon
 setfilecon system_u:object_r:tmp_t:s0 foo.log
 getfilecon foo.log
 ***********************************************************************************************************************************/
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -31,7 +32,13 @@ selinux_trans_to_raw_context(const char *trans, char **rawp)
 
     *rawp = malloc(strlen(trans) + 1);
 
-    strcpy(*rawp, trans);
+    // Convert to lower case
+    size_t rawIdx = 0;
+
+    for (; rawIdx < strlen(trans); rawIdx++)
+        (*rawp)[rawIdx] = (char)tolower(trans[rawIdx]);
+
+    (*rawp)[rawIdx] = '\0';
 
     FUNCTION_HARNESS_RESULT(INT, 0);
 }
@@ -55,7 +62,13 @@ selinux_raw_to_trans_context(const char *raw, char **transp)
 
     *transp = malloc(strlen(raw) + 1);
 
-    strcpy(*transp, raw);
+    // Convert to upper case
+    size_t transIdx = 0;
+
+    for (; transIdx < strlen(raw); transIdx++)
+        (*transp)[transIdx] = (char)toupper(raw[transIdx]);
+
+    (*transp)[transIdx] = '\0';
 
     FUNCTION_HARNESS_RESULT(INT, 0);
 }

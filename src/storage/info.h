@@ -58,8 +58,7 @@ typedef struct StorageInfo
     const String *user;                                             // Name of user that owns the file
     const String *group;                                            // Name of group that owns the file
     const String *linkDestination;                                  // Destination if this is a link
-    const KeyValue *extAttr;                                        // Extended attributes
-    const String *selContext;                                       // SELinux context
+    const KeyValue *attribute;                                      // Additional attributes (if any)
 } StorageInfo;
 
 /***********************************************************************************************************************************

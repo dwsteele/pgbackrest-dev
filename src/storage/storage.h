@@ -99,9 +99,7 @@ typedef struct StorageInfoParam
     bool ignoreMissing;
     bool followLink;
     bool noPathEnforce;
-    bool extAttr;
-    const StringList *extAttrList;
-    bool selContext;
+    KeyValue *attribute;                                            // Additional attributes (if any)
 } StorageInfoParam;
 
 #define storageInfoP(this, fileExp, ...)                                                                                           \
@@ -118,11 +116,9 @@ typedef struct StorageInfoListParam
     StorageInfoLevel level;
     bool errorOnMissing;
     bool recurse;
-    bool extAttr;
     SortOrder sortOrder;
     const String *expression;
-    const StringList *extAttrList;
-    bool selContext;
+    const KeyValue *attribute;                                      // Additional attributes (if any)
 } StorageInfoListParam;
 
 #define storageInfoListP(this, fileExp, callback, callbackData, ...)                                                               \

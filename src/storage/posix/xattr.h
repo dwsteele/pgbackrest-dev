@@ -4,13 +4,19 @@ Posix Extended Attributes
 #ifndef STORAGE_POSIX_XATTR_H
 #define STORAGE_POSIX_XATTR_H
 
-#ifdef HAVE_XATTR
+#include "common/type/variant.h"
 
-#include "common/type/string.h"
+/***********************************************************************************************************************************
+Extended attribute constants
+***********************************************************************************************************************************/
+#define STORAGE_POSIX_XATTR_KEY                                     "xtr"
+    VARIANT_DECLARE(STORAGE_POSIX_XATTR_KEY_VAR);
 
 /***********************************************************************************************************************************
 Functions
 ***********************************************************************************************************************************/
+#ifdef HAVE_XATTR
+
 String *storagePosixInfoXAttr(const String *path, const String *name);
 
 #endif // HAVE_XATTR

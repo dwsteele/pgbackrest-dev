@@ -4,8 +4,8 @@ SELinux Functions
 #include "build.auto.h"
 
 #ifdef HAVE_LIBSELINUX
-
 #include <selinux/selinux.h>
+#endif // HAVE_LIBSELINUX
 
 #include "common/debug.h"
 #include "common/log.h"
@@ -16,9 +16,31 @@ SELinux Functions
 /***********************************************************************************************************************************
 SELinux context extended attribute
 ***********************************************************************************************************************************/
-STRING_EXTERN(STORAGE_POSIX_SELINUX_CONTEXT_XATTR_STR,              "security.selinux");
+VARIANT_STRDEF_EXTERN(STORAGE_POSIX_SELINUX_KEY_VAR,                STORAGE_POSIX_SELINUX_KEY);
+
+#ifdef HAVE_LIBSELINUX
+
+VARIANT_STRDEF_EXTERN(STORAGE_POSIX_SELINUX_KEY_CONTEXT_VAR,        STORAGE_POSIX_SELINUX_KEY_CONTEXT);
+VARIANT_STRDEF_EXTERN(STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR,      "security.selinux");
+
+#endif // HAVE_LIBSELINUX
 
 /**********************************************************************************************************************************/
+void
+storagePosixSelCheck(void)
+{
+    FUNCTION_TEST_VOID();
+
+#ifndef HAVE_LIBSELINUX
+        THROW_FMT(OptionInvalidValueError, PROJECT_NAME " not compiled with SELinux support");
+#endif // HAVE_LIBSELINUX
+
+    FUNCTION_TEST_RETURN_VOID();
+}
+
+/**********************************************************************************************************************************/
+#ifdef HAVE_LIBSELINUX
+
 String *
 storagePosixSelContextTransToRaw(const String *translated)
 {

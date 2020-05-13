@@ -3,9 +3,15 @@ Posix Extended Attribute Test Harness
 ***********************************************************************************************************************************/
 #include "common/assert.h"
 #include "common/type/keyValue.h"
+#include "storage/posix/xattr.h"
 
 #include "common/harnessDebug.h"
 #include "common/harnessXattr.h"
+
+/***********************************************************************************************************************************
+Extended attribute constants (duplicated so shim works)
+***********************************************************************************************************************************/
+VARIANT_STRDEF_EXTERN(STORAGE_POSIX_XATTR_KEY_VAR,                  STORAGE_POSIX_XATTR_KEY);
 
 /***********************************************************************************************************************************
 Local variables
@@ -28,7 +34,10 @@ storagePosixInfoXAttr(const String *path, const String *name)
     ASSERT(path != NULL);
     ASSERT(name != NULL);
 
-    String *result = strDup(varStr(kvGet(harnessXAttrLocal.xAttr, VARSTR(strNewFmt("%s:%s", strPtr(path), strPtr(name))))));
+    String *result = NULL;
+
+    if (harnessXAttrLocal.xAttr != NULL)
+        result = strDup(varStr(kvGet(harnessXAttrLocal.xAttr, VARSTR(strNewFmt("%s:%s", strPtr(path), strPtr(name))))));
 
     FUNCTION_HARNESS_RESULT(STRING, result);
 }

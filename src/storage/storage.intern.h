@@ -72,14 +72,8 @@ typedef struct StorageInterfaceInfoParam
     // Should symlinks be followed?  Only required on storage that supports symlinks.
     bool followLink;
 
-    // Should extended attributes be included in detailed output?
-    bool extAttr;
-
-    // List of extended attributes to include in detailed output
-    const StringList *extAttrList;
-
-    // Should the SELinux context be included in detailed output?
-    bool selContext;
+    // Additional attributes (if any) to return. The logic for fetching these attributes is contained in the driver.
+    const KeyValue *attribute;
 } StorageInterfaceInfoParam;
 
 typedef StorageInfo StorageInterfaceInfo(
@@ -164,14 +158,8 @@ typedef struct StorageInterfaceInfoListParam
     // anything that matches the expression exactly.
     const String *expression;
 
-    // Should extended attributes be included in detailed output?
-    bool extAttr;
-
-    // List of extended attributes to include in detailed output
-    const StringList *extAttrList;
-
-    // Should the SELinux context be included in detailed output?
-    bool selContext;
+    // Additional attributes (if any) to return. The logic for fetching these attributes is contained in the driver.
+    const KeyValue *attribute;
 } StorageInterfaceInfoListParam;
 
 typedef bool StorageInterfaceInfoList(

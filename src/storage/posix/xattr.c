@@ -4,15 +4,22 @@ Posix Extended Attributes
 #include "build.auto.h"
 
 #ifdef HAVE_XATTR
-
 #include <sys/xattr.h>
+#endif // HAVE_XATTR
 
 #include "common/debug.h"
 #include "common/log.h"
 #include "common/memContext.h"
 #include "storage/posix/xattr.h"
 
+/***********************************************************************************************************************************
+Extended attribute constants
+***********************************************************************************************************************************/
+VARIANT_STRDEF_EXTERN(STORAGE_POSIX_XATTR_KEY_VAR,                  STORAGE_POSIX_XATTR_KEY);
+
 /**********************************************************************************************************************************/
+#ifdef HAVE_XATTR
+
 String *
 storagePosixInfoXAttr(const String *path, const String *name)
 {
