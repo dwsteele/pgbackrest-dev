@@ -203,13 +203,13 @@ sub coverageExtract
                 $oStorage->remove($strLCovFile);
             }
         }
-        # else
-        # {
-        #     if ($hTestCoverage->{$strCoveredModule} ne TESTDEF_COVERAGE_NOCODE)
-        #     {
-        #         confess &log(ERROR, "module '${strCoveredModule}' is marked 'code' but has no code");
-        #     }
-        # }
+        else
+        {
+            if ($hTestCoverage->{$strCoveredModule} ne TESTDEF_COVERAGE_NOCODE)
+            {
+                confess &log(ERROR, "module '${strCoveredModule}' is marked 'code' but has no code");
+            }
+        }
     }
 }
 

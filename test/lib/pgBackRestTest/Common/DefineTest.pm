@@ -205,11 +205,6 @@ sub testDefLoad
                         defined($hModuleTest->{&TESTDEF_COVERAGE}{$strShimModule}) ? true : false;
                     $hTestDefHash->{$strModule}{$strTest}{&TESTDEF_SHIM}{$strShim} =
                         !$hTestDefHash->{$strModule}{$strTest}{&TESTDEF_SHIM}{$strShimModule};
-
-                    if ($hTestDefHash->{$strModule}{$strTest}{&TESTDEF_SHIM}{$strShimModule})
-                    {
-                        &log(WARN, "SHIM $strModule/$strTest, $strShim, $strShimModule");
-                    }
                 }
 
                 # Set include list

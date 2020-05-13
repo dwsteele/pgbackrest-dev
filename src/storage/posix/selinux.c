@@ -12,6 +12,7 @@ SELinux Functions
 #include "common/macro.h"
 #include "common/memContext.h"
 #include "storage/posix/selinux.h"
+#include "version.h"
 
 /***********************************************************************************************************************************
 SELinux context extended attribute

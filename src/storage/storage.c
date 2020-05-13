@@ -307,7 +307,7 @@ storageInfoListSortCallback(void *data, const StorageInfo *info)
         infoCopy.linkDestination = strDup(info->linkDestination);
         infoCopy.user = strLstAddIfMissing(infoData->ownerList, info->user);
         infoCopy.group = strLstAddIfMissing(infoData->ownerList, info->group);
-        infoCopy.attribute = info->attribute == NULL ? NULL : kvDup(info->attribute);
+        // !!! infoCopy.attribute = info->attribute == NULL ? NULL : kvDup(info->attribute);
 
         lstAdd(infoData->infoList, &infoCopy);
     }
