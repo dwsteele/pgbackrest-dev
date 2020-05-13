@@ -451,6 +451,7 @@ STRING_EXTERN(CFGOPT_REPO1_TYPE_STR,                                CFGOPT_REPO1
 STRING_EXTERN(CFGOPT_RESUME_STR,                                    CFGOPT_RESUME);
 STRING_EXTERN(CFGOPT_SCK_BLOCK_STR,                                 CFGOPT_SCK_BLOCK);
 STRING_EXTERN(CFGOPT_SCK_KEEP_ALIVE_STR,                            CFGOPT_SCK_KEEP_ALIVE);
+STRING_EXTERN(CFGOPT_SELINUX_CONTEXT_STR,                           CFGOPT_SELINUX_CONTEXT);
 STRING_EXTERN(CFGOPT_SET_STR,                                       CFGOPT_SET);
 STRING_EXTERN(CFGOPT_SORT_STR,                                      CFGOPT_SORT);
 STRING_EXTERN(CFGOPT_SPOOL_PATH_STR,                                CFGOPT_SPOOL_PATH);
@@ -1815,6 +1816,14 @@ static ConfigOptionData configOptionData[CFG_OPTION_TOTAL] = CONFIG_OPTION_LIST
         CONFIG_OPTION_NAME(CFGOPT_SCK_KEEP_ALIVE)
         CONFIG_OPTION_INDEX(0)
         CONFIG_OPTION_DEFINE_ID(cfgDefOptSckKeepAlive)
+    )
+
+    //------------------------------------------------------------------------------------------------------------------------------
+    CONFIG_OPTION
+    (
+        CONFIG_OPTION_NAME(CFGOPT_SELINUX_CONTEXT)
+        CONFIG_OPTION_INDEX(0)
+        CONFIG_OPTION_DEFINE_ID(cfgDefOptSelinuxContext)
     )
 
     //------------------------------------------------------------------------------------------------------------------------------

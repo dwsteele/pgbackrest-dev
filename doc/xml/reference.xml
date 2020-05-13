@@ -256,6 +256,17 @@
                         <example>630</example>
                     </config-key>
 
+                    <!-- ======================================================================================================= -->
+                    <config-key id="selinux-context" name="Backup/Restore SELinux Context">
+                        <summary>Backup/restore SELinux context.</summary>
+
+                        <text>The SELinux context will be added to the backup when this option is set.
+
+                        On restore, SELinux contexts will be applied by default when present. This can be prevented by negating the option.</text>
+
+                        <example>n</example>
+                    </config-key>
+
                     <!-- CONFIG - GENERAL SECTION - SCK-KEEP-ALIVE KEY -->
                     <config-key id="sck-keep-alive" name="Keep Alive">
                         <summary>Keep-alive enable.</summary>

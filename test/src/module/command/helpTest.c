@@ -165,6 +165,7 @@ testRun(void)
             "                                   [default=1]\n"
             "  --protocol-timeout               protocol timeout [default=1830]\n"
             "  --sck-keep-alive                 keep-alive enable [default=y]\n"
+            "  --selinux-context                backup/restore SELinux context\n"
             "  --stanza                         defines the stanza\n"
             "  --tcp-keep-alive-count           keep-alive count\n"
             "  --tcp-keep-alive-idle            keep-alive idle time\n"

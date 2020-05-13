@@ -389,6 +389,8 @@ Option constants
     STRING_DECLARE(CFGOPT_SCK_BLOCK_STR);
 #define CFGOPT_SCK_KEEP_ALIVE                                       "sck-keep-alive"
     STRING_DECLARE(CFGOPT_SCK_KEEP_ALIVE_STR);
+#define CFGOPT_SELINUX_CONTEXT                                      "selinux-context"
+    STRING_DECLARE(CFGOPT_SELINUX_CONTEXT_STR);
 #define CFGOPT_SET                                                  "set"
     STRING_DECLARE(CFGOPT_SET_STR);
 #define CFGOPT_SORT                                                 "sort"
@@ -422,7 +424,7 @@ Option constants
 #define CFGOPT_TYPE                                                 "type"
     STRING_DECLARE(CFGOPT_TYPE_STR);
 
-#define CFG_OPTION_TOTAL                                            184
+#define CFG_OPTION_TOTAL                                            185
 
 /***********************************************************************************************************************************
 Command enum
@@ -624,6 +626,7 @@ typedef enum
     cfgOptResume,
     cfgOptSckBlock,
     cfgOptSckKeepAlive,
+    cfgOptSelinuxContext,
     cfgOptSet,
     cfgOptSort,
     cfgOptSpoolPath,

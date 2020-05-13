@@ -2282,6 +2282,21 @@ static const struct option optionList[] =
         .val = PARSE_OPTION_FLAG | PARSE_RESET_FLAG | cfgOptSckKeepAlive,
     },
 
+    // selinux-context option
+    // -----------------------------------------------------------------------------------------------------------------------------
+    {
+        .name = CFGOPT_SELINUX_CONTEXT,
+        .val = PARSE_OPTION_FLAG | cfgOptSelinuxContext,
+    },
+    {
+        .name = "no-" CFGOPT_SELINUX_CONTEXT,
+        .val = PARSE_OPTION_FLAG | PARSE_NEGATE_FLAG | cfgOptSelinuxContext,
+    },
+    {
+        .name = "reset-" CFGOPT_SELINUX_CONTEXT,
+        .val = PARSE_OPTION_FLAG | PARSE_RESET_FLAG | cfgOptSelinuxContext,
+    },
+
     // set option
     // -----------------------------------------------------------------------------------------------------------------------------
     {
@@ -2609,6 +2624,7 @@ static const ConfigOption optionResolveOrder[] =
     cfgOptResume,
     cfgOptSckBlock,
     cfgOptSckKeepAlive,
+    cfgOptSelinuxContext,
     cfgOptSet,
     cfgOptSort,
     cfgOptSpoolPath,
