@@ -1415,6 +1415,7 @@ my %hConfigDefine =
     {
         &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
         &CFGDEF_TYPE => CFGDEF_TYPE_LIST,
+        &CFGDEF_REQUIRED => false,
         &CFGDEF_COMMAND =>
         {
             &CFGCMD_BACKUP => {},
