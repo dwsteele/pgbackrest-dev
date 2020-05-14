@@ -143,7 +143,6 @@ typedef enum
     cfgDefOptResume,
     cfgDefOptSckBlock,
     cfgDefOptSckKeepAlive,
-    cfgDefOptSelinuxContext,
     cfgDefOptSet,
     cfgDefOptSort,
     cfgDefOptSpoolPath,
@@ -160,6 +159,7 @@ typedef enum
     cfgDefOptTcpKeepAliveIdle,
     cfgDefOptTcpKeepAliveInterval,
     cfgDefOptType,
+    cfgDefOptXattr,
 } ConfigDefineOption;
 
 #endif

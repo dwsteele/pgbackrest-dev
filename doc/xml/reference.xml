@@ -257,12 +257,13 @@
                     </config-key>
 
                     <!-- ======================================================================================================= -->
-                    <config-key id="selinux-context" name="Backup/Restore SELinux Context">
-                        <summary>Backup/restore SELinux context.</summary>
+                    <config-key id="xattr" name="Backup/Restore Extended Attribute">
+                        <summary>Backup/restore extended attribute.</summary>
 
-                        <text>The SELinux context will be added to the backup when this option is set.
+                        <text>The specified extended attribute(s) will be added to the backup when this option is set.
 
-                        On restore, SELinux contexts will be applied by default when present. This can be prevented by negating the option.</text>
+                        On restore, all extended attributes will be applied by default when present. !!! HOW TO PREVENT THEM FROM
+                        BEING APPLIED???.</text>
 
                         <example>n</example>
                     </config-key>

@@ -150,12 +150,12 @@ use constant CFGOPT_IO_TIMEOUT                                      => 'io-timeo
 use constant CFGOPT_NEUTRAL_UMASK                                   => 'neutral-umask';
 use constant CFGOPT_PROTOCOL_TIMEOUT                                => 'protocol-timeout';
 use constant CFGOPT_PROCESS_MAX                                     => 'process-max';
-use constant CFGOPT_SELINUX_CONTEXT                                 => 'selinux-context';
 use constant CFGOPT_SCK_BLOCK                                       => 'sck-block';
 use constant CFGOPT_SCK_KEEP_ALIVE                                  => 'sck-keep-alive';
 use constant CFGOPT_TCP_KEEP_ALIVE_COUNT                            => 'tcp-keep-alive-count';
 use constant CFGOPT_TCP_KEEP_ALIVE_IDLE                             => 'tcp-keep-alive-idle';
 use constant CFGOPT_TCP_KEEP_ALIVE_INTERVAL                         => 'tcp-keep-alive-interval';
+use constant CFGOPT_XATTR                                           => 'xattr';
 
 # Commands
 use constant CFGOPT_CMD_SSH                                         => 'cmd-ssh';
@@ -1129,23 +1129,6 @@ my %hConfigDefine =
         }
     },
 
-    &CFGOPT_SELINUX_CONTEXT =>
-    {
-        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
-        &CFGDEF_TYPE => CFGDEF_TYPE_BOOLEAN,
-        &CFGDEF_COMMAND =>
-        {
-            &CFGCMD_BACKUP =>
-            {
-                &CFGDEF_DEFAULT => false,
-            },
-            &CFGCMD_RESTORE =>
-            {
-                &CFGDEF_REQUIRED => false,
-            },
-        },
-    },
-
     &CFGOPT_SCK_BLOCK =>
     {
         &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
@@ -1426,6 +1409,17 @@ my %hConfigDefine =
             &CFGCMD_STANZA_DELETE => {},
             &CFGCMD_STANZA_UPGRADE => {},
         }
+    },
+
+    &CFGOPT_XATTR =>
+    {
+        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
+        &CFGDEF_TYPE => CFGDEF_TYPE_LIST,
+        &CFGDEF_COMMAND =>
+        {
+            &CFGCMD_BACKUP => {},
+            &CFGCMD_RESTORE => {},
+        },
     },
 
     # Repository options
