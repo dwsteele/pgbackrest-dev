@@ -5,6 +5,7 @@ Storage Test Harness
 
 #include "common/debug.h"
 #include "common/compress/helper.h"
+#include "common/type/json.h"
 #include "common/user.h"
 #include "storage/storage.h"
 
@@ -111,6 +112,11 @@ hrnStorageInfoListCallback(void *callbackData, const StorageInfo *info)
                 {
                     strCatFmt(data->content, ", g=%d", (int)info->groupId);
                 }
+            }
+
+            if (info->level >= storageInfoLevelDetail && info->attribute != NULL)
+            {
+                strCatFmt(data->content, ", a=%s", strPtr(jsonFromKv(info->attribute)));
             }
         }
     }

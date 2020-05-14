@@ -18,11 +18,11 @@ SELinux Functions
 SELinux context extended attribute
 ***********************************************************************************************************************************/
 VARIANT_STRDEF_EXTERN(STORAGE_POSIX_SELINUX_KEY_VAR,                STORAGE_POSIX_SELINUX_KEY);
+VARIANT_STRDEF_EXTERN(STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR,      "security.selinux");
 
 #ifdef HAVE_LIBSELINUX
 
 VARIANT_STRDEF_EXTERN(STORAGE_POSIX_SELINUX_KEY_CONTEXT_VAR,        STORAGE_POSIX_SELINUX_KEY_CONTEXT);
-VARIANT_STRDEF_EXTERN(STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR,      "security.selinux");
 
 #endif // HAVE_LIBSELINUX
 

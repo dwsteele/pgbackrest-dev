@@ -307,7 +307,7 @@ storageInfoListSortCallback(void *data, const StorageInfo *info)
         infoCopy.linkDestination = strDup(info->linkDestination);
         infoCopy.user = strLstAddIfMissing(infoData->ownerList, info->user);
         infoCopy.group = strLstAddIfMissing(infoData->ownerList, info->group);
-        // !!! infoCopy.attribute = info->attribute == NULL ? NULL : kvDup(info->attribute);
+        infoCopy.attribute = info->attribute == NULL ? NULL : kvDup(info->attribute);
 
         lstAdd(infoData->infoList, &infoCopy);
     }
@@ -356,7 +356,7 @@ storageInfoListSort(
             };
 
             result = storageInterfaceInfoListP(
-                this->driver, path, level, storageInfoListSortCallback, &data, .expression = expression);
+                this->driver, path, level, storageInfoListSortCallback, &data, .expression = expression, .attribute = attribute);
             lstSort(data.infoList, sortOrder);
 
             MEM_CONTEXT_TEMP_RESET_BEGIN()

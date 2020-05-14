@@ -115,37 +115,47 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
                 result.linkDestination = strNewN(linkDestination, (size_t)linkDestinationSize);
             }
 
+            // Get attribute types (e.g. extended attributes)
             if (param.attribute != NULL)
             {
                 KeyValue *attribute = kvNew();
-
-                // Get attribute keys
                 const VariantList *attributeKeyList = kvKeyList(param.attribute);
 
                 for (unsigned int attributeKeyIdx = 0; attributeKeyIdx < varLstSize(attributeKeyList); attributeKeyIdx++)
                 {
                     const Variant *attributeKey = varLstGet(attributeKeyList, attributeKeyIdx);
 
-                    if (varEq(attributeKey, STORAGE_POSIX_SELINUX_KEY_VAR))
+                    if (varEq(attributeKey, STORAGE_POSIX_XATTR_KEY_VAR))
                     {
-                        // Check that SELinux is supported
-                        storagePosixSelCheck();
+                        const KeyValue *xAttr = varKv(kvGet(param.attribute, attributeKey));
+                        const VariantList *xAttrKeyList = kvKeyList(xAttr);
+
+                        ASSERT(varLstSize(xAttrKeyList) > 0);
+
+                        KeyValue *kvXAttr = kvPutKv(attribute, attributeKey);
+
+                        for (unsigned int xAttrKeyIdx = 0; xAttrKeyIdx < varLstSize(xAttrKeyList); xAttrKeyIdx++)
+                        {
+                            const Variant *xAttrKey = varLstGet(xAttrKeyList, xAttrKeyIdx);
+
+                            // Store extended attribute value
+                            const String *xAttrValue = storagePosixInfoXAttr(file, varStr(xAttrKey));
+                            kvPut(kvXAttr, xAttrKey, VARSTR(xAttrValue));
+
+                            if (varEq(xAttrKey, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR))
+                            {
+                                // Check that SELinux is supported
+                                storagePosixSelCheck();
 
 #ifdef HAVE_LIBSELINUX
-                        // SELinux only has one subkey so there's no need to specify it
-                        CHECK(kvGet(attribute, attributeKey) == NULL);
-
-                        // Get raw context
-                        KeyValue *kvRaw = kvPutKv(attribute, STORAGE_POSIX_XATTR_KEY_VAR);
-                        String *selContextRaw = storagePosixInfoXAttr(file, varStr(STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR));
-                        kvPut(kvRaw, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR, VARSTR(selContextRaw));
-
-                        // Set translated context
-                        KeyValue *kvTrans = kvPutKv(attribute, STORAGE_POSIX_SELINUX_KEY_VAR);
-                        kvPut(
-                            kvTrans, STORAGE_POSIX_SELINUX_KEY_CONTEXT_VAR,
-                            VARSTR(storagePosixSelContextRawToTrans(selContextRaw)));
+                                // Set translated context
+                                KeyValue *kvSELinux = kvPutKv(attribute, STORAGE_POSIX_SELINUX_KEY_VAR);
+                                kvPut(
+                                    kvSELinux, STORAGE_POSIX_SELINUX_KEY_CONTEXT_VAR,
+                                    VARSTR(storagePosixSelContextRawToTrans(xAttrValue)));
 #endif // HAVE_LIBSELINUX
+                            }
+                        }
                     }
                     else
                         THROW_FMT(AssertError, "invalid attribute key '%s'", strPtr(varStr(attributeKey)));
