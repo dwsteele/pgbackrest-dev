@@ -9,6 +9,7 @@ Test Backup Manifest Handler
 #include "storage/posix/storage.h"
 
 #include "common/harnessInfo.h"
+#include "common/harnessXattr.h"
 
 /***********************************************************************************************************************************
 Special string constants
@@ -1014,8 +1015,17 @@ testRun(void)
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("rerun 12, offline");
 
+        const String *xAttrKey = STRDEF("user.pgb");
+
+        TEST_RESULT_VOID(
+            storagePosixInfoXAttrSet(storagePathP(storagePg, STRDEF("pg_hba.conf")), xAttrKey, BUFSTRDEF("XlinkX")),
+            "set link xattr");
+
         // pg_wal not ignored
-        TEST_ASSIGN(manifest, manifestNewBuild(storagePg, PG_VERSION_12, false, false, NULL, strLstNew(), NULL), "build manifest");
+        StringList *xAttrList = strLstNew();
+        strLstAdd(xAttrList, xAttrKey);
+
+        TEST_ASSIGN(manifest, manifestNewBuild(storagePg, PG_VERSION_12, false, false, NULL, xAttrList, NULL), "build manifest");
 
         contentSave = bufNew(0);
         TEST_RESULT_VOID(manifestSave(manifest, ioBufferWriteNew(contentSave)), "save manifest");
@@ -1077,7 +1087,6 @@ testRun(void)
                 "pg_data/pg_xlog={}\n"
                 TEST_MANIFEST_PATH_DEFAULT))),
             "check manifest");
-
 
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("error on link to pg_data");
