@@ -1629,7 +1629,7 @@ testRun(void)
             storagePathCreateP(storagePgWrite(), pgWalPath(PG_VERSION_95), .noParentCreate = true);
 
             // Create a backup manifest that looks like a halted backup manifest
-            Manifest *manifestResume = manifestNewBuild(storagePg(), PG_VERSION_95, true, false, NULL, NULL);
+            Manifest *manifestResume = manifestNewBuild(storagePg(), PG_VERSION_95, true, false, NULL, strLstNew(), NULL);
             ManifestData *manifestResumeData = (ManifestData *)manifestData(manifestResume);
 
             manifestResumeData->backupType = backupTypeFull;
@@ -1717,7 +1717,7 @@ testRun(void)
             harnessCfgLoad(cfgCmdBackup, argList);
 
             // Create a backup manifest that looks like a halted backup manifest
-            Manifest *manifestResume = manifestNewBuild(storagePg(), PG_VERSION_95, true, false, NULL, NULL);
+            Manifest *manifestResume = manifestNewBuild(storagePg(), PG_VERSION_95, true, false, NULL, strLstNew(), NULL);
             ManifestData *manifestResumeData = (ManifestData *)manifestData(manifestResume);
 
             manifestResumeData->backupType = backupTypeFull;
@@ -1912,7 +1912,7 @@ testRun(void)
             manifestSave(manifestPrior, storageWriteIo(storageNewWriteP(storageRepoWrite(), manifestPriorFile)));
 
             // Create a backup manifest that looks like a halted backup manifest
-            Manifest *manifestResume = manifestNewBuild(storagePg(), PG_VERSION_95, true, false, NULL, NULL);
+            Manifest *manifestResume = manifestNewBuild(storagePg(), PG_VERSION_95, true, false, NULL, strLstNew(), NULL);
             ManifestData *manifestResumeData = (ManifestData *)manifestData(manifestResume);
 
             manifestResumeData->backupType = backupTypeDiff;
