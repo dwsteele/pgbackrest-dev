@@ -1094,7 +1094,7 @@ my %hConfigDefine =
     {
         &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
         &CFGDEF_TYPE => CFGDEF_TYPE_SIZE,
-        &CFGDEF_DEFAULT => 4194304,
+        &CFGDEF_DEFAULT => 1048576,
         &CFGDEF_ALLOW_LIST =>
         [
             &CFGDEF_DEFAULT_BUFFER_SIZE_MIN,

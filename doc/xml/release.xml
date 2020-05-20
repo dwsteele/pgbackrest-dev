@@ -40,6 +40,22 @@
 
                         <p>The <cmd>expire</cmd> command now checks if a stop file is present.</p>
                     </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
+                             <release-item-ideator id="ctenuun"/>
+                        </release-item-contributor-list>
+
+                        <p>Handle missing reason phrase in HTTP response.</p>
+                    </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
+                             <release-item-ideator id="eric.radman"/>
+                        </release-item-contributor-list>
+
+                        <p>Increase buffer size for <proper>lz4</proper> compression flush.</p>
+                    </release-item>
                 </release-bug-list>
 
                 <release-feature-list>
@@ -104,6 +120,14 @@
                         <p>Expire WAL archive only when <br-option>repo-retention-archive</br-option> threshold is met.</p>
 
                         <p>WAL prior to the first full backup was previously expired after the first full backup. Now it is preserved according to retention settings.</p>
+                    </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
+                             <release-item-reviewer id="stephen.frost"/>
+                        </release-item-contributor-list>
+
+                        <p>Reduce <br-option>buffer-size</br-option> default to <id>1MiB</id>.</p>
                     </release-item>
 
                     <release-item>
@@ -8139,6 +8163,11 @@
         <contributor id="craig.a.james">
             <contributor-name-display>Craig A. James</contributor-name-display>
             <contributor-id type="github">cjames53</contributor-id>
+        </contributor>
+
+        <contributor id="ctenuun">
+            <contributor-name-display>Tenuun</contributor-name-display>
+            <contributor-id type="github">ctenuun</contributor-id>
         </contributor>
 
         <contributor id="cynthia.shang">
