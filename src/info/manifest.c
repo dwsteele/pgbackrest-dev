@@ -91,7 +91,7 @@ STRING_STATIC(MANIFEST_SECTION_TARGET_PATH_DEFAULT_STR,             "target:path
 #define MANIFEST_KEY_GROUP                                          "group"
     STRING_STATIC(MANIFEST_KEY_GROUP_STR,                           MANIFEST_KEY_GROUP);
     VARIANT_STRDEF_STATIC(MANIFEST_KEY_GROUP_VAR,                   MANIFEST_KEY_GROUP);
-#define MANIFEST_KEY_PRIMARY                                        "ma" "st" "er"
+#define MANIFEST_KEY_PRIMARY                                        "pri"
     STRING_STATIC(MANIFEST_KEY_PRIMARY_STR,                         MANIFEST_KEY_PRIMARY);
     VARIANT_STRDEF_STATIC(MANIFEST_KEY_PRIMARY_VAR,                 MANIFEST_KEY_PRIMARY);
 #define MANIFEST_KEY_MODE                                           "mode"
@@ -1283,7 +1283,6 @@ typedef struct ManifestLoadFound
 {
     bool group:1;
     bool mode:1;
-    bool primary:1;
     bool user:1;
 } ManifestLoadFound;
 
@@ -1295,7 +1294,6 @@ typedef struct ManifestLoadData
     List *fileFoundList;                                            // Values found in files
     const Variant *fileGroupDefault;                                // File default group
     mode_t fileModeDefault;                                         // File default mode
-    bool filePrimaryDefault;                                        // File default primary
     const Variant *fileUserDefault;                                 // File default user
 
     List *linkFoundList;                                            // Values found in links
@@ -1437,10 +1435,7 @@ manifestLoadCallback(void *callbackData, const String *section, const String *ke
             }
 
             if (kvKeyExists(fileKv, MANIFEST_KEY_PRIMARY_VAR))
-            {
-                valueFound.primary = true;
                 file.primary = varBool(kvGet(fileKv, MANIFEST_KEY_PRIMARY_VAR));
-            }
 
             if (kvKeyExists(fileKv, MANIFEST_KEY_USER_VAR))
             {
@@ -1534,8 +1529,6 @@ manifestLoadCallback(void *callbackData, const String *section, const String *ke
                 loadData->fileGroupDefault = manifestOwnerDefaultGet(value);
             else if (strEq(key, MANIFEST_KEY_MODE_STR))
                 loadData->fileModeDefault = cvtZToMode(strPtr(jsonToStr(value)));
-            else if (strEq(key, MANIFEST_KEY_PRIMARY_STR))
-                loadData->filePrimaryDefault = jsonToBool(value);
             else if (strEq(key, MANIFEST_KEY_USER_STR))
                 loadData->fileUserDefault = manifestOwnerDefaultGet(value);
         }
@@ -1740,9 +1733,6 @@ manifestNewLoad(IoRead *read)
             if (!found->mode)
                 file->mode = loadData.fileModeDefault;
 
-            if (!found->primary)
-                file->primary = loadData.filePrimaryDefault;
-
             if (!found->user)
                 file->user = manifestOwnerCache(this, manifestOwnerGet(loadData.fileUserDefault));
         }
@@ -1805,7 +1795,6 @@ typedef struct ManifestSaveData
 
     const Variant *fileGroupDefault;                                // File default group
     mode_t fileModeDefault;                                         // File default mode
-    bool filePrimaryDefault;                                        // File default primary
     const Variant *fileUserDefault;                                 // File default user
 
     const Variant *linkGroupDefault;                                // Link default group
@@ -2077,8 +2066,8 @@ manifestSaveCallback(void *callbackData, const String *sectionNext, InfoSave *in
                 if (!varEq(manifestOwnerVar(file->group), saveData->fileGroupDefault))
                     kvPut(fileKv, MANIFEST_KEY_GROUP_VAR, manifestOwnerVar(file->group));
 
-                if (file->primary != saveData->filePrimaryDefault)
-                    kvPut(fileKv, MANIFEST_KEY_PRIMARY_VAR, VARBOOL(file->primary));
+                if (file->primary)
+                    kvPut(fileKv, MANIFEST_KEY_PRIMARY_VAR, BOOL_TRUE_VAR);
 
                 if (file->mode != saveData->fileModeDefault)
                     kvPut(fileKv, MANIFEST_KEY_MODE_VAR, VARSTR(strNewFmt("%04o", file->mode)));
@@ -2110,9 +2099,6 @@ manifestSaveCallback(void *callbackData, const String *sectionNext, InfoSave *in
         infoSaveValue(
             infoSaveData, MANIFEST_SECTION_TARGET_FILE_DEFAULT_STR, MANIFEST_KEY_GROUP_STR,
             jsonFromVar(saveData->fileGroupDefault));
-        infoSaveValue(
-            infoSaveData, MANIFEST_SECTION_TARGET_FILE_DEFAULT_STR, MANIFEST_KEY_PRIMARY_STR,
-            jsonFromBool(saveData->filePrimaryDefault));
         infoSaveValue(
             infoSaveData, MANIFEST_SECTION_TARGET_FILE_DEFAULT_STR, MANIFEST_KEY_MODE_STR,
             jsonFromStr(strNewFmt("%04o", saveData->fileModeDefault)));
@@ -2229,7 +2215,6 @@ manifestSave(Manifest *this, IoWrite *write)
         // Get default file values
         MostCommonValue *fileGroupMcv = mcvNew();
         MostCommonValue *fileModeMcv = mcvNew();
-        MostCommonValue *filePrimaryMcv = mcvNew();
         MostCommonValue *fileUserMcv = mcvNew();
 
         ASSERT(manifestFileTotal(this) > 0);
@@ -2240,13 +2225,11 @@ manifestSave(Manifest *this, IoWrite *write)
 
             mcvUpdate(fileGroupMcv, VARSTR(file->group));
             mcvUpdate(fileModeMcv, VARUINT(file->mode));
-            mcvUpdate(filePrimaryMcv, VARBOOL(file->primary));
             mcvUpdate(fileUserMcv, VARSTR(file->user));
         }
 
         saveData.fileGroupDefault = manifestOwnerVar(varStr(mcvResult(fileGroupMcv)));
         saveData.fileModeDefault = varUInt(mcvResult(fileModeMcv));
-        saveData.filePrimaryDefault = varBool(mcvResult(filePrimaryMcv));
         saveData.fileUserDefault = manifestOwnerVar(varStr(mcvResult(fileUserMcv)));
 
         // Get default link values

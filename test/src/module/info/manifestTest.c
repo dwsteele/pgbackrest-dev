@@ -146,7 +146,6 @@ testRun(void)
             "\n"                                                                                                                   \
             "[target:file:default]\n"                                                                                              \
             "group=\"{[group]}\"\n"                                                                                                \
-            "master=false\n"                                                                                                       \
             "mode=\"0400\"\n"                                                                                                      \
             "user=\"{[user]}\"\n"
 
@@ -154,7 +153,6 @@ testRun(void)
             "\n"                                                                                                                   \
             "[target:file:default]\n"                                                                                              \
             "group=\"{[group]}\"\n"                                                                                                \
-            "master=true\n"                                                                                                        \
             "mode=\"0400\"\n"                                                                                                      \
             "user=\"{[user]}\"\n"
 
@@ -285,17 +283,17 @@ testRun(void)
                 "pg_data={\"path\":\"{[path]}/pg\",\"type\":\"path\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={\"size\":4,\"timestamp\":1565282100}\n"
-                "pg_data/global/pg_internal.init.allow={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/global/t1_1={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/pg_dynshmem/BOGUS={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_notify/BOGUS={\"size\":0,\"timestamp\":1565282102}\n"
-                "pg_data/pg_replslot/BOGUS={\"size\":0,\"timestamp\":1565282103}\n"
-                "pg_data/pg_serial/BOGUS={\"size\":0,\"timestamp\":1565282104}\n"
-                "pg_data/pg_snapshots/BOGUS={\"size\":4,\"timestamp\":1565282105}\n"
-                "pg_data/pg_stat_tmp/BOGUS={\"mode\":\"0640\",\"size\":0,\"timestamp\":1565282106}\n"
-                "pg_data/pg_xlog/BOGUS={\"size\":0,\"timestamp\":1565282108}\n"
-                "pg_data/pg_xlog/archive_status/BOGUS={\"size\":0,\"timestamp\":1565282108}\n"
+                "pg_data/PG_VERSION={\"pri\":true,\"size\":4,\"timestamp\":1565282100}\n"
+                "pg_data/global/pg_internal.init.allow={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/global/t1_1={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/pg_dynshmem/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_notify/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282102}\n"
+                "pg_data/pg_replslot/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282103}\n"
+                "pg_data/pg_serial/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282104}\n"
+                "pg_data/pg_snapshots/BOGUS={\"pri\":true,\"size\":4,\"timestamp\":1565282105}\n"
+                "pg_data/pg_stat_tmp/BOGUS={\"mode\":\"0640\",\"pri\":true,\"size\":0,\"timestamp\":1565282106}\n"
+                "pg_data/pg_xlog/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282108}\n"
+                "pg_data/pg_xlog/archive_status/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282108}\n"
                 TEST_MANIFEST_FILE_DEFAULT_PRIMARY_TRUE
                 "\n"
                 "[target:path]\n"
@@ -413,7 +411,7 @@ testRun(void)
                 "pg_tblspc/1={\"path\":\"../../ts/1\",\"tablespace-id\":\"1\",\"tablespace-name\":\"ts1\",\"type\":\"link\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={\"master\":true,\"size\":4,\"timestamp\":1565282100}\n"
+                "pg_data/PG_VERSION={\"pri\":true,\"size\":4,\"timestamp\":1565282100}\n"
                 "pg_data/base/1/555={\"size\":0,\"timestamp\":1565282114}\n"
                 "pg_data/base/1/555_fsm={\"size\":0,\"timestamp\":1565282114}\n"
                 "pg_data/base/1/555_init={\"size\":0,\"timestamp\":1565282114}\n"
@@ -426,13 +424,13 @@ testRun(void)
                 "pg_data/base/1/t8888888_8888888_vm.999999={\"size\":0,\"timestamp\":1565282113}\n"
                 "pg_data/global/pg_internal.init.allow={\"size\":0,\"timestamp\":1565282114}\n"
                 "pg_data/global/t1_1={\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/pg_dynshmem/BOGUS={\"master\":true,\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_hba.conf={\"master\":true,\"size\":9,\"timestamp\":1565282117}\n"
-                "pg_data/pg_notify/BOGUS={\"master\":true,\"size\":0,\"timestamp\":1565282102}\n"
-                "pg_data/pg_replslot/BOGUS={\"master\":true,\"size\":0,\"timestamp\":1565282103}\n"
-                "pg_data/pg_serial/BOGUS={\"master\":true,\"size\":0,\"timestamp\":1565282104}\n"
-                "pg_data/pg_snapshots/BOGUS={\"master\":true,\"size\":4,\"timestamp\":1565282105}\n"
-                "pg_data/postgresql.conf={\"master\":true,\"size\":14,\"timestamp\":1565282116}\n"
+                "pg_data/pg_dynshmem/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_hba.conf={\"pri\":true,\"size\":9,\"timestamp\":1565282117}\n"
+                "pg_data/pg_notify/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282102}\n"
+                "pg_data/pg_replslot/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282103}\n"
+                "pg_data/pg_serial/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282104}\n"
+                "pg_data/pg_snapshots/BOGUS={\"pri\":true,\"size\":4,\"timestamp\":1565282105}\n"
+                "pg_data/postgresql.conf={\"pri\":true,\"size\":14,\"timestamp\":1565282116}\n"
                 "pg_tblspc/1/1/16384={\"size\":8,\"timestamp\":1565282115}\n"
                 "pg_tblspc/1/1/t123_123_fsm={\"size\":13,\"timestamp\":1565282115}\n"
                 TEST_MANIFEST_FILE_DEFAULT_PRIMARY_FALSE
@@ -536,23 +534,23 @@ testRun(void)
                 "pg_tblspc/1={\"path\":\"../../ts/1\",\"tablespace-id\":\"1\",\"tablespace-name\":\"tblspc1\",\"type\":\"link\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={\"size\":4,\"timestamp\":1565282100}\n"
-                "pg_data/base/1/555={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_fsm={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_init={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_init.1={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_vm.1={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_vm.1_vm={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/global/pg_internal.init.allow={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/pg_dynshmem/BOGUS={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_hba.conf={\"size\":9,\"timestamp\":1565282117}\n"
-                "pg_data/pg_replslot/BOGUS={\"size\":0,\"timestamp\":1565282103}\n"
-                "pg_data/pg_serial/BOGUS={\"size\":0,\"timestamp\":1565282104}\n"
-                "pg_data/pg_snapshots/BOGUS={\"size\":4,\"timestamp\":1565282105}\n"
-                "pg_data/pg_xlog/BOGUS={\"size\":0,\"timestamp\":1565282108}\n"
-                "pg_data/pg_xlog/archive_status/BOGUS={\"size\":8,\"timestamp\":1565282120}\n"
-                "pg_data/postgresql.conf={\"size\":14,\"timestamp\":1565282116}\n"
-                "pg_tblspc/1/PG_9.0_201008051/1/16384={\"master\":false,\"size\":8,\"timestamp\":1565282115}\n"
+                "pg_data/PG_VERSION={\"pri\":true,\"size\":4,\"timestamp\":1565282100}\n"
+                "pg_data/base/1/555={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_fsm={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_init={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_init.1={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_vm.1={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_vm.1_vm={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/global/pg_internal.init.allow={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/pg_dynshmem/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_hba.conf={\"pri\":true,\"size\":9,\"timestamp\":1565282117}\n"
+                "pg_data/pg_replslot/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282103}\n"
+                "pg_data/pg_serial/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282104}\n"
+                "pg_data/pg_snapshots/BOGUS={\"pri\":true,\"size\":4,\"timestamp\":1565282105}\n"
+                "pg_data/pg_xlog/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282108}\n"
+                "pg_data/pg_xlog/archive_status/BOGUS={\"pri\":true,\"size\":8,\"timestamp\":1565282120}\n"
+                "pg_data/postgresql.conf={\"pri\":true,\"size\":14,\"timestamp\":1565282116}\n"
+                "pg_tblspc/1/PG_9.0_201008051/1/16384={\"size\":8,\"timestamp\":1565282115}\n"
                 TEST_MANIFEST_FILE_DEFAULT_PRIMARY_TRUE
                 "\n"
                 "[target:link]\n"
@@ -628,17 +626,17 @@ testRun(void)
                 "pg_data/postgresql.conf={\"file\":\"postgresql.conf\",\"path\":\"../config\",\"type\":\"link\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={\"size\":4,\"timestamp\":1565282100}\n"
-                "pg_data/base/1/555_init={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_init.1={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_vm.1_vm={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/global/pg_internal.init.allow={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/pg_dynshmem/BOGUS={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_hba.conf={\"size\":9,\"timestamp\":1565282117}\n"
-                "pg_data/pg_replslot/BOGUS={\"size\":0,\"timestamp\":1565282103}\n"
-                "pg_data/pg_snapshots/BOGUS={\"size\":4,\"timestamp\":1565282105}\n"
-                "pg_data/pg_wal/000000010000000000000001={\"size\":7,\"timestamp\":1565282120}\n"
-                "pg_data/postgresql.conf={\"size\":14,\"timestamp\":1565282116}\n"
+                "pg_data/PG_VERSION={\"pri\":true,\"size\":4,\"timestamp\":1565282100}\n"
+                "pg_data/base/1/555_init={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_init.1={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_vm.1_vm={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/global/pg_internal.init.allow={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/pg_dynshmem/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_hba.conf={\"pri\":true,\"size\":9,\"timestamp\":1565282117}\n"
+                "pg_data/pg_replslot/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282103}\n"
+                "pg_data/pg_snapshots/BOGUS={\"pri\":true,\"size\":4,\"timestamp\":1565282105}\n"
+                "pg_data/pg_wal/000000010000000000000001={\"pri\":true,\"size\":7,\"timestamp\":1565282120}\n"
+                "pg_data/postgresql.conf={\"pri\":true,\"size\":14,\"timestamp\":1565282116}\n"
                 TEST_MANIFEST_FILE_DEFAULT_PRIMARY_TRUE
                 "\n"
                 "[target:link]\n"
@@ -709,17 +707,17 @@ testRun(void)
                 "pg_data/postgresql.conf={\"file\":\"postgresql.conf\",\"path\":\"../config\",\"type\":\"link\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={\"size\":4,\"timestamp\":1565282100}\n"
-                "pg_data/base/1/555_init={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_init.1={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_vm.1_vm={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/global/pg_internal.init.allow={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/pg_dynshmem/BOGUS={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_hba.conf={\"size\":9,\"timestamp\":1565282117}\n"
-                "pg_data/pg_replslot/BOGUS={\"size\":0,\"timestamp\":1565282103}\n"
-                "pg_data/pg_wal/000000010000000000000001={\"size\":7,\"timestamp\":1565282120}\n"
-                "pg_data/postgresql.auto.conf.tmp={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/postgresql.conf={\"size\":14,\"timestamp\":1565282116}\n"
+                "pg_data/PG_VERSION={\"pri\":true,\"size\":4,\"timestamp\":1565282100}\n"
+                "pg_data/base/1/555_init={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_init.1={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_vm.1_vm={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/global/pg_internal.init.allow={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/pg_dynshmem/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_hba.conf={\"pri\":true,\"size\":9,\"timestamp\":1565282117}\n"
+                "pg_data/pg_replslot/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282103}\n"
+                "pg_data/pg_wal/000000010000000000000001={\"pri\":true,\"size\":7,\"timestamp\":1565282120}\n"
+                "pg_data/postgresql.auto.conf.tmp={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/postgresql.conf={\"pri\":true,\"size\":14,\"timestamp\":1565282116}\n"
                 TEST_MANIFEST_FILE_DEFAULT_PRIMARY_TRUE
                 "\n"
                 "[target:link]\n"
@@ -754,13 +752,13 @@ testRun(void)
             storageNewWriteP(storagePgWrite, strNew(PG_FILE_PGVERSION), .modeFile = 0400, .timeModified = 1565282100),
             BUFSTRDEF("9.4\n"));
 
-        // Put a pgcontrol (always master:true)
+        // Put a pgcontrol (always pri:true)
         storagePutP(
             storageNewWriteP(
                 storagePgWrite, STRDEF(PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL), .modeFile = 0400, .timeModified = 1565282101),
             NULL);
 
-        // pg_clog pgVersion < 10 master:false (pg_xact pgVersion < 10 master:true), pg_multixact always master:false
+        // pg_clog pgVersion < 10 pri:false (pg_xact pgVersion < 10 pri:true), pg_multixact always pri:false
         storagePathCreateP(storagePgWrite, STRDEF(PG_PATH_PGMULTIXACT), .mode = 0700, .noParentCreate = true);
         storagePutP(
             storageNewWriteP(
@@ -853,23 +851,23 @@ testRun(void)
                 "pg_tblspc/2={\"path\":\"../../ts/2\",\"tablespace-id\":\"2\",\"tablespace-name\":\"ts2\",\"type\":\"link\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={\"master\":true,\"size\":4,\"timestamp\":1565282100}\n"
-                "pg_data/backup_label={\"master\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/PG_VERSION={\"pri\":true,\"size\":4,\"timestamp\":1565282100}\n"
+                "pg_data/backup_label={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
                 "pg_data/base/1/555_init={\"checksum-page\":true,\"size\":0,\"timestamp\":1565282114}\n"
                 "pg_data/base/1/555_init.1={\"checksum-page\":true,\"size\":0,\"timestamp\":1565282114}\n"
                 "pg_data/base/1/555_vm.1_vm={\"checksum-page\":true,\"size\":0,\"timestamp\":1565282114}\n"
                 "pg_data/base/1/PG_VERSION={\"size\":0,\"timestamp\":1565282120}\n"
                 "pg_data/base/1/pg_filenode.map={\"size\":0,\"timestamp\":1565282120}\n"
-                "pg_data/global/pg_control={\"master\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/global/pg_control={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
                 "pg_data/global/pg_internal.init.allow={\"checksum-page\":true,\"size\":0,\"timestamp\":1565282114}\n"
                 "pg_data/pg_clog/BOGUS={\"size\":0,\"timestamp\":1565282121}\n"
-                "pg_data/pg_hba.conf={\"master\":true,\"size\":9,\"timestamp\":1565282117}\n"
+                "pg_data/pg_hba.conf={\"pri\":true,\"size\":9,\"timestamp\":1565282117}\n"
                 "pg_data/pg_multixact/BOGUS={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_wal/000000010000000000000001={\"master\":true,\"size\":7,\"timestamp\":1565282120}\n"
-                "pg_data/pg_xact/BOGUS={\"master\":true,\"size\":0,\"timestamp\":1565282122}\n"
-                "pg_data/postgresql.conf={\"master\":true,\"size\":14,\"timestamp\":1565282116}\n"
-                "pg_data/recovery.signal={\"master\":true,\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/standby.signal={\"master\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_wal/000000010000000000000001={\"pri\":true,\"size\":7,\"timestamp\":1565282120}\n"
+                "pg_data/pg_xact/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282122}\n"
+                "pg_data/postgresql.conf={\"pri\":true,\"size\":14,\"timestamp\":1565282116}\n"
+                "pg_data/recovery.signal={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/standby.signal={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
                 "pg_tblspc/1/PG_9.4_201409291/1/16384={\"checksum-page\":true,\"size\":8,\"timestamp\":1565282115}\n"
                 "pg_tblspc/1/PG_9.4_201409291/1/PG_VERSION={\"size\":0,\"timestamp\":1565282120}\n"
                 "pg_tblspc/2/PG_9.4_201409291/1/16385={\"checksum-page\":true,\"size\":8,\"timestamp\":1565282115}\n"
@@ -943,7 +941,7 @@ testRun(void)
 
         // Test manifest - 'pg_data/pg_tblspc' will appear in manifest but 'pg_tblspc' will not (no links). Recovery signal files
         // and backup_label ignored. Old recovery files and pg_xlog are now just another file/directory and will not be ignored.
-        // pg_wal contents will be ignored online. pg_clog pgVersion > 10 master:true, pg_xact pgVersion > 10 master:false
+        // pg_wal contents will be ignored online. pg_clog pgVersion > 10 pri:true, pg_xact pgVersion > 10 pri:false
         TEST_ASSIGN(manifest, manifestNewBuild(storagePg, PG_VERSION_12, true, false, NULL, NULL), "build manifest");
 
         contentSave = bufNew(0);
@@ -964,21 +962,21 @@ testRun(void)
                 "pg_data/postgresql.conf={\"file\":\"postgresql.conf\",\"path\":\"../config\",\"type\":\"link\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={\"size\":3,\"timestamp\":1565282100}\n"
-                "pg_data/base/1/555_init={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_init.1={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_vm.1_vm={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/PG_VERSION={\"master\":false,\"size\":0,\"timestamp\":1565282120}\n"
-                "pg_data/base/1/pg_filenode.map={\"master\":false,\"size\":0,\"timestamp\":1565282120}\n"
-                "pg_data/global/pg_control={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_clog/BOGUS={\"size\":0,\"timestamp\":1565282121}\n"
-                "pg_data/pg_hba.conf={\"size\":9,\"timestamp\":1565282117}\n"
-                "pg_data/pg_multixact/BOGUS={\"master\":false,\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_xact/BOGUS={\"master\":false,\"size\":0,\"timestamp\":1565282122}\n"
-                "pg_data/pg_xlog/000000020000000000000002={\"size\":6,\"timestamp\":1565282100}\n"
-                "pg_data/postgresql.conf={\"size\":14,\"timestamp\":1565282116}\n"
-                "pg_data/recovery.conf={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/recovery.done={\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/PG_VERSION={\"pri\":true,\"size\":3,\"timestamp\":1565282100}\n"
+                "pg_data/base/1/555_init={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_init.1={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_vm.1_vm={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/PG_VERSION={\"size\":0,\"timestamp\":1565282120}\n"
+                "pg_data/base/1/pg_filenode.map={\"size\":0,\"timestamp\":1565282120}\n"
+                "pg_data/global/pg_control={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_clog/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282121}\n"
+                "pg_data/pg_hba.conf={\"pri\":true,\"size\":9,\"timestamp\":1565282117}\n"
+                "pg_data/pg_multixact/BOGUS={\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_xact/BOGUS={\"size\":0,\"timestamp\":1565282122}\n"
+                "pg_data/pg_xlog/000000020000000000000002={\"pri\":true,\"size\":6,\"timestamp\":1565282100}\n"
+                "pg_data/postgresql.conf={\"pri\":true,\"size\":14,\"timestamp\":1565282116}\n"
+                "pg_data/recovery.conf={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/recovery.done={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
                 TEST_MANIFEST_FILE_DEFAULT_PRIMARY_TRUE
                 "\n"
                 "[target:link]\n"
@@ -1030,22 +1028,22 @@ testRun(void)
                 "pg_data/postgresql.conf={\"file\":\"postgresql.conf\",\"path\":\"../config\",\"type\":\"link\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={\"size\":3,\"timestamp\":1565282100}\n"
-                "pg_data/base/1/555_init={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_init.1={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_vm.1_vm={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/PG_VERSION={\"master\":false,\"size\":0,\"timestamp\":1565282120}\n"
-                "pg_data/base/1/pg_filenode.map={\"master\":false,\"size\":0,\"timestamp\":1565282120}\n"
-                "pg_data/global/pg_control={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_clog/BOGUS={\"size\":0,\"timestamp\":1565282121}\n"
-                "pg_data/pg_hba.conf={\"size\":9,\"timestamp\":1565282117}\n"
-                "pg_data/pg_multixact/BOGUS={\"master\":false,\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_wal/000000010000000000000001={\"size\":7,\"timestamp\":1565282120}\n"
-                "pg_data/pg_xact/BOGUS={\"master\":false,\"size\":0,\"timestamp\":1565282122}\n"
-                "pg_data/pg_xlog/000000020000000000000002={\"size\":6,\"timestamp\":1565282100}\n"
-                "pg_data/postgresql.conf={\"size\":14,\"timestamp\":1565282116}\n"
-                "pg_data/recovery.conf={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/recovery.done={\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/PG_VERSION={\"pri\":true,\"size\":3,\"timestamp\":1565282100}\n"
+                "pg_data/base/1/555_init={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_init.1={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_vm.1_vm={\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/PG_VERSION={\"size\":0,\"timestamp\":1565282120}\n"
+                "pg_data/base/1/pg_filenode.map={\"size\":0,\"timestamp\":1565282120}\n"
+                "pg_data/global/pg_control={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_clog/BOGUS={\"pri\":true,\"size\":0,\"timestamp\":1565282121}\n"
+                "pg_data/pg_hba.conf={\"pri\":true,\"size\":9,\"timestamp\":1565282117}\n"
+                "pg_data/pg_multixact/BOGUS={\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_wal/000000010000000000000001={\"pri\":true,\"size\":7,\"timestamp\":1565282120}\n"
+                "pg_data/pg_xact/BOGUS={\"size\":0,\"timestamp\":1565282122}\n"
+                "pg_data/pg_xlog/000000020000000000000002={\"pri\":true,\"size\":6,\"timestamp\":1565282100}\n"
+                "pg_data/postgresql.conf={\"pri\":true,\"size\":14,\"timestamp\":1565282116}\n"
+                "pg_data/recovery.conf={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/recovery.done={\"pri\":true,\"size\":0,\"timestamp\":1565282101}\n"
                 TEST_MANIFEST_FILE_DEFAULT_PRIMARY_TRUE
                 "\n"
                 "[target:link]\n"
@@ -1232,7 +1230,6 @@ testRun(void)
             "\n"                                                                                                                   \
             "[target:file:default]\n"                                                                                              \
             "group=\"test\"\n"                                                                                                     \
-            "master=false\n"                                                                                                       \
             "mode=\"0600\"\n"                                                                                                      \
             "user=\"test\"\n"
 
@@ -1584,7 +1581,6 @@ testRun(void)
             "\n"
             "[target:file:default]\n"
             "group=\"group1\"\n"
-            "master=true\n"
             "mode=\"0600\"\n"
             "user=\"user1\"\n"
             "\n"
@@ -1683,7 +1679,7 @@ testRun(void)
         #define TEST_MANIFEST_FILE                                                                                                 \
             "\n"                                                                                                                   \
             "[target:file]\n"                                                                                                      \
-            "pg_data/PG_VERSION={\"checksum\":\"184473f470864e067ee3a22e64b47b0a1c356f29\",\"master\":true"                        \
+            "pg_data/PG_VERSION={\"checksum\":\"184473f470864e067ee3a22e64b47b0a1c356f29\",\"pri\":true"                           \
                 ",\"reference\":\"20190818-084502F_20190819-084506D\",\"size\":4,\"timestamp\":1565282114}\n"                      \
             "pg_data/base/16384/17000={\"checksum\":\"e0101dd8ffb910c9c202ca35b5f828bcb9697bed\",\"checksum-page\":false"          \
                 ",\"checksum-page-error\":[1],\"repo-size\":4096,\"size\":8192,\"timestamp\":1565282114}\n"                        \
@@ -1693,15 +1689,14 @@ testRun(void)
                 ",\"reference\":\"20190818-084502F\",\"size\":1073741824,\"timestamp\":1565282116}\n"                              \
             "pg_data/base/32768/33000.32767={\"checksum\":\"6e99b589e550e68e934fd235ccba59fe5b592a9e\",\"checksum-page\":true"     \
                 ",\"reference\":\"20190818-084502F\",\"size\":32768,\"timestamp\":1565282114}\n"                                   \
-            "pg_data/postgresql.conf={\"master\":true,\"size\":4457,\"timestamp\":1565282114}\n"                                   \
-            "pg_data/special-@#!$^&*()_+~`{}[]\\:;={\"master\":true,\"mode\":\"0640\",\"size\":0,\"timestamp\":1565282120"         \
+            "pg_data/postgresql.conf={\"pri\":true,\"size\":4457,\"timestamp\":1565282114}\n"                                      \
+            "pg_data/special-@#!$^&*()_+~`{}[]\\:;={\"mode\":\"0640\",\"pri\":true,\"size\":0,\"timestamp\":1565282120"            \
                 ",\"user\":false}\n"                                                                                               \
 
         #define TEST_MANIFEST_FILE_DEFAULT                                                                                         \
             "\n"                                                                                                                   \
             "[target:file:default]\n"                                                                                              \
             "group=\"group1\"\n"                                                                                                   \
-            "master=false\n"                                                                                                       \
             "mode=\"0600\"\n"                                                                                                      \
             "user=\"user1\"\n"
 
@@ -2059,7 +2054,6 @@ testRun(void)
             "[target:file:default]\n"
             "group=\"group1\"\n"
             "ignore-key=ignore-value\n"
-            "master=true\n"
             "mode=\"0600\"\n"
             "user=\"user1\"\n"
             "\n"
