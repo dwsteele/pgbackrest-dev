@@ -107,6 +107,9 @@ testRun(void)
         // Remove first item
         TEST_RESULT_VOID(lstRemoveIdx(list, 0), "remove first item");
 
+        // Check the size
+        TEST_RESULT_INT(lstSize(list), 8, "list size");
+
         // Read them back and check values
         for (unsigned int listIdx = 0; listIdx < lstSize(list); listIdx++)
         {
