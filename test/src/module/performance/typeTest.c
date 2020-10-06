@@ -21,6 +21,8 @@ running out of memory on the test systems or taking an undue amount of time.  It
 #include "common/harnessInfo.h"
 #include "common/harnessStorage.h"
 
+extern void moncontrol(int);
+
 /***********************************************************************************************************************************
 Test sort comparator
 ***********************************************************************************************************************************/
@@ -185,6 +187,42 @@ testRun(void)
             CHECK(*(int *)lstFind(list, &listIdx) == listIdx);
 
         TEST_LOG_FMT("desc search completed in %ums", (unsigned int)(timeMSec() - timeBegin));
+    }
+
+    // *****************************************************************************************************************************
+    if (testBegin("lstRemoveIdx()"))
+    {
+        CHECK(testScale() <= 10000);
+        int testMax = 100000 * (int)testScale();
+
+        // Generate a large list of values (use int instead of string so there fewer allocations)
+        List *list = lstNewP(sizeof(int));
+
+        for (int listIdx = 0; listIdx < testMax; listIdx++)
+            lstAdd(list, &listIdx);
+
+        CHECK(lstSize(list) == (unsigned int)testMax);
+
+        TEST_LOG_FMT("generated %d item list", testMax);
+
+        // Remove all values from index 0
+        TimeMSec timeBegin = timeMSec();
+
+        moncontrol(1);
+
+        for (int listIdx = 0; listIdx < testMax; listIdx++)
+        {
+            lstRemoveIdx(list, 0);
+
+            // if (listIdx != 0 && (listIdx + 1) % 100000 == 0)
+            //     TEST_LOG_FMT("processed %d items, %u left", listIdx, lstSize(list));
+        }
+
+        moncontrol(0);
+
+        TEST_LOG_FMT("Remove search completed in %ums", (unsigned int)(timeMSec() - timeBegin));
+
+        CHECK(lstSize(list) == 0);
     }
 
     // *****************************************************************************************************************************

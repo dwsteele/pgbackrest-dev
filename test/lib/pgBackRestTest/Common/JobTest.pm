@@ -206,6 +206,7 @@ sub run
                 if ($self->{oTest}->{&TEST_VM} ne VM_NONE)
                 {
                     my $strBinPath = $self->{strTestPath} . '/bin/' . $self->{oTest}->{&TEST_VM} . '/' . PROJECT_EXE;
+                    my $strPgPath = $self->{strTestPath} . '/pg';
 
                     executeTest(
                         'docker run -itd -h ' . $self->{oTest}->{&TEST_VM} . "-test --name=${strImage}" .
@@ -214,6 +215,7 @@ sub run
                         ($self->{oTest}->{&TEST_C} ? " -v $self->{strDataPath}:$self->{strDataPath}" : '') .
                         " -v $self->{strBackRestBase}:$self->{strBackRestBase}" .
                         ($self->{oTest}->{&TEST_BIN_REQ} ? " -v ${strBinPath}:${strBinPath}:ro" : '') .
+                        " -v ${strPgPath}:${strPgPath}:ro" .
                         ' ' . containerRepo() . ':' . $self->{oTest}->{&TEST_VM} . '-test',
                         {bSuppressStdErr => true});
                 }

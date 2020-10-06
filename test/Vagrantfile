@@ -1,6 +1,6 @@
 Vagrant.configure(2) do |config|
     config.vm.provider :virtualbox do |vb|
-        vb.memory = 4096
+        vb.memory = 24576
         vb.cpus = 8
     end
 
@@ -65,7 +65,7 @@ Vagrant.configure(2) do |config|
             #-----------------------------------------------------------------------------------------------------------------------
             echo 'Mount tmpfs' && date
             sudo -u vagrant mkdir -p -m 770 /home/vagrant/test
-            echo 'tmpfs /home/vagrant/test tmpfs size=2560M 0 1' >> /etc/fstab
+            echo 'tmpfs /home/vagrant/test tmpfs size=8192M 0 1' >> /etc/fstab
             mount -a
 
             #-----------------------------------------------------------------------------------------------------------------------
