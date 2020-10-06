@@ -10,28 +10,11 @@ stress testing as needed.
 #include <unistd.h>
 
 #include "common/harnessConfig.h"
-// #include "common/harnessFork.h"
-// #include "common/harnessStorage.h"
 
 #include "command/backup/backup.h"
 #include "command/stanza/create.h"
 #include "postgres/interface.h"
-// #include "common/compress/gz/compress.h"
-// #include "common/compress/lz4/compress.h"
-// #include "common/io/filter/filter.intern.h"
-// #include "common/io/filter/sink.h"
-// #include "common/io/bufferRead.h"
-// #include "common/io/bufferWrite.h"
-// #include "common/io/fdRead.h"
-// #include "common/io/fdWrite.h"
-// #include "common/io/io.h"
-// #include "common/type/object.h"
-// #include "protocol/client.h"
-// #include "protocol/server.h"
 #include "storage/posix/storage.h"
-// #include "storage/remote/protocol.h"
-
-extern void moncontrol(int);
 
 /***********************************************************************************************************************************
 Test Run
@@ -54,16 +37,17 @@ testRun(void)
         const String *pgPath = strNewFmt("%s/pg", testPath());
         const String *repoPath = strNewFmt("%s/repo", testPath());
 
-        // Storage *storagePg = storagePosixNewP(pgPath, .write = true);
-        // for (unsigned int fileIdx = 0; fileIdx < fileTotal; fileIdx++)
-        //     storagePutP(storageNewWriteP(storagePg, strNewFmt("base/1/%u", 16384 + fileIdx)), BUFSTRDEF("TESTFILE"));
-        // storagePathCreateP(storagePg, STRDEF("global"));
-        // THROW_ON_SYS_ERROR(
-        //     symlink("../../../pg/global/pg_control", strZ(strNewFmt("%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL, strZ(pgPath)))) == -1,
-        //     FileOpenError, "unable to create symlink pg data");
-
+        Storage *storagePg = storagePosixNewP(pgPath, .write = true);
+        for (unsigned int fileIdx = 0; fileIdx < fileTotal; fileIdx++)
+            storagePutP(storageNewWriteP(storagePg, strNewFmt("base/1/%u", 16384 + fileIdx)), BUFSTRDEF("TESTFILE"));
+        storagePathCreateP(storagePg, STRDEF("global"));
         THROW_ON_SYS_ERROR(
-            symlink("../pg", strZ(pgPath)) == -1, FileOpenError, "unable to create symlink pg data");
+            symlink(
+                "../../../pg/global/pg_control", strZ(strNewFmt("%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL, strZ(pgPath)))) == -1,
+            FileOpenError, "unable to create symlink pg data");
+
+        // THROW_ON_SYS_ERROR(
+        //     symlink("../pg", strZ(pgPath)) == -1, FileOpenError, "unable to create symlink pg data");
 
         harnessLogLevelSet(logLevelError);
 

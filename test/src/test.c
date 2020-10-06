@@ -52,16 +52,12 @@ Includes that are not generally used by tests
     #include "common/stat.h"
 #endif
 
-extern void moncontrol(int);
-
 /***********************************************************************************************************************************
 main - run the tests
 ***********************************************************************************************************************************/
 int
 main(int argListSize, const char *argList[])
 {
-    moncontrol(0);
-
     // Basic sanity test on input parameters
     if (argListSize == 0 || argList[0] == NULL)
     {

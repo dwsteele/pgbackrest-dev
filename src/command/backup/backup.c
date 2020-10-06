@@ -1913,8 +1913,6 @@ backupComplete(InfoBackup *const infoBackup, Manifest *const manifest)
 }
 
 /**********************************************************************************************************************************/
-extern void moncontrol(int);
-
 void
 cmdBackup(void)
 {
@@ -1976,9 +1974,7 @@ cmdBackup(void)
         backupManifestSaveCopy(manifest, cipherPassBackup);
 
         // Process the backup manifest
-        moncontrol(1);
         backupProcess(backupData, manifest, backupStartResult.lsn, cipherPassBackup);
-        moncontrol(0);
 
         // Stop the backup
         BackupStopResult backupStopResult = backupStop(backupData, manifest);
