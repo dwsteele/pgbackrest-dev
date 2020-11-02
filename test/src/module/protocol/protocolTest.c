@@ -1,8 +1,8 @@
 /***********************************************************************************************************************************
 Test Protocol
 ***********************************************************************************************************************************/
-#include "common/io/handleRead.h"
-#include "common/io/handleWrite.h"
+#include "common/io/fdRead.h"
+#include "common/io/fdWrite.h"
 #include "common/io/bufferRead.h"
 #include "common/io/bufferWrite.h"
 #include "common/regExp.h"
@@ -16,7 +16,9 @@ Test Protocol
 /***********************************************************************************************************************************
 Test protocol request handler
 ***********************************************************************************************************************************/
-bool
+static unsigned int testServerProtocolErrorTotal = 0;
+
+static bool
 testServerProtocol(const String *command, const VariantList *paramList, ProtocolServer *server)
 {
     FUNCTION_HARNESS_BEGIN();
@@ -46,6 +48,16 @@ testServerProtocol(const String *command, const VariantList *paramList, Protocol
             protocolServerWriteLine(server, strNew("LINEOFTEXT"));
             protocolServerWriteLine(server, NULL);
             ioWriteFlush(protocolServerIoWrite(server));
+        }
+        else if (strEq(command, STRDEF("error-until-0")))
+        {
+            if (testServerProtocolErrorTotal > 0)
+            {
+                testServerProtocolErrorTotal--;
+                THROW(FormatError, "error-until-0");
+            }
+
+            protocolServerResponse(server, varNewBool(true));
         }
         else
             found = false;
@@ -117,6 +129,7 @@ testRun(void)
         StringList *argList = strLstNew();
         strLstAddZ(argList, "pgbackrest");
         strLstAddZ(argList, "--stanza=test1");
+        hrnCfgArgRawZ(argList, cfgOptPgPath, "/path/to/pg");
         strLstAddZ(argList, "archive-get");
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
@@ -127,6 +140,7 @@ testRun(void)
         argList = strLstNew();
         strLstAddZ(argList, "pgbackrest");
         strLstAddZ(argList, "--stanza=test1");
+        hrnCfgArgRawZ(argList, cfgOptPgPath, "/path/to/pg");
         strLstAddZ(argList, "--repo1-host=remote-host");
         strLstAddZ(argList, "archive-get");
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
@@ -145,7 +159,7 @@ testRun(void)
         strLstAddZ(argList, "backup");
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
-        TEST_RESULT_BOOL(pgIsLocal(1), true, "pg is local");
+        TEST_RESULT_BOOL(pgIsLocal(0), true, "pg is local");
         TEST_RESULT_VOID(pgIsLocalVerify(), "verify pg is local");
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -154,12 +168,12 @@ testRun(void)
         argList = strLstNew();
         strLstAddZ(argList, "pgbackrest");
         strLstAddZ(argList, "--" CFGOPT_STANZA "=test1");
-        strLstAddZ(argList, "--" CFGOPT_PG1_HOST "=test1");
+        hrnCfgArgRawZ(argList, cfgOptPgHost, "test1");
         strLstAddZ(argList, "--pg1-path=/path/to");
         strLstAddZ(argList, "restore");
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
-        TEST_RESULT_BOOL(pgIsLocal(1), false, "pg is remote");
+        TEST_RESULT_BOOL(pgIsLocal(0), false, "pg1 is remote");
         TEST_ERROR_FMT(pgIsLocalVerify(), HostInvalidError, "restore command must be run on the PostgreSQL host");
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -168,17 +182,38 @@ testRun(void)
         argList = strLstNew();
         strLstAddZ(argList, "pgbackrest");
         strLstAddZ(argList, "--stanza=test1");
-        strLstAddZ(argList, "--" CFGOPT_PG1_PATH "=/path/to/bogus");
+        hrnCfgArgRawZ(argList, cfgOptPgPath, "/path/to/bogus");
         strLstAddZ(argList, "--pg7-path=/path/to");
         strLstAddZ(argList, "--pg7-host=test1");
         strLstAddZ(argList, "--host-id=7");
         strLstAddZ(argList, "--" CFGOPT_REMOTE_TYPE "=" PROTOCOL_REMOTE_TYPE_PG);
         strLstAddZ(argList, "--process=0");
-        strLstAddZ(argList, "--" CFGOPT_REPO1_RETENTION_FULL "=1");
+        hrnCfgArgRawZ(argList, cfgOptRepoRetentionFull, "1");
         strLstAddZ(argList, CFGCMD_BACKUP ":" CONFIG_COMMAND_ROLE_LOCAL);
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
-        TEST_RESULT_BOOL(pgIsLocal(7), false, "pg is remote");
+        TEST_RESULT_BOOL(pgIsLocal(6), false, "pg7 is remote");
+    }
+
+    // *****************************************************************************************************************************
+    if (testBegin("protocolHelperClientFree()"))
+    {
+        TEST_TITLE("free with errors output as warnings");
+
+        // Create and free a mem context to give us an error to use
+        MemContext *memContext = memContextNew("test");
+        memContextFree(memContext);
+
+        // Create bogus client and exec with the freed memcontext to generate errors
+        ProtocolClient client = {.memContext = memContext, .name = STRDEF("test")};
+        Exec exec = {.memContext = memContext, .name = STRDEF("test"), .command = strNew("test")};
+        ProtocolHelperClient protocolHelperClient = {.client = &client, .exec = &exec};
+
+        TEST_RESULT_VOID(protocolHelperClientFree(&protocolHelperClient), "free");
+
+        harnessLogResult(
+            "P00   WARN: cannot free inactive context\n"
+            "P00   WARN: cannot free inactive context");
     }
 
     // *****************************************************************************************************************************
@@ -187,13 +222,14 @@ testRun(void)
         StringList *argList = strLstNew();
         strLstAddZ(argList, "pgbackrest");
         strLstAddZ(argList, "--stanza=test1");
+        hrnCfgArgRawZ(argList, cfgOptPgPath, "/path/to/pg");
         strLstAddZ(argList, "archive-get");
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
         TEST_RESULT_STR_Z(
-            strLstJoin(protocolLocalParam(protocolStorageTypeRepo, 1, 0), "|"),
-            "--host-id=1|--log-level-console=off|--log-level-file=off|--log-level-stderr=error|--process=0|--remote-type=repo"
-                "|--stanza=test1|archive-get:local",
+            strLstJoin(protocolLocalParam(protocolStorageTypeRepo, 0, 0), "|"),
+            "--host-id=1|--log-level-console=off|--log-level-file=off|--log-level-stderr=error|--pg1-path=/path/to/pg|--process=0"
+                "|--remote-type=repo|--stanza=test1|archive-get:local",
             "local repo protocol params");
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -207,8 +243,8 @@ testRun(void)
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
         TEST_RESULT_STR_Z(
-            strLstJoin(protocolLocalParam(protocolStorageTypePg, 2, 1), "|"),
-            "--host-id=2|--log-level-console=off|--log-level-file=info|--log-level-stderr=error|--log-subprocess|--pg1-path=/pg"
+            strLstJoin(protocolLocalParam(protocolStorageTypePg, 0, 1), "|"),
+            "--host-id=1|--log-level-console=off|--log-level-file=info|--log-level-stderr=error|--log-subprocess|--pg1-path=/pg"
                 "|--process=1|--remote-type=pg|--repo1-retention-full=1|--stanza=test1|backup:local",
             "local pg protocol params");
     }
@@ -221,6 +257,7 @@ testRun(void)
         StringList *argList = strLstNew();
         strLstAddZ(argList, "pgbackrest");
         strLstAddZ(argList, "--stanza=test1");
+        hrnCfgArgRawZ(argList, cfgOptPgPath, "/path/to/pg");
         strLstAddZ(argList, "--repo1-host=repo-host");
         strLstAddZ(argList, "--repo1-host-user=repo-host-user");
         // Local config settings should never be passed to the remote
@@ -231,10 +268,10 @@ testRun(void)
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
         TEST_RESULT_STR_Z(
-            strLstJoin(protocolRemoteParam(protocolStorageTypeRepo, 0, 0), "|"),
+            strLstJoin(protocolRemoteParam(protocolStorageTypeRepo, 0), "|"),
             "-o|LogLevel=error|-o|Compression=no|-o|PasswordAuthentication=no|repo-host-user@repo-host"
-                "|pgbackrest --log-level-console=off --log-level-file=off --log-level-stderr=error --process=0 --remote-type=repo"
-                " --stanza=test1 archive-get:remote",
+                "|pgbackrest --log-level-console=off --log-level-file=off --log-level-stderr=error --pg1-path=/path/to/pg"
+                " --process=0 --remote-type=repo --repo1-local --stanza=test1 archive-get:remote",
             "remote protocol params");
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -242,27 +279,30 @@ testRun(void)
         strLstAddZ(argList, "pgbackrest");
         strLstAddZ(argList, "--stanza=test1");
         strLstAddZ(argList, "--log-subprocess");
+        hrnCfgArgRawZ(argList, cfgOptPgPath, "/unused");            // Will be passed to remote (required)
+        hrnCfgArgRawZ(argList, cfgOptPgPort, "777");                // Not be passed to remote (required but has default)
         strLstAddZ(argList, "--repo1-host=repo-host");
         strLstAddZ(argList, "--repo1-host-port=444");
         strLstAddZ(argList, "--repo1-host-config=/path/pgbackrest.conf");
         strLstAddZ(argList, "--repo1-host-config-include-path=/path/include");
         strLstAddZ(argList, "--repo1-host-config-path=/path/config");
         strLstAddZ(argList, "--repo1-host-user=repo-host-user");
-        strLstAddZ(argList, "archive-get");
+        strLstAddZ(argList, CFGCMD_CHECK);
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
         TEST_RESULT_STR_Z(
-            strLstJoin(protocolRemoteParam(protocolStorageTypeRepo, 1, 0), "|"),
+            strLstJoin(protocolRemoteParam(protocolStorageTypeRepo, 0), "|"),
             "-o|LogLevel=error|-o|Compression=no|-o|PasswordAuthentication=no|-p|444|repo-host-user@repo-host"
                 "|pgbackrest --config=/path/pgbackrest.conf --config-include-path=/path/include --config-path=/path/config"
-                " --log-level-console=off --log-level-file=info --log-level-stderr=error --log-subprocess --process=1"
-                " --remote-type=repo --stanza=test1 archive-get:remote",
+                " --log-level-console=off --log-level-file=info --log-level-stderr=error --log-subprocess --pg1-path=/unused"
+                " --process=0 --remote-type=repo --repo1-local --stanza=test1 check:remote",
             "remote protocol params with replacements");
 
         // -------------------------------------------------------------------------------------------------------------------------
         argList = strLstNew();
         strLstAddZ(argList, "pgbackrest");
         strLstAddZ(argList, "--stanza=test1");
+        hrnCfgArgRawZ(argList, cfgOptPgPath, "/path/to/pg");
         strLstAddZ(argList, "--process=3");
         strLstAddZ(argList, "--host-id=1");
         strLstAddZ(argList, "--" CFGOPT_REMOTE_TYPE "=" PROTOCOL_REMOTE_TYPE_REPO);
@@ -271,10 +311,10 @@ testRun(void)
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
         TEST_RESULT_STR_Z(
-            strLstJoin(protocolRemoteParam(protocolStorageTypeRepo, 66, 0), "|"),
+            strLstJoin(protocolRemoteParam(protocolStorageTypeRepo, 0), "|"),
             "-o|LogLevel=error|-o|Compression=no|-o|PasswordAuthentication=no|pgbackrest@repo-host"
-                "|pgbackrest --log-level-console=off --log-level-file=off --log-level-stderr=error --process=3 --remote-type=repo"
-                " --stanza=test1 archive-get:remote",
+                "|pgbackrest --log-level-console=off --log-level-file=off --log-level-stderr=error --pg1-path=/path/to/pg"
+                " --process=3 --remote-type=repo --repo1-local --stanza=test1 archive-get:remote",
             "remote protocol params for backup local");
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -288,10 +328,10 @@ testRun(void)
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
         TEST_RESULT_STR_Z(
-            strLstJoin(protocolRemoteParam(protocolStorageTypePg, 1, 0), "|"),
+            strLstJoin(protocolRemoteParam(protocolStorageTypePg, 0), "|"),
             "-o|LogLevel=error|-o|Compression=no|-o|PasswordAuthentication=no|postgres@pg1-host"
-                "|pgbackrest --log-level-console=off --log-level-file=off --log-level-stderr=error --pg1-path=/path/to/1"
-                " --process=1 --remote-type=pg --stanza=test1 backup:remote",
+                "|pgbackrest --log-level-console=off --log-level-file=off --log-level-stderr=error --pg1-local"
+                " --pg1-path=/path/to/1 --process=0 --remote-type=pg --stanza=test1 backup:remote",
             "remote protocol params for db backup");
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -306,15 +346,15 @@ testRun(void)
         strLstAddZ(argList, "--pg2-path=/path/to/2");
         strLstAddZ(argList, "--pg2-host=pg2-host");
         strLstAddZ(argList, "--" CFGOPT_REMOTE_TYPE "=" PROTOCOL_REMOTE_TYPE_PG);
-        strLstAddZ(argList, "--" CFGOPT_REPO1_RETENTION_FULL "=1");
+        hrnCfgArgRawZ(argList, cfgOptRepoRetentionFull, "1");
         strLstAddZ(argList, CFGCMD_BACKUP ":" CONFIG_COMMAND_ROLE_LOCAL);
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
         TEST_RESULT_STR_Z(
-            strLstJoin(protocolRemoteParam(protocolStorageTypePg, 1, 1), "|"),
+            strLstJoin(protocolRemoteParam(protocolStorageTypePg, 1), "|"),
             "-o|LogLevel=error|-o|Compression=no|-o|PasswordAuthentication=no|postgres@pg2-host"
-                "|pgbackrest --log-level-console=off --log-level-file=off --log-level-stderr=error --pg1-path=/path/to/2"
-                " --process=4 --remote-type=pg --stanza=test1 backup:remote",
+                "|pgbackrest --log-level-console=off --log-level-file=off --log-level-stderr=error --pg1-local"
+                " --pg1-path=/path/to/2 --process=4 --remote-type=pg --stanza=test1 backup:remote",
             "remote protocol params for db local");
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -329,15 +369,16 @@ testRun(void)
         strLstAddZ(argList, "--pg3-socket-path=/socket3");
         strLstAddZ(argList, "--pg3-port=3333");
         strLstAddZ(argList, "--" CFGOPT_REMOTE_TYPE "=" PROTOCOL_REMOTE_TYPE_PG);
-        strLstAddZ(argList, "--" CFGOPT_REPO1_RETENTION_FULL "=1");
+        hrnCfgArgRawZ(argList, cfgOptRepoRetentionFull, "1");
         strLstAddZ(argList, CFGCMD_BACKUP ":" CONFIG_COMMAND_ROLE_LOCAL);
         harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList));
 
         TEST_RESULT_STR_Z(
-            strLstJoin(protocolRemoteParam(protocolStorageTypePg, 1, 2), "|"),
+            strLstJoin(protocolRemoteParam(protocolStorageTypePg, 2), "|"),
             "-o|LogLevel=error|-o|Compression=no|-o|PasswordAuthentication=no|postgres@pg3-host"
-                "|pgbackrest --log-level-console=off --log-level-file=off --log-level-stderr=error --pg1-path=/path/to/3"
-                " --pg1-port=3333 --pg1-socket-path=/socket3 --process=4 --remote-type=pg --stanza=test1 backup:remote",
+                "|pgbackrest --log-level-console=off --log-level-file=off --log-level-stderr=error --pg1-local"
+                " --pg1-path=/path/to/3 --pg1-port=3333 --pg1-socket-path=/socket3 --process=4 --remote-type=pg --stanza=test1"
+                " backup:remote",
             "remote protocol params for db local");
     }
 
@@ -376,9 +417,9 @@ testRun(void)
         {
             HARNESS_FORK_CHILD_BEGIN(0, true)
             {
-                IoRead *read = ioHandleReadNew(strNew("server read"), HARNESS_FORK_CHILD_READ(), 2000);
+                IoRead *read = ioFdReadNew(strNew("server read"), HARNESS_FORK_CHILD_READ(), 2000);
                 ioReadOpen(read);
-                IoWrite *write = ioHandleWriteNew(strNew("server write"), HARNESS_FORK_CHILD_WRITE());
+                IoWrite *write = ioFdWriteNew(strNew("server write"), HARNESS_FORK_CHILD_WRITE(), 2000);
                 ioWriteOpen(write);
 
                 // Various bogus greetings
@@ -450,9 +491,9 @@ testRun(void)
 
             HARNESS_FORK_PARENT_BEGIN()
             {
-                IoRead *read = ioHandleReadNew(strNew("client read"), HARNESS_FORK_PARENT_READ_PROCESS(0), 2000);
+                IoRead *read = ioFdReadNew(strNew("client read"), HARNESS_FORK_PARENT_READ_PROCESS(0), 2000);
                 ioReadOpen(read);
-                IoWrite *write = ioHandleWriteNew(strNew("client write"), HARNESS_FORK_PARENT_WRITE_PROCESS(0));
+                IoWrite *write = ioFdWriteNew(strNew("client write"), HARNESS_FORK_PARENT_WRITE_PROCESS(0), 2000);
                 ioWriteOpen(write);
 
                 // Various bogus greetings
@@ -467,13 +508,16 @@ testRun(void)
                     "unable to find greeting key 'name'");
                 TEST_ERROR(
                     protocolClientNew(strNew("test client"), strNew("test"), read, write), ProtocolError,
-                    "expected value 'pgBackRest' for greeting key 'name' but got 'bogus'");
+                    "expected value 'pgBackRest' for greeting key 'name' but got 'bogus'\n"
+                    "HINT: is the same version of " PROJECT_NAME " installed on the local and remote host?");
                 TEST_ERROR(
                     protocolClientNew(strNew("test client"), strNew("test"), read, write), ProtocolError,
-                    "expected value 'test' for greeting key 'service' but got 'bogus'");
+                    "expected value 'test' for greeting key 'service' but got 'bogus'\n"
+                    "HINT: is the same version of " PROJECT_NAME " installed on the local and remote host?");
                 TEST_ERROR(
                     protocolClientNew(strNew("test client"), strNew("test"), read, write), ProtocolError,
-                    "expected value '" PROJECT_VERSION "' for greeting key 'version' but got 'bogus'");
+                    "expected value '" PROJECT_VERSION "' for greeting key 'version' but got 'bogus'\n"
+                    "HINT: is the same version of " PROJECT_NAME " installed on the local and remote host?");
 
                 // Correct greeting
                 ProtocolClient *client = NULL;
@@ -556,9 +600,9 @@ testRun(void)
         {
             HARNESS_FORK_CHILD_BEGIN(0, true)
             {
-                IoRead *read = ioHandleReadNew(strNew("client read"), HARNESS_FORK_CHILD_READ(), 2000);
+                IoRead *read = ioFdReadNew(strNew("client read"), HARNESS_FORK_CHILD_READ(), 2000);
                 ioReadOpen(read);
-                IoWrite *write = ioHandleWriteNew(strNew("client write"), HARNESS_FORK_CHILD_WRITE());
+                IoWrite *write = ioFdWriteNew(strNew("client write"), HARNESS_FORK_CHILD_WRITE(), 2000);
                 ioWriteOpen(write);
 
                 // Check greeting
@@ -604,14 +648,23 @@ testRun(void)
                 // Exit
                 TEST_RESULT_VOID(ioWriteStrLine(write, strNew("{\"cmd\":\"exit\"}")), "write exit");
                 TEST_RESULT_VOID(ioWriteFlush(write), "flush exit");
+
+                // Retry errors until success
+                TEST_RESULT_VOID(ioWriteStrLine(write, strNew("{\"cmd\":\"error-until-0\"}")), "write error-until-0");
+                TEST_RESULT_VOID(ioWriteFlush(write), "flush error-until-0");
+                TEST_RESULT_STR_Z(ioReadLine(read), "{\"out\":true}", "error-until-0 result");
+
+                // Exit
+                TEST_RESULT_VOID(ioWriteStrLine(write, strNew("{\"cmd\":\"exit\"}")), "write exit");
+                TEST_RESULT_VOID(ioWriteFlush(write), "flush exit");
             }
             HARNESS_FORK_CHILD_END();
 
             HARNESS_FORK_PARENT_BEGIN()
             {
-                IoRead *read = ioHandleReadNew(strNew("server read"), HARNESS_FORK_PARENT_READ_PROCESS(0), 2000);
+                IoRead *read = ioFdReadNew(strNew("server read"), HARNESS_FORK_PARENT_READ_PROCESS(0), 2000);
                 ioReadOpen(read);
-                IoWrite *write = ioHandleWriteNew(strNew("server write"), HARNESS_FORK_PARENT_WRITE_PROCESS(0));
+                IoWrite *write = ioFdWriteNew(strNew("server write"), HARNESS_FORK_PARENT_WRITE_PROCESS(0), 2000);
                 ioWriteOpen(write);
 
                 // Send greeting
@@ -633,9 +686,23 @@ testRun(void)
 
                 TEST_RESULT_VOID(protocolServerHandlerAdd(server, testServerProtocol), "add handler");
 
-                TEST_RESULT_VOID(protocolServerProcess(server), "run process loop");
+                TEST_RESULT_VOID(protocolServerProcess(server, NULL), "run process loop");
 
-                TEST_RESULT_VOID(protocolServerFree(server), "free server");
+                // -----------------------------------------------------------------------------------------------------------------
+                TEST_TITLE("run process loop with retries");
+
+                VariantList *retryInterval = varLstNew();
+                varLstAdd(retryInterval, varNewUInt64(0));
+                varLstAdd(retryInterval, varNewUInt64(50));
+
+                testServerProtocolErrorTotal = 2;
+
+                TEST_RESULT_VOID(protocolServerProcess(server, retryInterval), "run process loop");
+
+                // -----------------------------------------------------------------------------------------------------------------
+                TEST_TITLE("free server");
+
+                TEST_RESULT_VOID(protocolServerFree(server), "free");
             }
             HARNESS_FORK_PARENT_END();
         }
@@ -672,9 +739,9 @@ testRun(void)
             // Local 1
             HARNESS_FORK_CHILD_BEGIN(0, true)
             {
-                IoRead *read = ioHandleReadNew(strNew("server read"), HARNESS_FORK_CHILD_READ(), 10000);
+                IoRead *read = ioFdReadNew(strNew("server read"), HARNESS_FORK_CHILD_READ(), 10000);
                 ioReadOpen(read);
-                IoWrite *write = ioHandleWriteNew(strNew("server write"), HARNESS_FORK_CHILD_WRITE());
+                IoWrite *write = ioFdWriteNew(strNew("server write"), HARNESS_FORK_CHILD_WRITE(), 2000);
                 ioWriteOpen(write);
 
                 // Greeting with noop
@@ -698,9 +765,9 @@ testRun(void)
             // Local 2
             HARNESS_FORK_CHILD_BEGIN(0, true)
             {
-                IoRead *read = ioHandleReadNew(strNew("server read"), HARNESS_FORK_CHILD_READ(), 10000);
+                IoRead *read = ioFdReadNew(strNew("server read"), HARNESS_FORK_CHILD_READ(), 10000);
                 ioReadOpen(read);
-                IoWrite *write = ioHandleWriteNew(strNew("server write"), HARNESS_FORK_CHILD_WRITE());
+                IoWrite *write = ioFdWriteNew(strNew("server write"), HARNESS_FORK_CHILD_WRITE(), 2000);
                 ioWriteOpen(write);
 
                 // Greeting with noop
@@ -729,7 +796,7 @@ testRun(void)
             HARNESS_FORK_PARENT_BEGIN()
             {
                 // -----------------------------------------------------------------------------------------------------------------
-                TestParallelJobCallback data = {.jobList = lstNew(sizeof(ProtocolParallelJob *))};
+                TestParallelJobCallback data = {.jobList = lstNewP(sizeof(ProtocolParallelJob *))};
                 ProtocolParallel *parallel = NULL;
                 TEST_ASSIGN(parallel, protocolParallelNew(2000, testParallelJobCallback, &data), "create parallel");
                 TEST_RESULT_STR_Z(protocolParallelToLog(parallel), "{state: pending, clientTotal: 0, jobTotal: 0}", "check log");
@@ -740,11 +807,11 @@ testRun(void)
 
                 for (unsigned int clientIdx = 0; clientIdx < clientTotal; clientIdx++)
                 {
-                    IoRead *read = ioHandleReadNew(
+                    IoRead *read = ioFdReadNew(
                         strNewFmt("client %u read", clientIdx), HARNESS_FORK_PARENT_READ_PROCESS(clientIdx), 2000);
                     ioReadOpen(read);
-                    IoWrite *write = ioHandleWriteNew(
-                        strNewFmt("client %u write", clientIdx), HARNESS_FORK_PARENT_WRITE_PROCESS(clientIdx));
+                    IoWrite *write = ioFdWriteNew(
+                        strNewFmt("client %u write", clientIdx), HARNESS_FORK_PARENT_WRITE_PROCESS(clientIdx), 2000);
                     ioWriteOpen(write);
 
                     TEST_ASSIGN(
@@ -754,7 +821,7 @@ testRun(void)
                     TEST_RESULT_VOID(protocolParallelClientAdd(parallel, client[clientIdx]), "add client %u", clientIdx);
                 }
 
-                // Attempt to add client without handle io
+                // Attempt to add client without an fd
                 String *protocolString = strNew(
                     "{\"name\":\"pgBackRest\",\"service\":\"error\",\"version\":\"" PROJECT_VERSION "\"}\n"
                     "{}\n");
@@ -765,7 +832,7 @@ testRun(void)
                 ioWriteOpen(write);
 
                 ProtocolClient *clientError = protocolClientNew(strNew("error"), strNew("error"), read, write);
-                TEST_ERROR(protocolParallelClientAdd(parallel, clientError), AssertError, "client with read handle is required");
+                TEST_ERROR(protocolParallelClientAdd(parallel, clientError), AssertError, "client with read fd is required");
                 protocolClientFree(clientError);
 
                 // Add jobs
@@ -819,6 +886,7 @@ testRun(void)
                 TEST_RESULT_INT(protocolParallelProcess(parallel), 0, "process jobs");
 
                 TEST_RESULT_PTR(protocolParallelResult(parallel), NULL, "check no result");
+                TEST_RESULT_BOOL(protocolParallelDone(parallel), false, "check not done");
 
                 // Process jobs
                 TEST_RESULT_INT(protocolParallelProcess(parallel), 1, "process jobs");
@@ -828,13 +896,27 @@ testRun(void)
                 TEST_RESULT_INT(varIntForce(protocolParallelJobResult(job)), 1, "check result is 1");
 
                 TEST_RESULT_BOOL(protocolParallelDone(parallel), true, "check done");
+                TEST_RESULT_BOOL(protocolParallelDone(parallel), true, "check still done");
 
-                // Free client
+                TEST_RESULT_VOID(protocolParallelFree(parallel), "free parallel");
+
+                // -----------------------------------------------------------------------------------------------------------------
+                TEST_TITLE("process zero jobs");
+
+                data = (TestParallelJobCallback){.jobList = lstNewP(sizeof(ProtocolParallelJob *))};
+                TEST_ASSIGN(parallel, protocolParallelNew(2000, testParallelJobCallback, &data), "create parallel");
+                TEST_RESULT_VOID(protocolParallelClientAdd(parallel, client[0]), "add client");
+
+                TEST_RESULT_INT(protocolParallelProcess(parallel), 0, "process zero jobs");
+                TEST_RESULT_BOOL(protocolParallelDone(parallel), true, "check done");
+
+                TEST_RESULT_VOID(protocolParallelFree(parallel), "free parallel");
+
+                // -----------------------------------------------------------------------------------------------------------------
+                TEST_TITLE("free clients");
+
                 for (unsigned int clientIdx = 0; clientIdx < clientTotal; clientIdx++)
                     TEST_RESULT_VOID(protocolClientFree(client[clientIdx]), "free client %u", clientIdx);
-
-                // Free parallel
-                TEST_RESULT_VOID(protocolParallelFree(parallel), "free parallel");
             }
             HARNESS_FORK_PARENT_END();
         }
@@ -847,6 +929,11 @@ testRun(void)
         // Call remote free before any remotes exist
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_RESULT_VOID(protocolRemoteFree(1), "free remote (non exist)");
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        TEST_TITLE("free local that does not exist");
+
+        TEST_RESULT_VOID(protocolLocalFree(2), "free");
 
         // Call keep alive before any remotes exist
         // -------------------------------------------------------------------------------------------------------------------------
@@ -866,8 +953,8 @@ testRun(void)
 
         TEST_RESULT_VOID(protocolFree(), "free protocol objects before anything has been created");
 
-        TEST_ASSIGN(client, protocolRemoteGet(protocolStorageTypeRepo, 1), "get remote protocol");
-        TEST_RESULT_PTR(protocolRemoteGet(protocolStorageTypeRepo, 1), client, "get remote cached protocol");
+        TEST_ASSIGN(client, protocolRemoteGet(protocolStorageTypeRepo, 0), "get remote protocol");
+        TEST_RESULT_PTR(protocolRemoteGet(protocolStorageTypeRepo, 0), client, "get remote cached protocol");
         TEST_RESULT_PTR(protocolHelper.clientRemote[0].client, client, "check position in cache");
         TEST_RESULT_VOID(protocolKeepAlive(), "keep alive");
         TEST_RESULT_VOID(protocolFree(), "free remote protocol objects");
@@ -884,6 +971,7 @@ testRun(void)
 
         argList = strLstNew();
         strLstAddZ(argList, "--stanza=db");
+        hrnCfgArgRawZ(argList, cfgOptPgPath, "/path/to/pg");
         strLstAddZ(argList, "--protocol-timeout=10");
         strLstAdd(argList, strNewFmt("--config=%s/pgbackrest.conf", testPath()));
         strLstAddZ(argList, "--repo1-host=localhost");
@@ -895,7 +983,7 @@ testRun(void)
         harnessCfgLoadRole(cfgCmdArchiveGet, cfgCmdRoleLocal, argList);
 
         TEST_RESULT_STR_Z(cfgOptionStr(cfgOptRepoCipherPass), "acbd", "check cipher pass before");
-        TEST_ASSIGN(client, protocolRemoteGet(protocolStorageTypeRepo, 1), "get remote protocol");
+        TEST_ASSIGN(client, protocolRemoteGet(protocolStorageTypeRepo, 0), "get remote protocol");
         TEST_RESULT_PTR(protocolHelper.clientRemote[0].client, client, "check position in cache");
         TEST_RESULT_STR_Z(cfgOptionStr(cfgOptRepoCipherPass), "acbd", "check cipher pass after");
 
@@ -920,7 +1008,7 @@ testRun(void)
         harnessCfgLoad(cfgCmdInfo, argList);
 
         TEST_RESULT_PTR(cfgOptionStrNull(cfgOptRepoCipherPass), NULL, "check cipher pass before");
-        TEST_ASSIGN(client, protocolRemoteGet(protocolStorageTypeRepo, 1), "get remote protocol");
+        TEST_ASSIGN(client, protocolRemoteGet(protocolStorageTypeRepo, 0), "get remote protocol");
         TEST_RESULT_STR_Z(cfgOptionStr(cfgOptRepoCipherPass), "dcba", "check cipher pass after");
 
         TEST_RESULT_VOID(protocolFree(), "free remote protocol objects");
@@ -936,18 +1024,21 @@ testRun(void)
         strLstAdd(argList, strNewFmt("--pg1-path=%s", testPath()));
         harnessCfgLoad(cfgCmdBackup, argList);
 
-        TEST_ASSIGN(client, protocolRemoteGet(protocolStorageTypePg, 1), "get remote protocol");
+        TEST_ASSIGN(client, protocolRemoteGet(protocolStorageTypePg, 0), "get remote protocol");
+
+        TEST_RESULT_VOID(protocolFree(), "free local and remote protocol objects");
 
         // Start local protocol
         // -------------------------------------------------------------------------------------------------------------------------
         argList = strLstNew();
         strLstAddZ(argList, "--stanza=db");
+        hrnCfgArgRawZ(argList, cfgOptPgPath, "/path/to/pg");
         strLstAddZ(argList, "--protocol-timeout=10");
         strLstAddZ(argList, "--process-max=2");
         harnessCfgLoad(cfgCmdArchiveGet, argList);
 
-        TEST_ASSIGN(client, protocolLocalGet(protocolStorageTypeRepo, 1, 1), "get local protocol");
-        TEST_RESULT_PTR(protocolLocalGet(protocolStorageTypeRepo, 1, 1), client, "get local cached protocol");
+        TEST_ASSIGN(client, protocolLocalGet(protocolStorageTypeRepo, 0, 1), "get local protocol");
+        TEST_RESULT_PTR(protocolLocalGet(protocolStorageTypeRepo, 0, 1), client, "get local cached protocol");
         TEST_RESULT_PTR(protocolHelper.clientLocal[0].client, client, "check location in cache");
 
         TEST_RESULT_VOID(protocolFree(), "free local and remote protocol objects");

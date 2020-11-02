@@ -168,6 +168,8 @@ my $oyVm =
         &VMDEF_PGSQL_BIN => '/usr/pgsql-{[version]}/bin',
         &VMDEF_WITH_SELINUX => true,
 
+        &VMDEF_WITH_ZST => true,
+
         &VM_DB =>
         [
             PG_VERSION_91,
@@ -177,6 +179,7 @@ my $oyVm =
             PG_VERSION_10,
             PG_VERSION_11,
             PG_VERSION_12,
+            PG_VERSION_13,
         ],
 
         &VM_DB_TEST =>
@@ -210,6 +213,7 @@ my $oyVm =
             PG_VERSION_10,
             PG_VERSION_11,
             PG_VERSION_12,
+            PG_VERSION_13,
         ],
 
         &VM_DB_TEST =>
@@ -358,6 +362,7 @@ my $oyVm =
             PG_VERSION_10,
             PG_VERSION_11,
             PG_VERSION_12,
+            PG_VERSION_13,
         ],
 
         &VM_DB =>
@@ -389,6 +394,7 @@ my $oyVm =
             PG_VERSION_10,
             PG_VERSION_11,
             PG_VERSION_12,
+            PG_VERSION_13,
         ],
 
         &VM_DB_TEST =>
@@ -415,6 +421,11 @@ my $oyVm =
 
         &VM_DB =>
         [
+            PG_VERSION_83,
+            PG_VERSION_84,
+            PG_VERSION_90,
+            PG_VERSION_91,
+            PG_VERSION_92,
             PG_VERSION_93,
             PG_VERSION_94,
             PG_VERSION_95,
@@ -422,6 +433,7 @@ my $oyVm =
             PG_VERSION_10,
             PG_VERSION_11,
             PG_VERSION_12,
+            PG_VERSION_13,
         ],
 
         &VM_DB_TEST =>
@@ -429,6 +441,7 @@ my $oyVm =
             PG_VERSION_94,
             PG_VERSION_11,
             PG_VERSION_12,
+            PG_VERSION_13,
         ],
     },
 };

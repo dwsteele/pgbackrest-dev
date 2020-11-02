@@ -1,17 +1,13 @@
 /***********************************************************************************************************************************
-Handle IO Read
-
-Read from a handle using the IoRead interface.
+Verify Command
 ***********************************************************************************************************************************/
-#ifndef COMMON_IO_HANDLEREAD_H
-#define COMMON_IO_HANDLEREAD_H
-
-#include "common/io/read.h"
-#include "common/time.h"
+#ifndef COMMAND_VERIFY_VERIFY_H
+#define COMMAND_VERIFY_VERIFY_H
 
 /***********************************************************************************************************************************
-Constructors
+Functions
 ***********************************************************************************************************************************/
-IoRead *ioHandleReadNew(const String *name, int handle, TimeMSec timeout);
+// Verify the contents of the repository
+void cmdVerify(void);
 
 #endif

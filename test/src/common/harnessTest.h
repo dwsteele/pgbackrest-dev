@@ -92,7 +92,7 @@ Test that an expected error is actually thrown and error when it isn't
     bool TEST_ERROR_catch = false;                                                                                                 \
                                                                                                                                    \
     /* Set the line number for the current function in the stack trace */                                                          \
-    stackTraceTestFileLineSet(__LINE__);                                                                                           \
+    FUNCTION_HARNESS_STACK_TRACE_LINE_SET(__LINE__);                                                                               \
                                                                                                                                    \
     hrnTestLogPrefix(__LINE__, true);                                                                                              \
     printf("expect %s: %s\n", errorTypeName(&errorTypeExpected), errorMessageExpected);                                            \
@@ -118,7 +118,7 @@ Test that an expected error is actually thrown and error when it isn't
             TestError, "statement '%s' returned but error %s, '%s' was expected", #statement, errorTypeName(&errorTypeExpected),   \
             errorMessageExpected);                                                                                                 \
                                                                                                                                    \
-    stackTraceTestFileLineSet(0);                                                                                                  \
+    FUNCTION_HARNESS_STACK_TRACE_LINE_SET(0);                                                                                      \
 }
 
 /***********************************************************************************************************************************
@@ -132,8 +132,6 @@ Test error with a formatted expected message
         THROW_FMT(AssertError, "error message needs more than the %zu characters available", sizeof(TEST_ERROR_FMT_buffer));       \
                                                                                                                                    \
     TEST_ERROR(statement, errorTypeExpected, TEST_ERROR_FMT_buffer);                                                               \
-                                                                                                                                   \
-    stackTraceTestFileLineSet(0);                                                                                                  \
 }
 
 /***********************************************************************************************************************************
@@ -217,6 +215,8 @@ Macros to compare results of common data types
     }                                                                                                                              \
     while (0)
 
+// Compare raw pointers. When checking for NULL use the type-specific macro when available, e.g. TEST_RESULT_STR(). This is more
+// type-safe and makes it clearer what is being tested.
 #define TEST_RESULT_PTR(statement, expected, ...)                                                                                  \
     TEST_RESULT_PTR_PARAM(statement, expected, harnessTestResultOperationEq, __VA_ARGS__);
 #define TEST_RESULT_PTR_NE(statement, expected, ...)                                                                               \
@@ -237,13 +237,15 @@ Macros to compare results of common data types
     TEST_RESULT_Z_PARAM(statement, expected, harnessTestResultOperationNe, __VA_ARGS__);
 
 #define TEST_RESULT_STR(statement, resultExpected, ...)                                                                            \
-    TEST_RESULT_Z(strPtr(statement), strPtr(resultExpected), __VA_ARGS__);
+    TEST_RESULT_Z(strZNull(statement), strZNull(resultExpected), __VA_ARGS__);
 #define TEST_RESULT_STR_Z(statement, resultExpected, ...)                                                                          \
-    TEST_RESULT_Z(strPtr(statement), resultExpected, __VA_ARGS__);
+    TEST_RESULT_Z(strZNull(statement), resultExpected, __VA_ARGS__);
+#define TEST_RESULT_STR_KEYRPL(statement, resultExpected, ...)                                                                     \
+    TEST_RESULT_Z(strZNull(statement), hrnReplaceKey(strZ(resultExpected)), __VA_ARGS__);
 #define TEST_RESULT_STR_Z_KEYRPL(statement, resultExpected, ...)                                                                   \
-    TEST_RESULT_Z(strPtr(statement), hrnReplaceKey(resultExpected), __VA_ARGS__);
+    TEST_RESULT_Z(strZNull(statement), hrnReplaceKey(resultExpected), __VA_ARGS__);
 #define TEST_RESULT_Z_STR(statement, resultExpected, ...)                                                                          \
-    TEST_RESULT_Z(statement, strPtr(resultExpected), __VA_ARGS__);
+    TEST_RESULT_Z(statement, strZNull(resultExpected), __VA_ARGS__);
 
 #define TEST_RESULT_UINT_PARAM(statement, expected, operation, ...)                                                                \
     do                                                                                                                             \
@@ -371,5 +373,10 @@ Is this a 64-bit system?  If not then it is 32-bit since 16-bit systems are not 
 ***********************************************************************************************************************************/
 #define TEST_64BIT()                                                                                                               \
     (sizeof(size_t) == 8)
+
+/***********************************************************************************************************************************
+Is this a big-endian system?
+***********************************************************************************************************************************/
+#define TEST_BIG_ENDIAN() (!*(unsigned char *)&(uint16_t){1})
 
 #endif

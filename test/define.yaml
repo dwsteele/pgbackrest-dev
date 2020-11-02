@@ -80,7 +80,7 @@ unit:
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: mem-context
         total: 7
-        define-test: -DNO_MEM_CONTEXT -DNO_LOG
+        define-test: -DNO_MEM_CONTEXT -DNO_LOG -DNO_STAT
 
         coverage:
           common/memContext: full
@@ -149,7 +149,7 @@ unit:
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: type-convert
-        total: 10
+        total: 11
 
         coverage:
           common/type/convert: full
@@ -220,6 +220,13 @@ unit:
           common/type/xml: full
 
       # ----------------------------------------------------------------------------------------------------------------------------
+      - name: stat
+        total: 1
+
+        coverage:
+          common/stat: full
+
+      # ----------------------------------------------------------------------------------------------------------------------------
       - name: user
         total: 1
 
@@ -233,13 +240,14 @@ unit:
         coverage:
           common/io/bufferRead: full
           common/io/bufferWrite: full
+          common/io/fd: full
+          common/io/fdRead: full
+          common/io/fdWrite: full
           common/io/filter/buffer: full
           common/io/filter/filter: full
           common/io/filter/group: full
           common/io/filter/sink: full
           common/io/filter/size: full
-          common/io/handleRead: full
-          common/io/handleWrite: full
           common/io/io: full
           common/io/read: full
           common/io/write: full
@@ -249,22 +257,30 @@ unit:
         total: 5
 
         coverage:
+          common/io/client: full
+          common/io/session: full
           common/io/tls/client: full
           common/io/tls/session: full
           common/io/socket/client: full
           common/io/socket/common: full
           common/io/socket/session: full
 
+        include:
+          - common/io/fdRead
+          - common/io/read
+
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: io-http
-        total: 6
+        total: 5
 
         coverage:
-          common/io/http/cache: full
           common/io/http/client: full
           common/io/http/common: full
           common/io/http/header: full
           common/io/http/query: full
+          common/io/http/request: full
+          common/io/http/response: full
+          common/io/http/session: full
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: compress
@@ -293,6 +309,7 @@ unit:
           common/crypto/cipherBlock: full
           common/crypto/common: full
           common/crypto/hash: full
+          common/crypto/md5.vendor: full
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: exec
@@ -403,6 +420,20 @@ unit:
 
     test:
       # ----------------------------------------------------------------------------------------------------------------------------
+      - name: azure
+        total: 3
+
+        coverage:
+          storage/azure/read: full
+          storage/azure/storage: full
+          storage/azure/write: full
+          storage/helper: full
+
+        include:
+          - storage/storage
+          - storage/write
+
+      # ----------------------------------------------------------------------------------------------------------------------------
       - name: cifs
         total: 1
 
@@ -458,7 +489,7 @@ unit:
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: s3
-        total: 3
+        total: 2
 
         coverage:
           storage/s3/read: full
@@ -476,7 +507,7 @@ unit:
     test:
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: protocol
-        total: 9
+        total: 10
         containerReq: true
         binReq: true
 
@@ -487,6 +518,9 @@ unit:
           protocol/parallel: full
           protocol/parallelJob: full
           protocol/server: full
+
+        include:
+          - common/exec
 
   # ********************************************************************************************************************************
   - name: info
@@ -548,7 +582,7 @@ unit:
     test:
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: archive-common
-        total: 8
+        total: 9
 
         coverage:
           command/archive/common: full
@@ -627,7 +661,7 @@ unit:
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: expire
-        total: 9
+        total: 8
 
         coverage:
           command/expire/expire: full
@@ -703,6 +737,16 @@ unit:
           # future this will probably be rolled into a custom object store server implementation.
           - command/repo/create
 
+      # ----------------------------------------------------------------------------------------------------------------------------
+      - name: verify
+        total: 6
+        binReq: true
+
+        coverage:
+          command/verify/file: full
+          command/verify/protocol: full
+          command/verify/verify: fulll
+
 # **********************************************************************************************************************************
 # Integration tests
 #
@@ -742,7 +786,7 @@ integration:
     test:
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: all
-        total: 6
+        total: 1
 
 # **********************************************************************************************************************************
 # Performance tests
@@ -763,7 +807,7 @@ performance:
     test:
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: type
-        total: 3
+        total: 5
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: storage

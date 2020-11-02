@@ -1,17 +1,15 @@
 /***********************************************************************************************************************************
-TLS Session Internal
+Azure Storage File Write
 ***********************************************************************************************************************************/
-#ifndef COMMON_IO_TLS_SESSION_INTERN_H
-#define COMMON_IO_TLS_SESSION_INTERN_H
+#ifndef STORAGE_AZURE_WRITE_H
+#define STORAGE_AZURE_WRITE_H
 
-#include <openssl/ssl.h>
-
-#include "common/io/tls/session.h"
+#include "storage/azure/storage.intern.h"
+#include "storage/write.h"
 
 /***********************************************************************************************************************************
 Constructors
 ***********************************************************************************************************************************/
-// Only called by TLS client/server code
-TlsSession *tlsSessionNew(SSL *session, SocketSession *socketSession, TimeMSec timeout);
+StorageWrite *storageWriteAzureNew(StorageAzure *storage, const String *name, uint64_t fileId, size_t blockSize);
 
 #endif

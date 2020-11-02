@@ -65,7 +65,7 @@ cmdStanzaUpgrade(void)
         // Update backup
         if (pgControl.version != backupInfo.version || pgControl.systemId != backupInfo.systemId)
         {
-            infoBackupPgSet(infoBackup, pgControl.version, pgControl.systemId);
+            infoBackupPgSet(infoBackup, pgControl.version, pgControl.systemId, pgControl.catalogVersion);
             infoBackupUpgrade = true;
         }
 
@@ -92,7 +92,7 @@ cmdStanzaUpgrade(void)
         }
 
         if (!(infoArchiveUpgrade || infoBackupUpgrade))
-            LOG_INFO_FMT("stanza '%s' is already up to date", strPtr(cfgOptionStr(cfgOptStanza)));
+            LOG_INFO_FMT("stanza '%s' is already up to date", strZ(cfgOptionStr(cfgOptStanza)));
     }
     MEM_CONTEXT_TEMP_END();
 

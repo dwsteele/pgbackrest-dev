@@ -16,6 +16,8 @@ Defines for various Postgres paths and files
 ***********************************************************************************************************************************/
 #define PG_FILE_BACKUPLABEL                                         "backup_label"
 #define PG_FILE_BACKUPLABELOLD                                      "backup_label.old"
+#define PG_FILE_BACKUPMANIFEST                                      "backup_manifest"
+#define PG_FILE_BACKUPMANIFEST_TMP                                  "backup_manifest.tmp"
 #define PG_FILE_PGCONTROL                                           "pg_control"
 #define PG_FILE_PGFILENODEMAP                                       "pg_filenode.map"
 #define PG_FILE_PGINTERNALINIT                                      "pg_internal.init"
@@ -87,12 +89,27 @@ Segment size can only be changed at compile time and is not known to be well-tes
 #define PG_SEGMENT_PAGE_DEFAULT                                     (PG_SEGMENT_SIZE_DEFAULT / PG_PAGE_SIZE_DEFAULT)
 
 /***********************************************************************************************************************************
+WAL header size. It doesn't seem worth tracking the exact size of the WAL header across versions of PostgreSQL so just set it to
+something far larger needed but <= the minimum read size on just about any system.
+***********************************************************************************************************************************/
+#define PG_WAL_HEADER_SIZE                                          ((unsigned int)(512))
+
+/***********************************************************************************************************************************
+Define default wal segment size
+
+Before PostgreSQL 11 WAL segment size could only be changed at compile time and is not known to be well-tested, so only the default
+WAL segment size is supported for versions below 11.
+***********************************************************************************************************************************/
+#define PG_WAL_SEGMENT_SIZE_DEFAULT                                 ((unsigned int)(16 * 1024 * 1024))
+
+/***********************************************************************************************************************************
 PostgreSQL Control File Info
 ***********************************************************************************************************************************/
 typedef struct PgControl
 {
     unsigned int version;
     uint64_t systemId;
+    unsigned int catalogVersion;
 
     unsigned int pageSize;
     unsigned int walSegmentSize;
@@ -106,15 +123,13 @@ PostgreSQL WAL Info
 typedef struct PgWal
 {
     unsigned int version;
+    unsigned int size;
     uint64_t systemId;
 } PgWal;
 
 /***********************************************************************************************************************************
 Functions
 ***********************************************************************************************************************************/
-// Get the catalog version for a PostgreSQL version
-uint32_t pgCatalogVersion(unsigned int pgVersion);
-
 // Get info from pg_control
 PgControl pgControlFromFile(const Storage *storage);
 PgControl pgControlFromBuffer(const Buffer *controlFile);
@@ -127,18 +142,19 @@ unsigned int pgVersionFromStr(const String *version);
 String *pgVersionToStr(unsigned int version);
 
 // Get info from WAL header
-PgWal pgWalFromFile(const String *walFile);
+PgWal pgWalFromFile(const String *walFile, const Storage *storage);
 PgWal pgWalFromBuffer(const Buffer *walBuffer);
 
 // Get the tablespace identifier used to distinguish versions in a tablespace directory, e.g. PG_9.0_201008051
-String *pgTablespaceId(unsigned int pgVersion);
+String *pgTablespaceId(unsigned int pgVersion, unsigned int pgCatalogVersion);
 
 // Convert a string to an lsn and vice versa
 uint64_t pgLsnFromStr(const String *lsn);
 String *pgLsnToStr(uint64_t lsn);
 
-// Convert a timeline and lsn to a wal segment
+// Convert a timeline and lsn to a wal segment and vice versa
 String *pgLsnToWalSegment(uint32_t timeline, uint64_t lsn, unsigned int walSegmentSize);
+uint64_t pgLsnFromWalSegment(const String *walSegment, unsigned int walSegmentSize);
 
 // Convert a timeline and lsn range to a list of wal segments
 StringList *pgLsnRangeToWalSegmentList(
@@ -162,6 +178,9 @@ const String *pgXactPath(unsigned int pgVersion);
 Test Functions
 ***********************************************************************************************************************************/
 #ifdef DEBUG
+    // Get the catalog version for a PostgreSQL version for testing
+    unsigned int pgCatalogTestVersion(unsigned int pgVersion);
+
     // Create pg_control for testing
     Buffer *pgControlTestToBuffer(PgControl pgControl);
 

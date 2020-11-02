@@ -22,7 +22,7 @@ Helper functions (to assist with testing)
 static unsigned int
 checkManifest(void)
 {
-    FUNCTION_LOG_VOID(logLevelTrace);
+    FUNCTION_LOG_VOID(logLevelDebug);
 
     // Return the actual number of pg* defined
     unsigned int result = 0;
@@ -30,13 +30,13 @@ checkManifest(void)
     MEM_CONTEXT_TEMP_BEGIN()
     {
         // Loop through all defined databases and attempt to build a manifest
-        for (unsigned int pgIdx = 0; pgIdx < cfgOptionIndexTotal(cfgOptPgPath); pgIdx++)
+        for (unsigned int pgIdx = 0; pgIdx < cfgOptionGroupIdxTotal(cfgOptGrpPg); pgIdx++)
         {
-            if (cfgOptionTest(cfgOptPgHost + pgIdx) || cfgOptionTest(cfgOptPgPath + pgIdx))
+            if (cfgOptionGroupIdxTest(cfgOptGrpPg, pgIdx))
             {
                 result++;
                 // ??? Placeholder for manifest build
-                storageListP(storagePgId(pgIdx + 1), varStr(cfgOption(cfgOptPgPath + pgIdx)));
+                storageListP(storagePgIdx(pgIdx), varStr(cfgOption(cfgOptPgPath + pgIdx)));
             }
         }
     }
@@ -70,10 +70,10 @@ checkStandby(const DbGetResult dbGroup, unsigned int pgPathDefinedTotal)
         }
 
         // Validate the standby database config
-        PgControl pgControl = pgControlFromFile(storagePgId(dbGroup.standbyId));
+        PgControl pgControl = pgControlFromFile(storagePgIdx(dbGroup.standbyIdx));
 
         // Check the user configured path and version against the database
-        checkDbConfig(pgControl.version, dbGroup.standbyId, dbGroup.standby, true);
+        checkDbConfig(pgControl.version, dbGroup.standbyIdx, dbGroup.standby, true);
 
         // Get the repo storage in case it is remote and encryption settings need to be pulled down (performed here for testing)
         storageRepo();
@@ -108,10 +108,10 @@ checkPrimary(const DbGetResult dbGroup)
     if (dbGroup.primary != NULL)
     {
         // Validate the primary database config
-        PgControl pgControl = pgControlFromFile(storagePgId(dbGroup.primaryId));
+        PgControl pgControl = pgControlFromFile(storagePgIdx(dbGroup.primaryIdx));
 
         // Check the user configured path and version against the database
-        checkDbConfig(pgControl.version, dbGroup.primaryId, dbGroup.primary, false);
+        checkDbConfig(pgControl.version, dbGroup.primaryIdx, dbGroup.primary, false);
 
         // Get the repo storage in case it is remote and encryption settings need to be pulled down (performed here for testing)
         storageRepo();
@@ -136,9 +136,8 @@ checkPrimary(const DbGetResult dbGroup)
         const String *walSegmentFile = walSegmentFind(storageRepo(), archiveId, walSegment, archiveTimeout);
 
         LOG_INFO_FMT(
-            "WAL segment %s successfully archived to '%s'", strPtr(walSegment),
-            strPtr(storagePathP(storageRepo(), strNewFmt(STORAGE_REPO_ARCHIVE "/%s/%s", strPtr(archiveId),
-            strPtr(walSegmentFile)))));
+            "WAL segment %s successfully archived to '%s'", strZ(walSegment),
+            strZ(storagePathP(storageRepo(), strNewFmt(STORAGE_REPO_ARCHIVE "/%s/%s", strZ(archiveId), strZ(walSegmentFile)))));
     }
 
     FUNCTION_LOG_RETURN_VOID();

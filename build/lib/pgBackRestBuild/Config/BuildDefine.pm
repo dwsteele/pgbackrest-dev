@@ -31,7 +31,6 @@ use constant BLDLCL_FILE_DEFINE                                     => 'define';
 use constant BLDLCL_DATA_COMMAND                                    => '01-dataCommand';
 use constant BLDLCL_DATA_OPTION                                     => '02-dataOption';
 
-use constant BLDLCL_ENUM_COMMAND                                    => '01-enumCommand';
 use constant BLDLCL_ENUM_OPTION_TYPE                                => '02-enumOptionType';
 use constant BLDLCL_ENUM_OPTION                                     => '03-enumOption';
 
@@ -50,12 +49,6 @@ my $rhBuild =
 
             &BLD_ENUM =>
             {
-                &BLDLCL_ENUM_COMMAND =>
-                {
-                    &BLD_SUMMARY => 'Command define',
-                    &BLD_NAME => 'ConfigDefineCommand',
-                },
-
                 &BLDLCL_ENUM_OPTION_TYPE =>
                 {
                     &BLD_SUMMARY => 'Option type define',
@@ -88,12 +81,10 @@ my $rhBuild =
 ####################################################################################################################################
 # Generate enum names
 ####################################################################################################################################
-sub buildConfigDefineCommandEnum
+sub buildConfigCommandEnum
 {
-    return bldEnum('cfgDefCmd', shift)
+    return bldEnum('cfgCmd', shift)
 }
-
-push @EXPORT, qw(buildConfigDefineCommandEnum);
 
 sub buildConfigDefineOptionTypeEnum
 {
@@ -273,15 +264,6 @@ sub renderOptional
         $bSingleLine = true;
     }
 
-    if (defined($rhOptional->{&CFGDEF_PREFIX}))
-    {
-        $strBuildSourceOptional .=
-            (defined($strBuildSourceOptional) && !$bSingleLine ? "\n" : '') .
-            "${strIndent}            CFGDEFDATA_OPTION_OPTIONAL_PREFIX(\"" . $rhOptional->{&CFGDEF_PREFIX} . "\")\n";
-
-        $bSingleLine = true;
-    }
-
     # Output alternate name
     if (!$bCommand && defined($rhOptionHelp->{&CONFIG_HELP_NAME_ALT}))
     {
@@ -364,8 +346,6 @@ sub buildConfigDefine
 
     # Build command constants and data
     #-------------------------------------------------------------------------------------------------------------------------------
-    my $rhEnum = $rhBuild->{&BLD_FILE}{&BLDLCL_FILE_DEFINE}{&BLD_ENUM}{&BLDLCL_ENUM_COMMAND};
-
     my $strBuildSource =
         "static ConfigDefineCommandData configDefineCommandData[] = CFGDEFDATA_COMMAND_LIST\n" .
         "(";
@@ -375,17 +355,12 @@ sub buildConfigDefine
         # Get command help
         my $hCommandHelp = $hConfigHelp->{&CONFIG_HELP_COMMAND}{$strCommand};
 
-        # Build C enum
-        my $strCommandEnum = buildConfigDefineCommandEnum($strCommand);
-        push(@{$rhEnum->{&BLD_LIST}}, $strCommandEnum);
-
         # Build command data
         $strBuildSource .=
             "\n" .
             "    CFGDEFDATA_COMMAND\n" .
             "    (\n" .
             "        CFGDEFDATA_COMMAND_NAME(\"${strCommand}\")\n";
-
 
         # Output help
         if (defined($hCommandHelp))
@@ -423,7 +398,7 @@ sub buildConfigDefine
 
     # Build option type constants
     #-------------------------------------------------------------------------------------------------------------------------------
-    $rhEnum = $rhBuild->{&BLD_FILE}{&BLDLCL_FILE_DEFINE}{&BLD_ENUM}{&BLDLCL_ENUM_OPTION_TYPE};
+    my $rhEnum = $rhBuild->{&BLD_FILE}{&BLDLCL_FILE_DEFINE}{&BLD_ENUM}{&BLDLCL_ENUM_OPTION_TYPE};
 
     foreach my $strOptionType (cfgDefineOptionTypeList())
     {
@@ -521,7 +496,7 @@ sub buildConfigDefine
             if (defined($rhOption->{&CFGDEF_COMMAND}{$strCommand}))
             {
                 $strBuildSource .=
-                    "            CFGDEFDATA_OPTION_COMMAND(" . buildConfigDefineCommandEnum($strCommand) . ")\n";
+                    "            CFGDEFDATA_OPTION_COMMAND(" . buildConfigCommandEnum($strCommand) . ")\n";
             }
         }
 
@@ -549,7 +524,7 @@ sub buildConfigDefine
                         (defined($strBuildSourceOptional) ? "\n" : '') .
                         "            CFGDEFDATA_OPTION_OPTIONAL_COMMAND_OVERRIDE\n" .
                         "            (\n" .
-                        "                CFGDEFDATA_OPTION_OPTIONAL_COMMAND(" . buildConfigDefineCommandEnum($strCommand) . ")\n" .
+                        "                CFGDEFDATA_OPTION_OPTIONAL_COMMAND(" . buildConfigCommandEnum($strCommand) . ")\n" .
                         "\n" .
                         $strBuildSourceOptionalCommand .
                         "            )\n";

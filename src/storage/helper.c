@@ -12,6 +12,7 @@ Storage Helper
 #include "config/define.h"
 #include "config/config.h"
 #include "protocol/helper.h"
+#include "storage/azure/storage.h"
 #include "storage/cifs/storage.h"
 #include "storage/posix/storage.h"
 #include "storage/remote/storage.h"
@@ -163,26 +164,26 @@ storageLocalWrite(void)
 Get pg storage for the specified host id
 ***********************************************************************************************************************************/
 static Storage *
-storagePgGet(unsigned int hostId, bool write)
+storagePgGet(unsigned int pgIdx, bool write)
 {
     FUNCTION_TEST_BEGIN();
-        FUNCTION_TEST_PARAM(UINT, hostId);
+        FUNCTION_TEST_PARAM(UINT, pgIdx);
         FUNCTION_TEST_PARAM(BOOL, write);
     FUNCTION_TEST_END();
 
     Storage *result = NULL;
 
     // Use remote storage
-    if (!pgIsLocal(hostId))
+    if (!pgIsLocal(pgIdx))
     {
         result = storageRemoteNew(
             STORAGE_MODE_FILE_DEFAULT, STORAGE_MODE_PATH_DEFAULT, write, NULL,
-            protocolRemoteGet(protocolStorageTypePg, hostId), cfgOptionUInt(cfgOptCompressLevelNetwork));
+            protocolRemoteGet(protocolStorageTypePg, pgIdx), cfgOptionUInt(cfgOptCompressLevelNetwork));
     }
     // Use Posix storage
     else
     {
-        result = storagePosixNewP(cfgOptionStr(cfgOptPgPath + hostId - 1), .write = write);
+        result = storagePosixNewP(cfgOptionStr(cfgOptPgPath + pgIdx), .write = write);
     }
 
     FUNCTION_TEST_RETURN(result);
@@ -190,13 +191,13 @@ storagePgGet(unsigned int hostId, bool write)
 
 /**********************************************************************************************************************************/
 const Storage *
-storagePgId(unsigned int hostId)
+storagePgIdx(unsigned int pgIdx)
 {
     FUNCTION_TEST_BEGIN();
-        FUNCTION_TEST_PARAM(UINT, hostId);
+        FUNCTION_TEST_PARAM(UINT, pgIdx);
     FUNCTION_TEST_END();
 
-    if (storageHelper.storagePg == NULL || storageHelper.storagePg[hostId - 1] == NULL)
+    if (storageHelper.storagePg == NULL || storageHelper.storagePg[pgIdx] == NULL)
     {
         storageHelperInit();
 
@@ -205,33 +206,33 @@ storagePgId(unsigned int hostId)
             if (storageHelper.storagePg == NULL)
                 storageHelper.storagePg = memNewPtrArray(cfgDefOptionIndexTotal(cfgDefOptPgPath));
 
-            storageHelper.storagePg[hostId - 1] = storagePgGet(hostId, false);
+            storageHelper.storagePg[pgIdx] = storagePgGet(pgIdx, false);
         }
         MEM_CONTEXT_END();
     }
 
-    FUNCTION_TEST_RETURN(storageHelper.storagePg[hostId - 1]);
+    FUNCTION_TEST_RETURN(storageHelper.storagePg[pgIdx]);
 }
 
 const Storage *
 storagePg(void)
 {
     FUNCTION_TEST_VOID();
-    FUNCTION_TEST_RETURN(storagePgId(cfgOptionTest(cfgOptHostId) ? cfgOptionUInt(cfgOptHostId) : 1));
+    FUNCTION_TEST_RETURN(storagePgIdx(cfgOptionTest(cfgOptHostId) ? cfgOptionUInt(cfgOptHostId) - 1 : 0));
 }
 
 const Storage *
-storagePgIdWrite(unsigned int hostId)
+storagePgIdxWrite(unsigned int pgIdx)
 {
     FUNCTION_TEST_BEGIN();
-        FUNCTION_TEST_PARAM(UINT, hostId);
+        FUNCTION_TEST_PARAM(UINT, pgIdx);
     FUNCTION_TEST_END();
 
     // Writes not allowed in dry-run mode
     if (!storageHelper.dryRunInit || storageHelper.dryRun)
         THROW(AssertError, WRITABLE_WHILE_DRYRUN);
 
-    if (storageHelper.storagePgWrite == NULL || storageHelper.storagePgWrite[hostId - 1] == NULL)
+    if (storageHelper.storagePgWrite == NULL || storageHelper.storagePgWrite[pgIdx] == NULL)
     {
         storageHelperInit();
 
@@ -240,19 +241,19 @@ storagePgIdWrite(unsigned int hostId)
             if (storageHelper.storagePgWrite == NULL)
                 storageHelper.storagePgWrite = memNewPtrArray(cfgDefOptionIndexTotal(cfgDefOptPgPath));
 
-            storageHelper.storagePgWrite[hostId - 1] = storagePgGet(hostId, true);
+            storageHelper.storagePgWrite[pgIdx] = storagePgGet(pgIdx, true);
         }
         MEM_CONTEXT_END();
     }
 
-    FUNCTION_TEST_RETURN(storageHelper.storagePgWrite[hostId - 1]);
+    FUNCTION_TEST_RETURN(storageHelper.storagePgWrite[pgIdx]);
 }
 
 const Storage *
 storagePgWrite(void)
 {
     FUNCTION_TEST_VOID();
-    FUNCTION_TEST_RETURN(storagePgIdWrite(cfgOptionTest(cfgOptHostId) ? cfgOptionUInt(cfgOptHostId) : 1));
+    FUNCTION_TEST_RETURN(storagePgIdxWrite(cfgOptionTest(cfgOptHostId) ? cfgOptionUInt(cfgOptHostId) - 1 : 0));
 }
 
 /***********************************************************************************************************************************
@@ -294,7 +295,7 @@ storageRepoPathExpression(const String *expression, const String *path)
     {
         // Construct the base path
         if (storageHelper.stanza != NULL)
-            result = strNewFmt(STORAGE_PATH_ARCHIVE "/%s", strPtr(storageHelper.stanza));
+            result = strNewFmt(STORAGE_PATH_ARCHIVE "/%s", strZ(storageHelper.stanza));
         else
             result = strNew(STORAGE_PATH_ARCHIVE);
 
@@ -305,25 +306,25 @@ storageRepoPathExpression(const String *expression, const String *path)
             String *file = strLstSize(pathSplit) == 2 ? strLstGet(pathSplit, 1) : NULL;
 
             if (file != NULL && regExpMatch(storageHelper.walRegExp, file))
-                strCatFmt(result, "/%s/%s/%s", strPtr(strLstGet(pathSplit, 0)), strPtr(strSubN(file, 0, 16)), strPtr(file));
+                strCatFmt(result, "/%s/%s/%s", strZ(strLstGet(pathSplit, 0)), strZ(strSubN(file, 0, 16)), strZ(file));
             else
-                strCatFmt(result, "/%s", strPtr(path));
+                strCatFmt(result, "/%s", strZ(path));
         }
     }
     else if (strEq(expression, STORAGE_REPO_BACKUP_STR))
     {
         // Construct the base path
         if (storageHelper.stanza != NULL)
-            result = strNewFmt(STORAGE_PATH_BACKUP "/%s", strPtr(storageHelper.stanza));
+            result = strNewFmt(STORAGE_PATH_BACKUP "/%s", strZ(storageHelper.stanza));
         else
             result = strNew(STORAGE_PATH_BACKUP);
 
         // Append subpath if provided
         if (path != NULL)
-            strCatFmt(result, "/%s", strPtr(path));
+            strCatFmt(result, "/%s", strZ(path));
     }
     else
-        THROW_FMT(AssertError, "invalid expression '%s'", strPtr(expression));
+        THROW_FMT(AssertError, "invalid expression '%s'", strZ(expression));
 
     FUNCTION_TEST_RETURN(result);
 }
@@ -348,22 +349,35 @@ storageRepoGet(const String *type, bool write)
     {
         result = storageRemoteNew(
             STORAGE_MODE_FILE_DEFAULT, STORAGE_MODE_PATH_DEFAULT, write, storageRepoPathExpression,
-            protocolRemoteGet(protocolStorageTypeRepo, 1), cfgOptionUInt(cfgOptCompressLevelNetwork));
+            protocolRemoteGet(protocolStorageTypeRepo, 0), cfgOptionUInt(cfgOptCompressLevelNetwork));
+    }
+    // Use Azure storage
+    else if (strEqZ(type, STORAGE_AZURE_TYPE))
+    {
+        result = storageAzureNew(
+            cfgOptionStr(cfgOptRepoPath), write, storageRepoPathExpression, cfgOptionStr(cfgOptRepoAzureContainer),
+            cfgOptionStr(cfgOptRepoAzureAccount),
+            strEqZ(cfgOptionStr(cfgOptRepoAzureKeyType), STORAGE_AZURE_KEY_TYPE_SHARED) ?
+                storageAzureKeyTypeShared : storageAzureKeyTypeSas,
+            cfgOptionStr(cfgOptRepoAzureKey), STORAGE_AZURE_BLOCKSIZE_MIN, cfgOptionStrNull(cfgOptRepoAzureHost),
+            cfgOptionStr(cfgOptRepoAzureEndpoint), cfgOptionUInt(cfgOptRepoAzurePort), ioTimeoutMs(),
+            cfgOptionBool(cfgOptRepoAzureVerifyTls), cfgOptionStrNull(cfgOptRepoAzureCaFile),
+            cfgOptionStrNull(cfgOptRepoAzureCaPath));
     }
     // Use CIFS storage
-    else if (strEqZ(type, STORAGE_TYPE_CIFS))
+    else if (strEqZ(type, STORAGE_CIFS_TYPE))
     {
         result = storageCifsNew(
             cfgOptionStr(cfgOptRepoPath), STORAGE_MODE_FILE_DEFAULT, STORAGE_MODE_PATH_DEFAULT, write, storageRepoPathExpression);
     }
     // Use Posix storage
-    else if (strEqZ(type, STORAGE_TYPE_POSIX))
+    else if (strEqZ(type, STORAGE_POSIX_TYPE))
     {
         result = storagePosixNewP(
             cfgOptionStr(cfgOptRepoPath), .write = write, .pathExpressionFunction = storageRepoPathExpression);
     }
     // Use S3 storage
-    else if (strEqZ(type, STORAGE_TYPE_S3))
+    else if (strEqZ(type, STORAGE_S3_TYPE))
     {
         // Set the default port
         unsigned int port = cfgOptionUInt(cfgOptRepoS3Port);
@@ -379,12 +393,14 @@ storageRepoGet(const String *type, bool write)
         result = storageS3New(
             cfgOptionStr(cfgOptRepoPath), write, storageRepoPathExpression, cfgOptionStr(cfgOptRepoS3Bucket), endPoint,
             strEqZ(cfgOptionStr(cfgOptRepoS3UriStyle), STORAGE_S3_URI_STYLE_HOST) ? storageS3UriStyleHost : storageS3UriStylePath,
-            cfgOptionStr(cfgOptRepoS3Region), cfgOptionStr(cfgOptRepoS3Key), cfgOptionStr(cfgOptRepoS3KeySecret),
-            cfgOptionStrNull(cfgOptRepoS3Token), STORAGE_S3_PARTSIZE_MIN, STORAGE_S3_DELETE_MAX, host, port, ioTimeoutMs(),
+            cfgOptionStr(cfgOptRepoS3Region),
+            strEqZ(cfgOptionStr(cfgOptRepoS3KeyType), STORAGE_S3_KEY_TYPE_SHARED) ? storageS3KeyTypeShared : storageS3KeyTypeAuto,
+            cfgOptionStrNull(cfgOptRepoS3Key), cfgOptionStrNull(cfgOptRepoS3KeySecret), cfgOptionStrNull(cfgOptRepoS3Token),
+            cfgOptionStrNull(cfgOptRepoS3Role), STORAGE_S3_PARTSIZE_MIN, host, port, ioTimeoutMs(),
             cfgOptionBool(cfgOptRepoS3VerifyTls), cfgOptionStrNull(cfgOptRepoS3CaFile), cfgOptionStrNull(cfgOptRepoS3CaPath));
     }
     else
-        THROW_FMT(AssertError, "invalid storage type '%s'", strPtr(type));
+        THROW_FMT(AssertError, "invalid storage type '%s'", strZ(type));
 
     FUNCTION_TEST_RETURN(result);
 }
@@ -455,19 +471,19 @@ storageSpoolPathExpression(const String *expression, const String *path)
     if (strEqZ(expression, STORAGE_SPOOL_ARCHIVE_IN))
     {
         if (path == NULL)
-            result = strNewFmt(STORAGE_PATH_ARCHIVE "/%s/in", strPtr(storageHelper.stanza));
+            result = strNewFmt(STORAGE_PATH_ARCHIVE "/%s/in", strZ(storageHelper.stanza));
         else
-            result = strNewFmt(STORAGE_PATH_ARCHIVE "/%s/in/%s", strPtr(storageHelper.stanza), strPtr(path));
+            result = strNewFmt(STORAGE_PATH_ARCHIVE "/%s/in/%s", strZ(storageHelper.stanza), strZ(path));
     }
     else if (strEqZ(expression, STORAGE_SPOOL_ARCHIVE_OUT))
     {
         if (path == NULL)
-            result = strNewFmt(STORAGE_PATH_ARCHIVE "/%s/out", strPtr(storageHelper.stanza));
+            result = strNewFmt(STORAGE_PATH_ARCHIVE "/%s/out", strZ(storageHelper.stanza));
         else
-            result = strNewFmt(STORAGE_PATH_ARCHIVE "/%s/out/%s", strPtr(storageHelper.stanza), strPtr(path));
+            result = strNewFmt(STORAGE_PATH_ARCHIVE "/%s/out/%s", strZ(storageHelper.stanza), strZ(path));
     }
     else
-        THROW_FMT(AssertError, "invalid expression '%s'", strPtr(expression));
+        THROW_FMT(AssertError, "invalid expression '%s'", strZ(expression));
 
     FUNCTION_TEST_RETURN(result);
 }

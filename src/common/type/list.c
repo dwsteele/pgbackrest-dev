@@ -22,7 +22,8 @@ struct List
     unsigned int listSize;
     unsigned int listSizeMax;
     SortOrder sortOrder;
-    unsigned char *list;
+    unsigned char *listAlloc;                                       // Pointer to memory allocated for the list
+    unsigned char *list;                                            // Pointer to the current start of the list
     ListComparator *comparator;
 };
 
@@ -31,17 +32,7 @@ OBJECT_DEFINE_FREE(LIST);
 
 /**********************************************************************************************************************************/
 List *
-lstNew(size_t itemSize)
-{
-    FUNCTION_TEST_BEGIN();
-        FUNCTION_TEST_PARAM(SIZE, itemSize);
-    FUNCTION_TEST_END();
-
-    FUNCTION_TEST_RETURN(lstNewP(itemSize));
-}
-
-List *
-lstNewParam(size_t itemSize, ListParam param)
+lstNew(size_t itemSize, ListParam param)
 {
     FUNCTION_TEST_BEGIN();
         FUNCTION_TEST_PARAM(SIZE, itemSize);
@@ -153,6 +144,23 @@ lstGet(const List *this, unsigned int listIdx)
     FUNCTION_TEST_RETURN(this->list + (listIdx * this->itemSize));
 }
 
+void *
+lstGetLast(const List *this)
+{
+    FUNCTION_TEST_BEGIN();
+        FUNCTION_TEST_PARAM(LIST, this);
+    FUNCTION_TEST_END();
+
+    ASSERT(this != NULL);
+
+    // Ensure there are items in the list
+    if (this->listSize == 0)
+        THROW(AssertError, "cannot get last from list with no values");
+
+    // Return pointer to list item
+    FUNCTION_TEST_RETURN(lstGet(this, this->listSize - 1));
+}
+
 /**********************************************************************************************************************************/
 bool
 lstExists(const List *this, const void *item)
@@ -178,6 +186,7 @@ lstFind(const List *this, const void *item)
     FUNCTION_TEST_END();
 
     ASSERT(this != NULL);
+    ASSERT(this->comparator != NULL);
     ASSERT(item != NULL);
 
     if (this->sortOrder == sortOrderAsc)
@@ -286,13 +295,24 @@ lstInsert(List *this, unsigned int listIdx, const void *item)
                 this->listSizeMax *= 2;
                 this->list = memResize(this->list, this->listSizeMax * this->itemSize);
             }
+
+            this->listAlloc = this->list;
         }
         MEM_CONTEXT_END();
     }
+    // Else if there is space before the beginning of the list then move the list down
+    else if (
+        (this->list != this->listAlloc) &&
+        (this->listSize + ((uintptr_t)(this->list - this->listAlloc) / this->itemSize) == this->listSizeMax))
+    {
+        memmove(this->listAlloc, this->list, this->listSize * this->itemSize);
+        this->list = this->listAlloc;
+    }
 
-    // If not inserting at the end then move items down to make space
+    // Calculate the position where this item will be copied
     void *itemPtr = this->list + (listIdx * this->itemSize);
 
+    // If not inserting at the end then move items down to make space
     if (listIdx != lstSize(this))
         memmove(this->list + ((listIdx + 1) * this->itemSize), itemPtr, (lstSize(this) - listIdx) * this->itemSize);
 
@@ -310,17 +330,27 @@ lstRemoveIdx(List *this, unsigned int listIdx)
 {
     FUNCTION_TEST_BEGIN();
         FUNCTION_TEST_PARAM(LIST, this);
+        FUNCTION_TEST_PARAM(UINT, listIdx);
     FUNCTION_TEST_END();
 
     ASSERT(this != NULL);
     ASSERT(listIdx <= lstSize(this));
 
-    // Remove the item by moving the items after it down
+    // Decrement the list size
     this->listSize--;
 
-    memmove(
-        this->list + (listIdx * this->itemSize), this->list + ((listIdx + 1) * this->itemSize),
-        (lstSize(this) - listIdx) * this->itemSize);
+    // If this is the first item then move the list pointer up to avoid moving all the items
+    if (listIdx == 0)
+    {
+        this->list += this->itemSize;
+    }
+    // Else remove the item by moving the items after it down
+    else
+    {
+        memmove(
+            this->list + (listIdx * this->itemSize), this->list + ((listIdx + 1) * this->itemSize),
+            (lstSize(this) - listIdx) * this->itemSize);
+    }
 
     FUNCTION_TEST_RETURN(this);
 }
@@ -345,6 +375,21 @@ lstRemove(List *this, const void *item)
     }
 
     FUNCTION_TEST_RETURN(false);
+}
+
+List *
+lstRemoveLast(List *this)
+{
+    FUNCTION_TEST_BEGIN();
+        FUNCTION_TEST_PARAM(LIST, this);
+    FUNCTION_TEST_END();
+
+    ASSERT(this != NULL);
+
+    if (this->listSize == 0)
+        THROW(AssertError, "cannot remove last from list with no values");
+
+    FUNCTION_TEST_RETURN(lstRemoveIdx(this, this->listSize - 1));
 }
 
 /**********************************************************************************************************************************/
@@ -383,6 +428,7 @@ lstSort(List *this, SortOrder sortOrder)
     FUNCTION_TEST_END();
 
     ASSERT(this != NULL);
+    ASSERT(this->comparator != NULL);
 
     switch (sortOrder)
     {

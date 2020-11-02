@@ -29,6 +29,7 @@ use pgBackRestTest::Common::StorageBase;
 use pgBackRestTest::Common::StorageRepo;
 use pgBackRestTest::Env::ArchiveInfo;
 use pgBackRestTest::Env::BackupInfo;
+use pgBackRestTest::Env::Host::HostAzureTest;
 use pgBackRestTest::Env::Host::HostBaseTest;
 use pgBackRestTest::Env::Host::HostS3Test;
 use pgBackRestTest::Env::Manifest;
@@ -73,6 +74,8 @@ use constant CFGOPTVAL_BACKUP_TYPE_INCR                             => 'incr';
 use constant CFGOPTVAL_REPO_CIPHER_TYPE_AES_256_CBC                 => 'aes-256-cbc';
     push @EXPORT, qw(CFGOPTVAL_REPO_CIPHER_TYPE_AES_256_CBC);
 
+use constant AZURE                                                  => 'azure';
+    push @EXPORT, qw(AZURE);
 use constant CIFS                                                   => 'cifs';
     push @EXPORT, qw(CIFS);
 use constant POSIX                                                  => STORAGE_POSIX;
@@ -490,9 +493,9 @@ sub backupEnd
     {
         my $oHostGroup = hostGroupGet();
 
-        if (defined($oHostGroup->hostGet(HOST_DB_MASTER, true)))
+        if (defined($oHostGroup->hostGet(HOST_DB_PRIMARY, true)))
         {
-            $self->{oLogTest}->supplementalAdd($oHostGroup->hostGet(HOST_DB_MASTER)->testPath() . '/' . PROJECT_CONF);
+            $self->{oLogTest}->supplementalAdd($oHostGroup->hostGet(HOST_DB_PRIMARY)->testPath() . '/' . PROJECT_CONF);
         }
 
         if (defined($oHostGroup->hostGet(HOST_DB_STANDBY, true)))
@@ -1137,7 +1140,7 @@ sub configCreate
     my $strStanza = $self->stanza();
     my $oHostGroup = hostGroupGet();
     my $oHostBackup = $oHostGroup->hostGet($self->backupDestination());
-    my $oHostDbMaster = $oHostGroup->hostGet(HOST_DB_MASTER);
+    my $oHostDbPrimary = $oHostGroup->hostGet(HOST_DB_PRIMARY);
     my $oHostDbStandby = $oHostGroup->hostGet(HOST_DB_STANDBY, true);
 
     my $bArchiveAsync = defined($$oParam{bArchiveAsync}) ? $$oParam{bArchiveAsync} : false;
@@ -1162,7 +1165,7 @@ sub configCreate
     $oParamHash{&CFGDEF_SECTION_GLOBAL}{'compress-level'} = 3;
 
     # Only set network compress level if there is more than one host
-    if ($oHostBackup != $oHostDbMaster)
+    if ($oHostBackup != $oHostDbPrimary)
     {
         $oParamHash{&CFGDEF_SECTION_GLOBAL}{'compress-level-network'} = 1;
     }
@@ -1193,6 +1196,15 @@ sub configCreate
             $oParamHash{&CFGDEF_SECTION_GLOBAL}{'repo1-s3-region'} = HOST_S3_REGION;
             $oParamHash{&CFGDEF_SECTION_GLOBAL}{'repo1-s3-verify-ssl'} = 'n';
         }
+        elsif ($oParam->{strStorage} eq AZURE)
+        {
+            $oParamHash{&CFGDEF_SECTION_GLOBAL}{'repo1-type'} = AZURE;
+            $oParamHash{&CFGDEF_SECTION_GLOBAL}{'repo1-azure-account'} = HOST_AZURE_ACCOUNT;
+            $oParamHash{&CFGDEF_SECTION_GLOBAL}{'repo1-azure-key'} = HOST_AZURE_KEY;
+            $oParamHash{&CFGDEF_SECTION_GLOBAL}{'repo1-azure-container'} = HOST_AZURE_CONTAINER;
+            $oParamHash{&CFGDEF_SECTION_GLOBAL}{'repo1-azure-host'} = HOST_AZURE;
+            $oParamHash{&CFGDEF_SECTION_GLOBAL}{'repo1-azure-verify-tls'} = 'n';
+        }
 
         if (defined($$oParam{bHardlink}) && $$oParam{bHardlink})
         {
@@ -1210,13 +1222,13 @@ sub configCreate
     # If this is the backup host
     if ($self->isHostBackup())
     {
-        my $oHostDb1 = $oHostDbMaster;
+        my $oHostDb1 = $oHostDbPrimary;
         my $oHostDb2 = $oHostDbStandby;
 
         if ($self->nameTest(HOST_DB_STANDBY))
         {
             $oHostDb1 = $oHostDbStandby;
-            $oHostDb2 = $oHostDbMaster;
+            $oHostDb2 = $oHostDbPrimary;
         }
 
         if ($self->nameTest(HOST_BACKUP))
@@ -2171,9 +2183,9 @@ sub hardLink {return shift->{bHardLink}}
 sub hasLink {storageRepo()->capability(STORAGE_CAPABILITY_LINK)}
 sub isFS {storageRepo()->type() ne STORAGE_OBJECT}
 sub isHostBackup {my $self = shift; return $self->backupDestination() eq $self->nameGet()}
-sub isHostDbMaster {return shift->nameGet() eq HOST_DB_MASTER}
+sub isHostDbPrimary {return shift->nameGet() eq HOST_DB_PRIMARY}
 sub isHostDbStandby {return shift->nameGet() eq HOST_DB_STANDBY}
-sub isHostDb {my $self = shift; return $self->isHostDbMaster() || $self->isHostDbStandby()}
+sub isHostDb {my $self = shift; return $self->isHostDbPrimary() || $self->isHostDbStandby()}
 sub lockPath {return shift->{strLockPath}}
 sub logPath {return shift->{strLogPath}}
 sub repoArchivePath {return shift->repoSubPath('archive', shift)}

@@ -22,8 +22,8 @@ storagePosixInfoXAttrSet(const String *path, const String *name, const Buffer *v
     ASSERT(value != NULL);
 
     THROW_ON_SYS_ERROR_FMT(
-        lsetxattr(strPtr(path), strPtr(name), bufPtrConst(value), bufSize(value), 0), FileWriteError,
-        "unable to set xattr '%s' on '%s'", strPtr(name), strPtr(path));
+        lsetxattr(strZ(path), strZ(name), bufPtrConst(value), bufSize(value), 0), FileWriteError,
+        "unable to set xattr '%s' on '%s'", strZ(name), strZ(path));
 
     FUNCTION_HARNESS_RESULT_VOID();
 }

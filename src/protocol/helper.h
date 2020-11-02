@@ -35,6 +35,9 @@ void protocolKeepAlive(void);
 // Local protocol client
 ProtocolClient *protocolLocalGet(ProtocolStorageType protocolStorageType, unsigned int hostId, unsigned int protocolId);
 
+// Free (shutdown) a local
+void protocolLocalFree(unsigned int protocolId);
+
 // Remote protocol client
 ProtocolClient *protocolRemoteGet(ProtocolStorageType protocolStorageType, unsigned int hostId);
 
@@ -45,7 +48,7 @@ void protocolRemoteFree(unsigned int hostId);
 Getters/Setters
 ***********************************************************************************************************************************/
 // Is pg local?
-bool pgIsLocal(unsigned int hostId);
+bool pgIsLocal(unsigned int pgIdx);
 
 // Error if PostgreSQL is not local, i.e. pg-host is set
 void pgIsLocalVerify(void);

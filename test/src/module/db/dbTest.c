@@ -6,8 +6,8 @@ Test Database
 #include "common/harnessLog.h"
 #include "common/harnessPq.h"
 
-#include "common/io/handleRead.h"
-#include "common/io/handleWrite.h"
+#include "common/io/fdRead.h"
+#include "common/io/fdWrite.h"
 #include "common/type/json.h"
 
 /***********************************************************************************************************************************
@@ -63,9 +63,9 @@ testRun(void)
         {
             HARNESS_FORK_CHILD_BEGIN(0, true)
             {
-                IoRead *read = ioHandleReadNew(strNew("client read"), HARNESS_FORK_CHILD_READ(), 2000);
+                IoRead *read = ioFdReadNew(strNew("client read"), HARNESS_FORK_CHILD_READ(), 2000);
                 ioReadOpen(read);
-                IoWrite *write = ioHandleWriteNew(strNew("client write"), HARNESS_FORK_CHILD_WRITE());
+                IoWrite *write = ioFdWriteNew(strNew("client write"), HARNESS_FORK_CHILD_WRITE(), 2000);
                 ioWriteOpen(write);
 
                 // Set options
@@ -100,16 +100,16 @@ testRun(void)
 
                 TEST_ASSIGN(server, protocolServerNew(strNew("db test server"), strNew("test"), read, write), "create server");
                 TEST_RESULT_VOID(protocolServerHandlerAdd(server, dbProtocol), "add handler");
-                TEST_RESULT_VOID(protocolServerProcess(server), "run process loop");
+                TEST_RESULT_VOID(protocolServerProcess(server, NULL), "run process loop");
                 TEST_RESULT_VOID(protocolServerFree(server), "free server");
             }
             HARNESS_FORK_CHILD_END();
 
             HARNESS_FORK_PARENT_BEGIN()
             {
-                IoRead *read = ioHandleReadNew(strNew("server read"), HARNESS_FORK_PARENT_READ_PROCESS(0), 2000);
+                IoRead *read = ioFdReadNew(strNew("server read"), HARNESS_FORK_PARENT_READ_PROCESS(0), 2000);
                 ioReadOpen(read);
-                IoWrite *write = ioHandleWriteNew(strNew("server write"), HARNESS_FORK_PARENT_WRITE_PROCESS(0));
+                IoWrite *write = ioFdWriteNew(strNew("server write"), HARNESS_FORK_PARENT_WRITE_PROCESS(0), 2000);
                 ioWriteOpen(write);
 
                 // Create client
@@ -146,6 +146,54 @@ testRun(void)
         harnessCfgLoad(cfgCmdBackup, argList);
 
         // -------------------------------------------------------------------------------------------------------------------------
+        TEST_TITLE("error when unable to select any pg_settings");
+
+        harnessPqScriptSet((HarnessPq [])
+        {
+            // Connect to primary
+            HRNPQ_MACRO_OPEN(1, "dbname='postgres' port=5432"),
+            HRNPQ_MACRO_SET_SEARCH_PATH(1),
+            HRNPQ_MACRO_SET_CLIENT_ENCODING(1),
+
+            // Return NULL for a row in pg_settings
+            {.session = 1, .function = HRNPQ_SENDQUERY, .param =
+                "[\"select (select setting from pg_catalog.pg_settings where name = 'server_version_num')::int4,"
+                    " (select setting from pg_catalog.pg_settings where name = 'data_directory')::text,"
+                    " (select setting from pg_catalog.pg_settings where name = 'archive_mode')::text,"
+                    " (select setting from pg_catalog.pg_settings where name = 'archive_command')::text\"]",
+                .resultInt = 1},
+            {.session = 1, .function = HRNPQ_CONSUMEINPUT},
+            {.session = 1, .function = HRNPQ_ISBUSY},
+            {.session = 1, .function = HRNPQ_GETRESULT},
+            {.session = 1, .function = HRNPQ_RESULTSTATUS, .resultInt = PGRES_TUPLES_OK},
+            {.session = 1, .function = HRNPQ_NTUPLES, .resultInt = 1},
+            {.session = 1, .function = HRNPQ_NFIELDS, .resultInt = 4},
+            {.session = 1, .function = HRNPQ_FTYPE, .param = "[0]", .resultInt = HRNPQ_TYPE_INT},
+            {.session = 1, .function = HRNPQ_FTYPE, .param = "[1]", .resultInt = HRNPQ_TYPE_TEXT},
+            {.session = 1, .function = HRNPQ_FTYPE, .param = "[2]", .resultInt = HRNPQ_TYPE_TEXT},
+            {.session = 1, .function = HRNPQ_FTYPE, .param = "[3]", .resultInt = HRNPQ_TYPE_TEXT},
+            {.session = 1, .function = HRNPQ_GETVALUE, .param = "[0,0]", .resultZ = "0"},
+            {.session = 1, .function = HRNPQ_GETVALUE, .param = "[0,1]", .resultZ = "value"},
+            {.session = 1, .function = HRNPQ_GETVALUE, .param = "[0,2]", .resultZ = "value"},
+            {.session = 1, .function = HRNPQ_GETVALUE, .param = "[0,3]", .resultZ = ""},
+            {.session = 1, .function = HRNPQ_GETISNULL, .param = "[0,3]", .resultInt = 1},
+            {.session = 1, .function = HRNPQ_CLEAR},
+            {.session = 1, .function = HRNPQ_GETRESULT, .resultNull = true},
+
+            // Close primary
+            HRNPQ_MACRO_CLOSE(1),
+
+            HRNPQ_MACRO_DONE()
+        });
+
+        TEST_ERROR(dbGet(true, true, false), DbConnectError, "unable to find primary cluster - cannot proceed");
+
+        TEST_RESULT_LOG(
+            "P00   WARN: unable to check pg-1: [DbQueryError] unable to select some rows from pg_settings\n"
+            "            HINT: is the backup running as the postgres user?\n"
+            "            HINT: is the pg_read_all_settings role assigned for PostgreSQL >= 10?");
+
+        // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("PostgreSQL 8.3 start backup with no start fast");
 
         harnessPqScriptSet((HarnessPq [])
@@ -165,7 +213,7 @@ testRun(void)
             HRNPQ_MACRO_DONE()
         });
 
-        DbGetResult db = {.primaryId = 0};
+        DbGetResult db = {0};
         TEST_ASSIGN(db, dbGet(true, true, false), "get primary");
 
         TEST_RESULT_STR_Z(dbBackupStart(db.primary, false, false).lsn, "1/1", "start backup");
@@ -273,7 +321,7 @@ testRun(void)
         harnessPqScriptSet((HarnessPq [])
         {
             // Connect to primary
-            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_96, "/pg1", false, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_96(1, "dbname='postgres' port=5432", PG_VERSION_96, "/pg1", false, NULL, NULL),
 
             // Start backup
             HRNPQ_MACRO_ADVISORY_LOCK(1, true),
@@ -351,10 +399,10 @@ testRun(void)
         harnessPqScriptSet((HarnessPq [])
         {
             // Connect to primary
-            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_10, "/pg1", false, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_96(1, "dbname='postgres' port=5432", PG_VERSION_10, "/pg1", false, NULL, NULL),
 
             // Connect to standby
-            HRNPQ_MACRO_OPEN_GE_92(2, "dbname='postgres' port=5433", PG_VERSION_10, "/pg2", true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_96(2, "dbname='postgres' port=5433", PG_VERSION_10, "/pg2", true, NULL, NULL),
 
             // Start backup
             HRNPQ_MACRO_ADVISORY_LOCK(1, true),
@@ -510,9 +558,9 @@ testRun(void)
 
         TEST_ASSIGN(result, dbGet(true, true, false), "get primary only");
 
-        TEST_RESULT_INT(result.primaryId, 1, "    check primary id");
+        TEST_RESULT_INT(result.primaryIdx, 0, "    check primary id");
         TEST_RESULT_BOOL(result.primary != NULL, true, "    check primary");
-        TEST_RESULT_INT(result.standbyId, 0, "    check standby id");
+        TEST_RESULT_INT(result.standbyIdx, 0, "    check standby id");
         TEST_RESULT_BOOL(result.standby == NULL, true, "    check standby");
         TEST_RESULT_INT(dbPgVersion(result.primary), PG_VERSION_84, "    version set");
         TEST_RESULT_STR_Z(dbPgDataPath(result.primary), "/pgdata", "    path set");
@@ -546,8 +594,8 @@ testRun(void)
         // -------------------------------------------------------------------------------------------------------------------------
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", "/pgdata", true, NULL, NULL),
-            HRNPQ_MACRO_OPEN_92(8, "dbname='postgres' port=5433", "/pgdata", true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, "/pgdata", true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(8, "dbname='postgres' port=5433", PG_VERSION_92, "/pgdata", true, NULL, NULL),
 
             HRNPQ_MACRO_CLOSE(8),
             HRNPQ_MACRO_CLOSE(1),
@@ -561,8 +609,8 @@ testRun(void)
         // -------------------------------------------------------------------------------------------------------------------------
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", "/pgdata", true, NULL, NULL),
-            HRNPQ_MACRO_OPEN_92(8, "dbname='postgres' port=5433", "/pgdata", true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, "/pgdata", true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(8, "dbname='postgres' port=5433", PG_VERSION_92, "/pgdata", true, NULL, NULL),
 
             HRNPQ_MACRO_CLOSE(8),
             HRNPQ_MACRO_CLOSE(1),
@@ -572,9 +620,9 @@ testRun(void)
 
         TEST_ASSIGN(result, dbGet(false, false, false), "get standbys");
 
-        TEST_RESULT_INT(result.primaryId, 0, "    check primary id");
+        TEST_RESULT_INT(result.primaryIdx, 0, "    check primary id");
         TEST_RESULT_BOOL(result.primary == NULL, true, "    check primary");
-        TEST_RESULT_INT(result.standbyId, 1, "    check standby id");
+        TEST_RESULT_INT(result.standbyIdx, 0, "    check standby id");
         TEST_RESULT_BOOL(result.standby != NULL, true, "    check standby");
 
         TEST_RESULT_VOID(dbFree(result.standby), "free standby");
@@ -596,7 +644,7 @@ testRun(void)
 
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", "/pgdata", true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, "/pgdata", true, NULL, NULL),
 
             // pg-4 error
             {.session = 4, .function = HRNPQ_CONNECTDB, .param = "[\"dbname='postgres' port=5433\"]"},
@@ -604,7 +652,7 @@ testRun(void)
             {.session = 4, .function = HRNPQ_ERRORMESSAGE, .resultZ = "error"},
             {.session = 4, .function = HRNPQ_FINISH},
 
-            HRNPQ_MACRO_OPEN_92(8, "dbname='postgres' port=5434", "/pgdata", false, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(8, "dbname='postgres' port=5434", PG_VERSION_92, "/pgdata", false, NULL, NULL),
 
             HRNPQ_MACRO_CREATE_RESTORE_POINT(8, "2/3"),
             HRNPQ_MACRO_WAL_SWITCH(8, "xlog", "000000010000000200000003"),
@@ -623,12 +671,12 @@ testRun(void)
             "P00   WARN: unable to check pg-5: [DbConnectError] raised from remote-0 protocol on 'localhost':"
                 " unable to connect to 'dbname='postgres' port=5432': could not connect to server: [NO SUCH FILE OR DIRECTORY]");
 
-        TEST_RESULT_INT(result.primaryId, 8, "    check primary id");
+        TEST_RESULT_INT(result.primaryIdx, 7, "    check primary id");
         TEST_RESULT_BOOL(result.primary != NULL, true, "    check primary");
         TEST_RESULT_STR_Z(dbArchiveMode(result.primary), "on", "    dbArchiveMode");
         TEST_RESULT_STR_Z(dbArchiveCommand(result.primary), PROJECT_BIN, "    dbArchiveCommand");
         TEST_RESULT_STR_Z(dbWalSwitch(result.primary), "000000010000000200000003", "    wal switch");
-        TEST_RESULT_INT(result.standbyId, 1, "    check standby id");
+        TEST_RESULT_INT(result.standbyIdx, 0, "    check standby id");
         TEST_RESULT_BOOL(result.standby != NULL, true, "    check standby");
 
         TEST_RESULT_VOID(dbFree(result.primary), "free primary");

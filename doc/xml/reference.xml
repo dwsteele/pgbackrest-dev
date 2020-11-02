@@ -141,13 +141,14 @@
 
                         <text>The following compression types are supported:
                         <ul>
+                            <li><id>none</id> - no compression</li>
                             <li><id>bz2</id> - bzip2 compression format</li>
                             <li><id>gz</id> - gzip compression format</li>
                             <li><id>lz4</id> - lz4 compression format (not available on all platforms)</li>
                             <li><id>zst</id> - Zstandard compression format (not available on all platforms)</li>
                         </ul></text>
 
-                        <example>n</example>
+                        <example>none</example>
                     </config-key>
 
                     <!-- CONFIG - GENERAL SECTION - COMPRESS-LEVEL KEY -->
@@ -321,6 +322,102 @@
                 The <setting>repo-retention-*</setting> options define how long backups will be retained.  Expiration only occurs when the count of complete backups exceeds the allowed retention.  In other words, if <setting>repo-retention-full-type</setting> is set to <setting>count</setting> (default) and <setting>repo-retention-full</setting> is set to 2, then there must be 3 complete backups before the oldest will be expired.  If <setting>repo-retention-full-type</setting> is set to <setting>time</setting> then <setting>repo-retention-full</setting> represents days so there must be at least that many days worth of full backups before expiration can occur. Make sure you always have enough space for retention + 1 backups.</text>
 
                 <config-key-list>
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-azure-account" name="Azure Repository Account">
+                        <summary>Azure repository account.</summary>
+
+                        <text>Azure account used to store the repository.</text>
+
+                        <example>pg-backup</example>
+                    </config-key>
+
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-azure-ca-file" name="Azure Repository TLS CA File">
+                        <summary>Azure repository TLS CA file.</summary>
+
+                        <text>Use a CA file other than the system default.</text>
+
+                        <example>/etc/pki/tls/certs/ca-bundle.crt</example>
+                    </config-key>
+
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-azure-ca-path" name="Azure Respository TLS CA Path">
+                        <summary>Azure repository TLS CA path.</summary>
+
+                        <text>Use a CA path other than the system default.</text>
+
+                        <example>/etc/pki/tls/certs</example>
+                    </config-key>
+
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-azure-container" name="Azure Repository Container">
+                        <summary>Azure repository container.</summary>
+
+                        <text>Azure container used to store the repository.
+
+                        <backrest/> repositories can be stored in the container root by setting <br-option>repo-path=/</br-option> but it is usually best to specify a prefix, such as <path>/repo</path>, so logs and other Azure-generated content can also be stored in the container.</text>
+
+                        <example>pg-backup</example>
+                    </config-key>
+
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-azure-endpoint" name="Azure Repository Endpoint">
+                        <summary>Azure repository endpoint.</summary>
+
+                        <text>Endpoint used to connect to the blob service. The default is generally correct unless using Azure Government.</text>
+
+                        <example>blob.core.usgovcloudapi.net</example>
+                    </config-key>
+
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-azure-host" name="Azure Repository Host">
+                        <summary>Azure repository host.</summary>
+
+                        <text>Connect to a host other than the default. This is typically used for testing.</text>
+
+                        <example>127.0.0.1</example>
+                    </config-key>
+
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-azure-key" name="Azure Repository Key">
+                        <summary>Azure repository key.</summary>
+
+                        <text>A shared key or shared access signature depending on the <br-option>repo-azure-key-type</br-option> option.</text>
+
+                        <example>T+9+aov82qNhrcXSNGZCzm9mjd4d75/oxxOr6r1JVpgTLA==</example>
+                    </config-key>
+
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-azure-key-type" name="Azure Repository Key Type">
+                        <summary>Azure repository key type.</summary>
+
+                        <text>The following types are supported for authorization:
+                        <ul>
+                            <li><id>shared</id> - Shared key</li>
+                            <li><id>sas</id> - Shared access signature</li>
+                        </ul></text>
+
+                        <example>sas</example>
+                    </config-key>
+
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-azure-port" name="Azure Repository Server Port">
+                        <summary>Azure repository server port.</summary>
+
+                        <text>Port to use when connecting to the default server (or host if specified). This is typically used for testing.</text>
+
+                        <example>10000</example>
+                    </config-key>
+
+                    <!-- ======================================================================================================= -->
+                        <config-key id="repo-azure-verify-tls" name="Azure Repository Server Certificate Verify">
+                        <summary>Azure repository server certificate verify.</summary>
+
+                        <text>Disables verification of the Azure server certificate.  This should only be used for testing or other scenarios where a certificate has been self-signed.</text>
+
+                        <example>n</example>
+                    </config-key>
+
                     <!-- CONFIG - REPO SECTION - REPO-HOST KEY -->
                     <config-key id="repo-host" name="Repository Host">
                         <summary>Repository host when operating remotely via SSH.</summary>
@@ -422,7 +519,7 @@
 
                         <text>Determines whether the <setting>repo-retention-full</setting> setting represents a time period (days) or count of full backups to keep. If set to <setting>time</setting> then full backups older than <setting>repo-retention-full</setting> will be removed from the repository if there is at least one backup that is equal to or greater than the <setting>repo-retention-full</setting> setting. For example, if <setting>repo-retention-full</setting> is 30 (days) and there are 2 full backups: one 25 days old and one 35 days old, no full backups will be expired because expiring the 35 day old backup would leave only the 25 day old backup, which would violate the 30 day retention policy of having at least one backup 30 days old before an older one can be expired. Archived WAL older than the oldest full backup remaining will be automatically expired unless <setting>repo-retention-archive-type</setting> and <setting>repo-retention-archive</setting> are explicitly set.</text>
 
-                        <example>30</example>
+                        <example>time</example>
                     </config-key>
 
                     <!-- CONFIG - RETENTION SECTION - REPO-DIFFERENTIAL-RETENTION KEY -->
@@ -470,6 +567,19 @@
                         <text>AWS secret key used to access this bucket.</text>
 
                         <example>wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY</example>
+                    </config-key>
+
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-s3-key-type" name="S3 Repository Key Type">
+                        <summary>S3 repository key type.</summary>
+
+                        <text>The following types are supported:
+                        <ul>
+                            <li><id>shared</id> - Shared keys</li>
+                            <li><id>auto</id> - Automatically retrieve temporary credentials</li>
+                        </ul></text>
+
+                        <example>auto</example>
                     </config-key>
 
                     <!-- CONFIG - REPO SECTION - REPO-S3-TOKEN KEY -->
@@ -537,6 +647,15 @@
                         <example>9000</example>
                     </config-key>
 
+                    <!-- ======================================================================================================= -->
+                    <config-key id="repo-s3-role" name="S3 Repository Role">
+                        <summary>S3 repository role.</summary>
+
+                        <text>AWS role used to retrieve temporary credentials when <br-option>repo-s3-key-type=auto</br-option>.</text>
+
+                        <example>authrole</example>
+                    </config-key>
+
                     <!-- CONFIG - REPO SECTION - REPO-S3-REGION KEY -->
                     <config-key id="repo-s3-region" name="S3 Repository Region">
                         <summary>S3 repository region.</summary>
@@ -574,6 +693,7 @@
 
                         <text>The following repository types are supported:
                         <ul>
+                            <li><id>azure</id> - Azure Blob Storage Service</li>
                             <li><id>cifs</id> - Like <id>posix</id>, but disables links and directory fsyncs</li>
                             <li><id>posix</id> - Posix-compliant file systems</li>
                             <li><id>s3</id> - AWS Simple Storage Service</li>
@@ -586,7 +706,7 @@
                     <config-key id="repo-cipher-type" name="Repository Cipher Type">
                         <summary>Cipher used to encrypt the repository.</summary>
 
-                        <text>The following repository types are supported:
+                        <text>The following cipher types are supported:
                         <ul>
                             <li><id>none</id> - The repository is not encrypted</li>
                             <li><id>aes-256-cbc</id> - Advanced Encryption Standard with 256 bit key length</li>
@@ -680,6 +800,15 @@
                         Size can be entered in bytes (default) or KB, MB, GB, TB, or PB where the multiplier is a power of 1024.</text>
 
                         <example>5G</example>
+                    </config-key>
+
+                    <!-- CONFIG - BACKUP SECTION - EXPIRE-AUTO -->
+                    <config-key id="expire-auto" name="Expire Auto">
+                        <summary>Automatically run the <cmd>expire</cmd> command after a successful backup.</summary>
+
+                        <text>The setting is enabled by default. Use caution when disabling this option as doing so will result in retaining all backups and archives indefinitely, which could cause your repository to run out of space. The <cmd>expire</cmd> command will need to be run regularly to prevent this from happening.</text>
+
+                        <example>y</example>
                     </config-key>
 
                     <!-- CONFIG - BACKUP SECTION - RESUME -->
@@ -782,6 +911,21 @@
                 <text>The <setting>restore</setting> section defines settings used for restoring backups.</text>
 
                 <config-key-list>
+                    <!-- ======================================================================================================= -->
+                    <config-key id="archive-mode" name="Archive Mode">
+                        <summary>Preserve or disable archiving on restored cluster.</summary>
+
+                        <text>This option allows archiving to be preserved or disabled on a restored cluster. This is useful when the cluster must be promoted to do some work but is not intended to become the new primary. In this case it is not a good idea to push WAL from the cluster into the repository.
+
+                        The following modes are supported:
+                        <ul>
+                            <li><id>off</id> - disable archiving by setting <setting>archive_mode=off</setting>.</li>
+                            <li><id>preserve</id> - preserve current <setting>archive_mode</setting> setting.</li>
+                        </ul><b>NOTE</b>: This option is not available on <postgres/> &amp;lt; 12.</text>
+
+                        <example>off</example>
+                    </config-key>
+
                     <!-- CONFIG - RESTORE SECTION - DB-INCLUDE KEY -->
                     <config-key id="db-include" name="Include Database">
                         <summary>Restore only specified databases.</summary>
@@ -1434,7 +1578,21 @@
 
                 <text>The <cmd>info</cmd> command operates on a single stanza or all stanzas.  Text output is the default and gives a human-readable summary of backups for the stanza(s) requested.  This format is subject to change with any release.
 
-                For machine-readable output use <setting>--output=json</setting>.  The JSON output contains far more information than the text output and is kept stable unless a bug is found.</text>
+                For machine-readable output use <br-option>--output=json</br-option>.  The JSON output contains far more information than the text output and is kept stable unless a bug is found.
+
+                Each stanza has a separate section and it is possible to limit output to a single stanza with the <br-option>--stanza</br-option> option.  The stanza '<id>status</id>' gives a brief indication of the stanza's health.  If this is '<id>ok</id>' then <backrest/> is functioning normally.  The '<id>wal archive min/max</id>' shows the minimum and maximum WAL currently stored in the archive.  Note that there may be gaps due to archive retention policies or other reasons.
+
+                The '<id>backup/expire running</id>' message will appear beside the '<id>status</id>' information if one of those commands is currently running on the host.
+
+                The backups are displayed oldest to newest.  The oldest backup will <i>always</i> be a full backup (indicated by an <id>F</id> at the end of the label) but the newest backup can be full, differential (ends with <id>D</id>), or incremental (ends with <id>I</id>).
+
+                The '<id>timestamp start/stop</id>' defines the time period when the backup ran.  The '<id>timestamp stop</id>' can be used to determine the backup to use when performing Point-In-Time Recovery.  More information about Point-In-Time Recovery can be found in the <link page="user-guide" section="/pitr">Point-In-Time Recovery</link> section.
+
+                The '<id>wal start/stop</id>' defines the WAL range that is required to make the database consistent when restoring.  The <cmd>backup</cmd> command will ensure that this WAL range is in the archive before completing.
+
+                The '<id>database size</id>' is the full uncompressed size of the database while '<id>backup size</id>' is the amount of data actually backed up (these will be the same for full backups).  The '<id>repository size</id>' includes all the files from this backup and any referenced backups that are required to restore the database while '<id>repository backup size</id>' includes only the files in this backup (these will also be the same for full backups).  Repository sizes reflect compressed file sizes if compression is enabled in <backrest/> or the filesystem.
+
+                The '<id>backup reference list</id>' contains the additional backups that are required to restore this backup.</text>
 
                 <option-list>
                     <!-- OPERATION - INFO COMMAND - OUTPUT OPTION -->
@@ -1549,6 +1707,31 @@
                 </command-example-list>
             </command>
 
+            <!-- OPERATION - VERIFY COMMAND -->
+            <command id="verify" name="Verify">
+                <summary>Verify the contents of the repository.</summary>
+
+                <text>Verify will attempt to determine if the backups and archives in the repository are valid.</text>
+
+                <option-list>
+                    <!-- OPERATION - VERIFY COMMAND - SET OPTION -->
+                    <option id="set" name="Set">
+                        <summary>Backup set to verify.</summary>
+
+                        <text>Verify all database and archive files associated with the specified backup set.</text>
+                        <example>20150131-153358F_20150131-153401I</example>
+                    </option>
+                </option-list>
+
+                <command-example-list>
+                    <command-example>
+                        <text><code-block title="">
+                            {[backrest-exe]} --stanza=db verify
+                        </code-block>
+                        Verify all database and archive files associated with the stanza.</text>
+                    </command-example>
+                </command-example-list>
+            </command>
 
             <!-- OPERATION - VERSION COMMAND -->
             <command id="version" name="Version">

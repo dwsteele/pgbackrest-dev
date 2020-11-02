@@ -8,10 +8,11 @@ Help Command
 #include <unistd.h>
 
 #include "common/debug.h"
-#include "common/io/handleWrite.h"
+#include "common/io/fdWrite.h"
 #include "common/memContext.h"
 #include "config/config.h"
 #include "config/define.h"
+#include "config/parse.h"
 #include "version.h"
 
 /***********************************************************************************************************************************
@@ -45,7 +46,7 @@ helpRenderText(const String *text, size_t indent, bool indentFirst, size_t lengt
     {
         // Add LF if there is already content
         if (strSize(result) != 0)
-            strCat(result, "\n");
+            strCat(result, LF_STR);
 
         // Split the paragraph into lines that don't exceed the line length
         StringList *partList = strLstNewSplitSizeZ(strLstGet(lineList, lineIdx), " ", length - indent);
@@ -56,14 +57,14 @@ helpRenderText(const String *text, size_t indent, bool indentFirst, size_t lengt
             if (partIdx != 0 || indentFirst)
             {
                 if (partIdx != 0)
-                    strCat(result, "\n");
+                    strCat(result, LF_STR);
 
                 if (strSize(strLstGet(partList, partIdx)))
                     strCatFmt(result, "%*s", (int)indent, "");
             }
 
             // Add the line
-            strCat(result, strPtr(strLstGet(partList, partIdx)));
+            strCat(result, strLstGet(partList, partIdx));
         }
     }
 
@@ -101,11 +102,11 @@ helpRenderValue(const Variant *value)
             for (unsigned int keyIdx = 0; keyIdx < varLstSize(keyList); keyIdx++)
             {
                 if (keyIdx != 0)
-                    strCat(resultTemp, ", ");
+                    strCatZ(resultTemp, ", ");
 
                 strCatFmt(
-                    resultTemp, "%s=%s", strPtr(varStr(varLstGet(keyList, keyIdx))),
-                    strPtr(varStrForce(kvGet(optionKv, varLstGet(keyList, keyIdx)))));
+                    resultTemp, "%s=%s", strZ(varStr(varLstGet(keyList, keyIdx))),
+                    strZ(varStrForce(kvGet(optionKv, varLstGet(keyList, keyIdx)))));
             }
 
             result = resultTemp;
@@ -119,9 +120,9 @@ helpRenderValue(const Variant *value)
             for (unsigned int listIdx = 0; listIdx < varLstSize(list); listIdx++)
             {
                 if (listIdx != 0)
-                    strCat(resultTemp, ", ");
+                    strCatZ(resultTemp, ", ");
 
-                strCatFmt(resultTemp, "%s", strPtr(varStr(varLstGet(list, listIdx))));
+                strCatFmt(resultTemp, "%s", strZ(varStr(varLstGet(list, listIdx))));
             }
 
             result = resultTemp;
@@ -151,7 +152,7 @@ helpRender(void)
         // Display general help
         if (cfgCommand() == cfgCmdHelp || cfgCommand() == cfgCmdNone)
         {
-            strCat(
+            strCatZ(
                 result,
                 " - General help\n"
                 "\n"
@@ -181,10 +182,7 @@ helpRender(void)
                 strCatFmt(
                     result, "    %s%*s%s\n", cfgCommandName(commandId),
                     (int)(commandSizeMax - strlen(cfgCommandName(commandId)) + 2), "",
-                    strPtr(
-                        helpRenderText(
-                            STR(cfgDefCommandHelpSummary(cfgCommandDefIdFromId(commandId))), commandSizeMax + 6, false,
-                            CONSOLE_WIDTH)));
+                    strZ(helpRenderText(STR(cfgDefCommandHelpSummary(commandId)), commandSizeMax + 6, false, CONSOLE_WIDTH)));
             }
 
             // Construct message for more help
@@ -193,7 +191,6 @@ helpRender(void)
         else
         {
             ConfigCommand commandId = cfgCommand();
-            ConfigDefineCommand commandDefId = cfgCommandDefIdFromId(commandId);
             const char *commandName = cfgCommandName(commandId);
 
             // Output command part of title
@@ -210,8 +207,8 @@ helpRender(void)
                     "%s\n"
                     "\n"
                     "%s\n",
-                    strPtr(helpRenderText(STR(cfgDefCommandHelpSummary(commandDefId)), 0, true, CONSOLE_WIDTH)),
-                    strPtr(helpRenderText(STR(cfgDefCommandHelpDescription(commandDefId)), 0, true, CONSOLE_WIDTH)));
+                    strZ(helpRenderText(STR(cfgDefCommandHelpSummary(commandId)), 0, true, CONSOLE_WIDTH)),
+                    strZ(helpRenderText(STR(cfgDefCommandHelpDescription(commandId)), 0, true, CONSOLE_WIDTH)));
 
                 // Construct key/value of sections and options
                 KeyValue *optionKv = kvNew();
@@ -219,7 +216,7 @@ helpRender(void)
 
                 for (unsigned int optionDefId = 0; optionDefId < cfgDefOptionTotal(); optionDefId++)
                 {
-                    if (cfgDefOptionValid(commandDefId, optionDefId) && !cfgDefOptionInternal(commandDefId, optionDefId))
+                    if (cfgDefOptionValid(commandId, optionDefId) && !cfgDefOptionInternal(commandId, optionDefId))
                     {
                         const String *section = NULL;
 
@@ -247,7 +244,7 @@ helpRender(void)
                 {
                     const String *section = strLstGet(sectionList, sectionIdx);
 
-                    strCatFmt(result, "\n%s Options:\n\n", strPtr(strFirstUpper(strDup(section))));
+                    strCatFmt(result, "\n%s Options:\n\n", strZ(strFirstUpper(strDup(section))));
 
                     // Output options
                     VariantList *optionList = kvGetList(optionKv, VARSTR(section));
@@ -259,8 +256,8 @@ helpRender(void)
 
                         // Get option summary
                         String *summary = strFirstLower(strNewN(
-                            cfgDefOptionHelpSummary(commandDefId, optionDefId),
-                            strlen(cfgDefOptionHelpSummary(commandDefId, optionDefId)) - 1));
+                            cfgDefOptionHelpSummary(commandId, optionDefId),
+                            strlen(cfgDefOptionHelpSummary(commandId, optionDefId)) - 1));
 
                         // Ouput current and default values if they exist
                         const String *defaultValue = helpRenderValue(cfgOptionDefault(optionId));
@@ -271,27 +268,27 @@ helpRender(void)
 
                         if (value != NULL || defaultValue != NULL)
                         {
-                            strCat(summary, " [");
+                            strCatZ(summary, " [");
 
                             if (value != NULL)
-                                strCatFmt(summary, "current=%s", cfgDefOptionSecure(optionDefId) ? "<redacted>" : strPtr(value));
+                                strCatFmt(summary, "current=%s", cfgDefOptionSecure(optionDefId) ? "<redacted>" : strZ(value));
 
                             if (defaultValue != NULL)
                             {
                                 if (value != NULL)
-                                    strCat(summary, ", ");
+                                    strCatZ(summary, ", ");
 
-                                strCatFmt(summary, "default=%s", strPtr(defaultValue));
+                                strCatFmt(summary, "default=%s", strZ(defaultValue));
                             }
 
-                            strCat(summary, "]");
+                            strCatZ(summary, "]");
                         }
 
                         // Output option help
                         strCatFmt(
                             result, "  --%s%*s%s\n",
                             cfgDefOptionName(optionDefId), (int)(optionSizeMax - strlen(cfgDefOptionName(optionDefId)) + 2), "",
-                            strPtr(helpRenderText(summary, optionSizeMax + 6, false, CONSOLE_WIDTH)));
+                            strZ(helpRenderText(summary, optionSizeMax + 6, false, CONSOLE_WIDTH)));
                     }
                 }
 
@@ -307,19 +304,21 @@ helpRender(void)
                     THROW(ParamInvalidError, "only one option allowed for option help");
 
                 // Ensure the option is valid
-                const char *optionName = strPtr(strLstGet(cfgCommandParam(), 0));
-                ConfigOption optionId = cfgOptionId(optionName);
+                const String *optionName = strLstGet(cfgCommandParam(), 0);
+                CfgParseOptionResult option = cfgParseOption(optionName);
 
-                if (cfgOptionId(optionName) == -1)
+                if (!option.found)
                 {
-                    if (cfgDefOptionId(optionName) != -1)
-                        optionId = cfgOptionIdFromDefId(cfgDefOptionId(optionName), 0);
+                    int optionId = cfgDefOptionId(strZ(optionName));
+
+                    if (optionId == -1)
+                        THROW_FMT(OptionInvalidError, "option '%s' is not valid for command '%s'", strZ(optionName), commandName);
                     else
-                        THROW_FMT(OptionInvalidError, "option '%s' is not valid for command '%s'", optionName, commandName);
+                        option.id = cfgOptionIdFromDefId((unsigned int)optionId, 0);
                 }
 
                 // Output option summary and description
-                ConfigDefineOption optionDefId = cfgOptionDefIdFromId(optionId);
+                ConfigDefineOption optionDefId = cfgOptionDefIdFromId(option.id);
 
                 strCatFmt(
                     result,
@@ -328,26 +327,26 @@ helpRender(void)
                     "%s\n"
                     "\n"
                     "%s\n",
-                    optionName,
-                    strPtr(helpRenderText(STR(cfgDefOptionHelpSummary(commandDefId, optionDefId)), 0, true, CONSOLE_WIDTH)),
-                    strPtr(helpRenderText(STR(cfgDefOptionHelpDescription(commandDefId, optionDefId)), 0, true, CONSOLE_WIDTH)));
+                    cfgDefOptionName(optionDefId),
+                    strZ(helpRenderText(STR(cfgDefOptionHelpSummary(commandId, optionDefId)), 0, true, CONSOLE_WIDTH)),
+                    strZ(helpRenderText(STR(cfgDefOptionHelpDescription(commandId, optionDefId)), 0, true, CONSOLE_WIDTH)));
 
                 // Ouput current and default values if they exist
-                const String *defaultValue = helpRenderValue(cfgOptionDefault(optionId));
+                const String *defaultValue = helpRenderValue(cfgOptionDefault(option.id));
                 const String *value = NULL;
 
-                if (cfgOptionSource(optionId) != cfgSourceDefault)
-                    value = helpRenderValue(cfgOption(optionId));
+                if (cfgOptionSource(option.id) != cfgSourceDefault)
+                    value = helpRenderValue(cfgOption(option.id));
 
                 if (value != NULL || defaultValue != NULL)
                 {
-                    strCat(result, "\n");
+                    strCat(result, LF_STR);
 
                     if (value != NULL)
-                        strCatFmt(result, "current: %s\n", cfgDefOptionSecure(optionDefId) ? "<redacted>" : strPtr(value));
+                        strCatFmt(result, "current: %s\n", cfgDefOptionSecure(optionDefId) ? "<redacted>" : strZ(value));
 
                     if (defaultValue != NULL)
-                        strCatFmt(result, "default: %s\n", strPtr(defaultValue));
+                        strCatFmt(result, "default: %s\n", strZ(defaultValue));
                 }
 
                 // Output alternate name (call it deprecated so the user will know not to use it)
@@ -358,7 +357,7 @@ helpRender(void)
 
         // If there is more help available output a message to let the user know
         if (more != NULL)
-            strCatFmt(result, "\nUse '" PROJECT_BIN " help %s' for more information.\n", strPtr(more));
+            strCatFmt(result, "\nUse '" PROJECT_BIN " help %s' for more information.\n", strZ(more));
     }
     MEM_CONTEXT_TEMP_END();
 
@@ -373,7 +372,7 @@ cmdHelp(void)
 
     MEM_CONTEXT_TEMP_BEGIN()
     {
-        ioHandleWriteOneStr(STDOUT_FILENO, helpRender());
+        ioFdWriteOneStr(STDOUT_FILENO, helpRender());
     }
     MEM_CONTEXT_TEMP_END();
 

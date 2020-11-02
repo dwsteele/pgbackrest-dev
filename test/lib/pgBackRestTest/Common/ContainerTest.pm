@@ -481,7 +481,7 @@ sub containerBuild
                         "    rpm -ivh \\\n" .
                         "        http://yum.postgresql.org/9.1/redhat/rhel-6-x86_64/pgdg-centos91-9.1-6.noarch.rpm \\\n" .
                         "        http://yum.postgresql.org/9.2/redhat/rhel-6-x86_64/pgdg-centos92-9.2-8.noarch.rpm \\\n" .
-                        "        https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-6-x86_64/" .
+                        "        https://download.postgresql.org/pub/repos/yum/reporpms/EL-6-x86_64/" .
                             "pgdg-redhat-repo-latest.noarch.rpm && \\\n";
                 }
                 elsif ($strOS eq VM_CO7)
@@ -489,7 +489,7 @@ sub containerBuild
                     $strScript .=
                         "    rpm -ivh \\\n" .
                         "        http://yum.postgresql.org/9.2/redhat/rhel-7-x86_64/pgdg-centos92-9.2-3.noarch.rpm \\\n" .
-                        "        https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7-x86_64/" .
+                        "        https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/" .
                             "pgdg-redhat-repo-latest.noarch.rpm && \\\n";
                 }
                 elsif ($strOS eq VM_F32)

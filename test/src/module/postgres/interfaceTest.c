@@ -30,15 +30,11 @@ testRun(void)
     }
 
     // *****************************************************************************************************************************
-    if (testBegin("pgControlVersion() and pgCatalogVersion()"))
+    if (testBegin("pgControlVersion()"))
     {
         TEST_ERROR(pgControlVersion(70300), AssertError, "invalid PostgreSQL version 70300");
         TEST_RESULT_UINT(pgControlVersion(PG_VERSION_83), 833, "8.3 control version");
         TEST_RESULT_UINT(pgControlVersion(PG_VERSION_11), 1100, "11 control version");
-
-        TEST_ERROR(pgCatalogVersion(70900), AssertError, "invalid PostgreSQL version 70900");
-        TEST_RESULT_UINT(pgCatalogVersion(PG_VERSION_83), 200711281, "8.3 catalog version");
-        TEST_RESULT_UINT(pgCatalogVersion(PG_VERSION_11), 201809051, "11 catalog version");
     }
 
     // *****************************************************************************************************************************
@@ -78,6 +74,7 @@ testRun(void)
         TEST_ASSIGN(info, pgControlFromFile(storageTest), "get control info v11");
         TEST_RESULT_UINT(info.systemId, 0xFACEFACE, "   check system id");
         TEST_RESULT_UINT(info.version, PG_VERSION_11, "   check version");
+        TEST_RESULT_UINT(info.catalogVersion, 201809051, "   check catalog version");
 
         //--------------------------------------------------------------------------------------------------------------------------
         storagePutP(
@@ -97,15 +94,18 @@ testRun(void)
         //--------------------------------------------------------------------------------------------------------------------------
         storagePutP(
             storageNewWriteP(storageTest, controlFile),
-            pgControlTestToBuffer((PgControl){.version = PG_VERSION_83, .systemId = 0xEFEFEFEFEF}));
+            pgControlTestToBuffer(
+                (PgControl){
+                    .version = PG_VERSION_83, .systemId = 0xEFEFEFEFEF, .catalogVersion = pgCatalogTestVersion(PG_VERSION_83)}));
 
         TEST_ASSIGN(info, pgControlFromFile(storageTest), "get control info v83");
         TEST_RESULT_UINT(info.systemId, 0xEFEFEFEFEF, "   check system id");
         TEST_RESULT_UINT(info.version, PG_VERSION_83, "   check version");
+        TEST_RESULT_UINT(info.catalogVersion, 200711281, "   check catalog version");
     }
 
     // *****************************************************************************************************************************
-    if (testBegin("pgLsnFromStr(), pgLsnToStr(), pgLsnToWalSegment(), and pgLsnRangeToWalSegmentList()"))
+    if (testBegin("pgLsnFromStr(), pgLsnToStr(), pgLsnToWalSegment(), pgLsnFromWalSegment(), and pgLsnRangeToWalSegmentList()"))
     {
         TEST_RESULT_UINT(pgLsnFromStr(STRDEF("1/1")), 0x0000000100000001, "lsn to string");
         TEST_RESULT_UINT(pgLsnFromStr(STRDEF("ffffffff/ffffffff")), 0xFFFFFFFFFFFFFFFF, "lsn to string");
@@ -118,6 +118,13 @@ testRun(void)
         TEST_RESULT_STR_Z(pgLsnToWalSegment(1, 0xFFFFFFFFAAAAAAAA, 0x1000000), "00000001FFFFFFFF000000AA", "lsn to wal segment");
         TEST_RESULT_STR_Z(pgLsnToWalSegment(1, 0xFFFFFFFFAAAAAAAA, 0x40000000), "00000001FFFFFFFF00000002", "lsn to wal segment");
         TEST_RESULT_STR_Z(pgLsnToWalSegment(1, 0xFFFFFFFF40000000, 0x40000000), "00000001FFFFFFFF00000001", "lsn to wal segment");
+
+        TEST_RESULT_UINT(
+            pgLsnFromWalSegment(STRDEF("00000001FFFFFFFF000000AA"), 0x1000000), 0xFFFFFFFFAA000000, "16M wal segment to lsn");
+        TEST_RESULT_UINT(
+            pgLsnFromWalSegment(STRDEF("00000001FFFFFFFF00000002"), 0x40000000), 0xFFFFFFFF80000000, "1G wal segment to lsn");
+        TEST_RESULT_UINT(
+            pgLsnFromWalSegment(STRDEF("00000001FFFFFFFF00000001"), 0x40000000), 0xFFFFFFFF40000000, "1G wal segment to lsn");
 
         TEST_RESULT_STR_Z(
             strLstJoin(
@@ -162,10 +169,9 @@ testRun(void)
         TEST_RESULT_STR_Z(pgLsnName(PG_VERSION_96), "location", "check location name");
         TEST_RESULT_STR_Z(pgLsnName(PG_VERSION_10), "lsn", "check lsn name");
 
-        TEST_RESULT_STR_Z(pgTablespaceId(PG_VERSION_84), NULL, "check 8.4 tablespace id");
-        TEST_RESULT_STR_Z(pgTablespaceId(PG_VERSION_90), "PG_9.0_201008051", "check 9.0 tablespace id");
-        TEST_RESULT_STR_Z(pgTablespaceId(PG_VERSION_94), "PG_9.4_201409291", "check 9.4 tablespace id");
-        TEST_RESULT_STR_Z(pgTablespaceId(PG_VERSION_11), "PG_11_201809051", "check 11 tablespace id");
+        TEST_RESULT_STR_Z(pgTablespaceId(PG_VERSION_84, 200904091), NULL, "check 8.4 tablespace id");
+        TEST_RESULT_STR_Z(pgTablespaceId(PG_VERSION_90, 201008051), "PG_9.0_201008051", "check 9.0 tablespace id");
+        TEST_RESULT_STR_Z(pgTablespaceId(PG_VERSION_94, 999999999), "PG_9.4_999999999", "check 9.4 tablespace id");
 
         TEST_RESULT_STR_Z(pgWalName(PG_VERSION_96), "xlog", "check xlog name");
         TEST_RESULT_STR_Z(pgWalName(PG_VERSION_10), "wal", "check wal name");
@@ -183,8 +189,8 @@ testRun(void)
         unsigned char page[PG_PAGE_SIZE_DEFAULT];
         memset(page, 0xFF, PG_PAGE_SIZE_DEFAULT);
 
-        TEST_RESULT_UINT(pgPageChecksum(page, 0), 0x0E1C, "check 0xFF filled page, block 0");
-        TEST_RESULT_UINT(pgPageChecksum(page, 999), 0x0EC3, "check 0xFF filled page, block 999");
+        TEST_RESULT_UINT(pgPageChecksum(page, 0), TEST_BIG_ENDIAN() ? 0xF55E : 0x0E1C, "check 0xFF filled page, block 0");
+        TEST_RESULT_UINT(pgPageChecksum(page, 999), TEST_BIG_ENDIAN() ? 0xF1B9 : 0x0EC3, "check 0xFF filled page, block 999");
     }
 
     // *****************************************************************************************************************************
@@ -217,22 +223,32 @@ testRun(void)
 
         //--------------------------------------------------------------------------------------------------------------------------
         memset(bufPtr(result), 0, bufSize(result));
-        pgWalTestToBuffer((PgWal){.version = PG_VERSION_11, .systemId = 0xECAFECAF}, result);
+        pgWalTestToBuffer(
+            (PgWal){.version = PG_VERSION_11, .systemId = 0xECAFECAF, .size = PG_WAL_SEGMENT_SIZE_DEFAULT * 2}, result);
         storagePutP(storageNewWriteP(storageTest, walFile), result);
 
         PgWal info = {0};
-        TEST_ASSIGN(info, pgWalFromFile(walFile), "get wal info v11");
+        TEST_ASSIGN(info, pgWalFromFile(walFile, storageLocal()), "get wal info v11");
         TEST_RESULT_UINT(info.systemId, 0xECAFECAF, "   check system id");
         TEST_RESULT_UINT(info.version, PG_VERSION_11, "   check version");
+        TEST_RESULT_UINT(info.size, PG_WAL_SEGMENT_SIZE_DEFAULT * 2, "   check size");
 
         //--------------------------------------------------------------------------------------------------------------------------
         memset(bufPtr(result), 0, bufSize(result));
-        pgWalTestToBuffer((PgWal){.version = PG_VERSION_83, .systemId = 0xEAEAEAEA}, result);
+        pgWalTestToBuffer(
+            (PgWal){.version = PG_VERSION_83, .systemId = 0xEAEAEAEA, .size = PG_WAL_SEGMENT_SIZE_DEFAULT * 2}, result);
+
+        TEST_ERROR(pgWalFromBuffer(result), FormatError, "wal segment size is 33554432 but must be 16777216 for PostgreSQL <= 10");
+
+        //--------------------------------------------------------------------------------------------------------------------------
+        memset(bufPtr(result), 0, bufSize(result));
+        pgWalTestToBuffer((PgWal){.version = PG_VERSION_83, .systemId = 0xEAEAEAEA, .size = PG_WAL_SEGMENT_SIZE_DEFAULT}, result);
         storagePutP(storageNewWriteP(storageTest, walFile), result);
 
-        TEST_ASSIGN(info, pgWalFromFile(walFile), "get wal info v8.3");
+        TEST_ASSIGN(info, pgWalFromFile(walFile, storageLocal()), "get wal info v8.3");
         TEST_RESULT_UINT(info.systemId, 0xEAEAEAEA, "   check system id");
         TEST_RESULT_UINT(info.version, PG_VERSION_83, "   check version");
+        TEST_RESULT_UINT(info.size, PG_WAL_SEGMENT_SIZE_DEFAULT, "   check size");
     }
 
     // *****************************************************************************************************************************

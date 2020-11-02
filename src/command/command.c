@@ -7,18 +7,20 @@ Common Command Routines
 #include <string.h>
 
 #include "common/debug.h"
-#include "common/io/http/client.h"
-#include "common/io/tls/client.h"
 #include "common/log.h"
 #include "common/memContext.h"
+#include "common/stat.h"
 #include "common/time.h"
+#include "common/type/json.h"
 #include "config/config.h"
+#include "config/define.h"
 #include "version.h"
 
 /***********************************************************************************************************************************
 Track time command started
 ***********************************************************************************************************************************/
 static TimeMSec timeBegin;
+static String *cmdOptionStr;
 
 /**********************************************************************************************************************************/
 void
@@ -32,51 +34,40 @@ cmdInit(void)
 }
 
 /**********************************************************************************************************************************/
-void
-cmdBegin(bool logOption)
+const String *
+cmdOption(void)
 {
-    FUNCTION_LOG_BEGIN(logLevelTrace);
-        FUNCTION_LOG_PARAM(BOOL, logOption);
-    FUNCTION_LOG_END();
+    FUNCTION_TEST_VOID();
 
-    ASSERT(cfgCommand() != cfgCmdNone);
-
-    // This is fairly expensive log message to generate so skip it if it won't be output
-    if (logAny(cfgLogLevelDefault()))
+    if (cmdOptionStr == NULL)
     {
-        MEM_CONTEXT_TEMP_BEGIN()
+        MEM_CONTEXT_BEGIN(memContextTop())
         {
-            // Basic info on command start
-            String *info = strNewFmt("%s command begin", strPtr(cfgCommandRoleName()));
+            cmdOptionStr = strNew("");
 
-            if (logOption)
+            MEM_CONTEXT_TEMP_BEGIN()
             {
-                strCatFmt(info, " %s:", PROJECT_VERSION);
-
-                // Get command define id used to determine which options are valid for this command
-                ConfigDefineCommand commandDefId = cfgCommandDefIdFromId(cfgCommand());
-
                 // Add command parameters if they exist
                 const StringList *commandParamList = cfgCommandParam();
 
                 if (strLstSize(commandParamList) != 0)
                 {
-                    strCatFmt(info, " [");
+                    strCatFmt(cmdOptionStr, " [");
 
                     for (unsigned int commandParamIdx = 0; commandParamIdx < strLstSize(commandParamList); commandParamIdx++)
                     {
                         const String *commandParam = strLstGet(commandParamList, commandParamIdx);
 
                         if (commandParamIdx != 0)
-                            strCatFmt(info, ", ");
+                            strCatFmt(cmdOptionStr, ", ");
 
-                        if (strchr(strPtr(commandParam), ' ') != NULL)
-                            commandParam = strNewFmt("\"%s\"", strPtr(commandParam));
+                        if (strchr(strZ(commandParam), ' ') != NULL)
+                            commandParam = strNewFmt("\"%s\"", strZ(commandParam));
 
-                        strCat(info, strPtr(commandParam));
+                        strCat(cmdOptionStr, commandParam);
                     }
 
-                    strCatFmt(info, "]");
+                    strCatFmt(cmdOptionStr, "]");
                 }
 
                 // Loop though options and add the ones that are interesting
@@ -85,26 +76,26 @@ cmdBegin(bool logOption)
                     // Skip the option if not valid for this command.  Generally only one command runs at a time, but sometimes
                     // commands are chained together (e.g. backup and expire) and the second command may not use all the options of
                     // the first command.  Displaying them is harmless but might cause confusion.
-                    if (!cfgDefOptionValid(commandDefId, cfgOptionDefIdFromId(optionId)))
+                    if (!cfgDefOptionValid(cfgCommand(), cfgOptionDefIdFromId(optionId)))
                         continue;
 
                     // If option was negated
                     if (cfgOptionNegate(optionId))
-                        strCatFmt(info, " --no-%s", cfgOptionName(optionId));
+                        strCatFmt(cmdOptionStr, " --no-%s", cfgOptionName(optionId));
                     // If option was reset
                     else if (cfgOptionReset(optionId))
-                        strCatFmt(info, " --reset-%s", cfgOptionName(optionId));
-                    // Else set and not default
-                    else if (cfgOptionSource(optionId) != cfgSourceDefault && cfgOptionTest(optionId))
+                        strCatFmt(cmdOptionStr, " --reset-%s", cfgOptionName(optionId));
+                    // Else not default
+                    else if (cfgOptionSource(optionId) != cfgSourceDefault)
                     {
                         ConfigDefineOption optionDefId = cfgOptionDefIdFromId(optionId);
 
                         // Don't show redacted options
                         if (cfgDefOptionSecure(optionDefId))
-                            strCatFmt(info, " --%s=<redacted>", cfgOptionName(optionId));
+                            strCatFmt(cmdOptionStr, " --%s=<redacted>", cfgOptionName(optionId));
                         // Output boolean option
                         else if (cfgDefOptionType(optionDefId) == cfgDefOptTypeBoolean)
-                            strCatFmt(info, " --%s", cfgOptionName(optionId));
+                            strCatFmt(cmdOptionStr, " --%s", cfgOptionName(optionId));
                         // Output other options
                         else
                         {
@@ -123,8 +114,8 @@ cmdBegin(bool logOption)
                                     strLstAdd(
                                         valueList,
                                         strNewFmt(
-                                            "%s=%s", strPtr(varStr(varLstGet(keyList, keyIdx))),
-                                                strPtr(varStrForce(kvGet(optionKv, varLstGet(keyList, keyIdx))))));
+                                            "%s=%s", strZ(varStr(varLstGet(keyList, keyIdx))),
+                                            strZ(varStrForce(kvGet(optionKv, varLstGet(keyList, keyIdx))))));
                                 }
                             }
                             // Generate values for list options
@@ -144,19 +135,50 @@ cmdBegin(bool logOption)
                             {
                                 const String *value = strLstGet(valueList, valueListIdx);
 
-                                strCatFmt(info, " --%s", cfgOptionName(optionId));
+                                strCatFmt(cmdOptionStr, " --%s", cfgOptionName(optionId));
 
-                                if (strchr(strPtr(value), ' ') != NULL)
-                                    value = strNewFmt("\"%s\"", strPtr(value));
+                                if (strchr(strZ(value), ' ') != NULL)
+                                    value = strNewFmt("\"%s\"", strZ(value));
 
-                                strCatFmt(info, "=%s", strPtr(value));
+                                strCatFmt(cmdOptionStr, "=%s", strZ(value));
                             }
                         }
                     }
                 }
             }
+            MEM_CONTEXT_TEMP_END();
+        }
+        MEM_CONTEXT_END();
+    }
 
-            LOG(cfgLogLevelDefault(), 0, strPtr(info));
+    FUNCTION_TEST_RETURN(cmdOptionStr);
+}
+
+/**********************************************************************************************************************************/
+void
+cmdBegin(void)
+{
+    FUNCTION_LOG_VOID(logLevelTrace);
+
+    ASSERT(cfgCommand() != cfgCmdNone);
+
+    // This is fairly expensive log message to generate so skip it if it won't be output
+    if (logAny(cfgLogLevelDefault()))
+    {
+        MEM_CONTEXT_TEMP_BEGIN()
+        {
+            // Basic info on command start
+            String *info = strNewFmt("%s command begin", strZ(cfgCommandRoleName()));
+
+            // Free the old option string if it exists. This is needed when more than one command is run in a row so an option
+            // string gets created for the new command.
+            strFree(cmdOptionStr);
+            cmdOptionStr = NULL;
+
+            // Add version and options
+            strCatFmt(info, " %s:%s", PROJECT_VERSION, strZ(cmdOption()));
+
+            LOG(cfgLogLevelDefault(), 0, strZ(info));
         }
         MEM_CONTEXT_TEMP_END();
     }
@@ -180,38 +202,26 @@ cmdEnd(int code, const String *errorMessage)
     {
         MEM_CONTEXT_TEMP_BEGIN()
         {
-            // Log socket statistics
-            String *sckClientStat = sckClientStatStr();
+            // Output statistics if there are any
+            const KeyValue *statKv = statToKv();
 
-            if (sckClientStat != NULL)
-                LOG_DETAIL(strPtr(sckClientStat));
-
-            // Log tls statistics
-            String *tlsClientStat = tlsClientStatStr();
-
-            if (tlsClientStat != NULL)
-                LOG_DETAIL(strPtr(tlsClientStat));
-
-            // Log http statistics
-            String *httpClientStat = httpClientStatStr();
-
-            if (httpClientStat != NULL)
-                LOG_INFO(strPtr(httpClientStat));
+            if (varLstSize(kvKeyList(statKv)) > 0)
+                LOG_DETAIL_FMT("statistics: %s", strZ(jsonFromKv(statKv)));
 
             // Basic info on command end
-            String *info = strNewFmt("%s command end: ", strPtr(cfgCommandRoleName()));
+            String *info = strNewFmt("%s command end: ", strZ(cfgCommandRoleName()));
 
             if (errorMessage == NULL)
             {
-                strCat(info, "completed successfully");
+                strCatZ(info, "completed successfully");
 
-                if (cfgOptionValid(cfgOptLogTimestamp) && cfgOptionBool(cfgOptLogTimestamp))
+                if (cfgOptionBool(cfgOptLogTimestamp))
                     strCatFmt(info, " (%" PRIu64 "ms)", timeMSec() - timeBegin);
             }
             else
-                strCat(info, strPtr(errorMessage));
+                strCat(info, errorMessage);
 
-            LOG(cfgLogLevelDefault(), 0, strPtr(info));
+            LOG(cfgLogLevelDefault(), 0, strZ(info));
         }
         MEM_CONTEXT_TEMP_END();
     }

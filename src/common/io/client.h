@@ -1,44 +1,50 @@
 /***********************************************************************************************************************************
-Http Client Cache
+Io Client Interface
 
-Cache http clients and return one that is not busy on request.
+Create sessions for protocol clients. For example, a TLS client can be created with tlsClientNew() and then new TLS sessions can be
+opened with ioClientOpen().
 ***********************************************************************************************************************************/
-#ifndef COMMON_IO_HTTP_CLIENT_CACHE_H
-#define COMMON_IO_HTTP_CLIENT_CACHE_H
+#ifndef COMMON_IO_CLIENT_H
+#define COMMON_IO_CLIENT_H
 
 /***********************************************************************************************************************************
 Object type
 ***********************************************************************************************************************************/
-#define HTTP_CLIENT_CACHE_TYPE                                      HttpClientCache
-#define HTTP_CLIENT_CACHE_PREFIX                                    httpClientCache
+#define IO_CLIENT_TYPE                                             IoClient
+#define IO_CLIENT_PREFIX                                           ioClient
 
-typedef struct HttpClientCache HttpClientCache;
+typedef struct IoClient IoClient;
 
-#include "common/io/http/client.h"
-
-/***********************************************************************************************************************************
-Constructors
-***********************************************************************************************************************************/
-HttpClientCache *httpClientCacheNew(
-    const String *host, unsigned int port, TimeMSec timeout, bool verifyPeer, const String *caFile, const String *caPath);
+#include "common/io/session.h"
 
 /***********************************************************************************************************************************
 Functions
 ***********************************************************************************************************************************/
-// Get an http client from the cache
-HttpClient *httpClientCacheGet(HttpClientCache *this);
+// Move to a new parent mem context
+IoClient *ioClientMove(IoClient *this, MemContext *parentNew);
+
+// Open session
+IoSession *ioClientOpen(IoClient *this);
+
+/***********************************************************************************************************************************
+Getters/Setters
+***********************************************************************************************************************************/
+// Name that identifies the client
+const String *ioClientName(IoClient *this);
 
 /***********************************************************************************************************************************
 Destructor
 ***********************************************************************************************************************************/
-void httpClientCacheFree(HttpClientCache *this);
+void ioClientFree(IoClient *this);
 
 /***********************************************************************************************************************************
 Macros for function logging
 ***********************************************************************************************************************************/
-#define FUNCTION_LOG_HTTP_CLIENT_CACHE_TYPE                                                                                        \
-    HttpClientCache *
-#define FUNCTION_LOG_HTTP_CLIENT_CACHE_FORMAT(value, buffer, bufferSize)                                                           \
-    objToLog(value, "HttpClientCache", buffer, bufferSize)
+String *ioClientToLog(const IoClient *this);
+
+#define FUNCTION_LOG_IO_CLIENT_TYPE                                                                                                \
+    IoClient *
+#define FUNCTION_LOG_IO_CLIENT_FORMAT(value, buffer, bufferSize)                                                                   \
+    FUNCTION_LOG_STRING_OBJECT_FORMAT(value, ioClientToLog, buffer, bufferSize)
 
 #endif

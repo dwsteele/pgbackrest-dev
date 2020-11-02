@@ -6,6 +6,8 @@ Test Help Command
 #include "storage/storage.h"
 #include "version.h"
 
+#include "common/harnessConfig.h"
+
 /***********************************************************************************************************************************
 Test Run
 ***********************************************************************************************************************************/
@@ -18,7 +20,7 @@ testRun(void)
     const char *helpVersion = PROJECT_NAME " " PROJECT_VERSION;
 
     // General help text is used in more than one test
-    const char *generalHelp = strPtr(strNewFmt(
+    const char *generalHelp = strZ(strNewFmt(
         "%s - General help\n"
         "\n"
         "Usage:\n"
@@ -84,17 +86,17 @@ testRun(void)
         // -------------------------------------------------------------------------------------------------------------------------
         argList = strLstNew();
         strLstAddZ(argList, "/path/to/pgbackrest");
-        TEST_RESULT_VOID(configParse(strLstSize(argList), strLstPtr(argList), false), "help from empty command line");
+        TEST_RESULT_VOID(harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help from empty command line");
         TEST_RESULT_STR_Z(helpRender(), generalHelp, "    check text");
 
         argList = strLstNew();
         strLstAddZ(argList, "/path/to/pgbackrest");
         strLstAddZ(argList, "help");
-        TEST_RESULT_VOID(configParse(strLstSize(argList), strLstPtr(argList), false), "help from help command");
+        TEST_RESULT_VOID(harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help from help command");
         TEST_RESULT_STR_Z(helpRender(), generalHelp, "    check text");
 
         // -------------------------------------------------------------------------------------------------------------------------
-        const char *commandHelp = strPtr(strNewFmt(
+        const char *commandHelp = strZ(strNewFmt(
             "%s%s",
             helpVersion,
             " - 'version' command help\n"
@@ -107,12 +109,12 @@ testRun(void)
         strLstAddZ(argList, "/path/to/pgbackrest");
         strLstAddZ(argList, "help");
         strLstAddZ(argList, "version");
-        TEST_RESULT_VOID(configParse(strLstSize(argList), strLstPtr(argList), false), "help for version command");
+        TEST_RESULT_VOID(harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help for version command");
         TEST_RESULT_STR_Z(helpRender(), commandHelp, "    check text");
 
         // This test is broken up into multiple strings because C99 does not require compilers to support const strings > 4095 bytes
         // -------------------------------------------------------------------------------------------------------------------------
-        commandHelp = strPtr(strNewFmt(
+        commandHelp = strZ(strNewFmt(
             "%s%s%s",
             helpVersion,
             " - 'restore' command help\n"
@@ -124,6 +126,8 @@ testRun(void)
             "\n"
             "Command Options:\n"
             "\n"
+            "  --archive-mode                   preserve or disable archiving on restored\n"
+            "                                   cluster [default=preserve]\n"
             "  --db-include                     restore only specified databases\n"
             "                                   [current=db1, db2]\n"
             "  --force                          force a restore [default=n]\n"
@@ -183,6 +187,18 @@ testRun(void)
             "\n",
             "Repository Options:\n"
             "\n"
+            "  --repo-azure-account             azure repository account\n"
+            "  --repo-azure-ca-file             azure repository TLS CA file\n"
+            "  --repo-azure-ca-path             azure repository TLS CA path\n"
+            "  --repo-azure-container           azure repository container\n"
+            "  --repo-azure-endpoint            azure repository endpoint\n"
+            "                                   [default=blob.core.windows.net]\n"
+            "  --repo-azure-host                azure repository host\n"
+            "  --repo-azure-key                 azure repository key\n"
+            "  --repo-azure-key-type            azure repository key type [default=shared]\n"
+            "  --repo-azure-port                azure repository server port [default=443]\n"
+            "  --repo-azure-verify-tls          azure repository server certificate verify\n"
+            "                                   [default=y]\n"
             "  --repo-cipher-pass               repository cipher passphrase\n"
             "                                   [current=<redacted>]\n"
             "  --repo-cipher-type               cipher used to encrypt the repository\n"
@@ -190,6 +206,7 @@ testRun(void)
             "  --repo-host                      repository host when operating remotely via\n"
             "                                   SSH [current=backup.example.net]\n"
             "  --repo-host-cmd                  pgBackRest exe path on the repository host\n"
+            "                                   [default=/path/to/pgbackrest]\n"
             "  --repo-host-config               pgBackRest repository host configuration\n"
             "                                   file\n"
             "                                   [default=/etc/pgbackrest/pgbackrest.conf]\n"
@@ -209,8 +226,10 @@ testRun(void)
             "  --repo-s3-host                   s3 repository host\n"
             "  --repo-s3-key                    s3 repository access key\n"
             "  --repo-s3-key-secret             s3 repository secret access key\n"
+            "  --repo-s3-key-type               s3 repository key type [default=shared]\n"
             "  --repo-s3-port                   s3 repository port [default=443]\n"
             "  --repo-s3-region                 s3 repository region\n"
+            "  --repo-s3-role                   s3 repository role\n"
             "  --repo-s3-token                  s3 repository security token\n"
             "  --repo-s3-uri-style              s3 URI Style [default=host]\n"
             "  --repo-s3-verify-tls             verify S3 server certificate [default=y]\n"
@@ -235,7 +254,7 @@ testRun(void)
         strLstAddZ(argList, "--link-map=/link2=/dest2");
         strLstAddZ(argList, "--db-include=db1");
         strLstAddZ(argList, "--db-include=db2");
-        TEST_RESULT_VOID(configParse(strLstSize(argList), strLstPtr(argList), false), "help for restore command");
+        TEST_RESULT_VOID(harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help for restore command");
         unsetenv("PGBACKREST_REPO1_CIPHER_PASS");
         TEST_RESULT_STR_Z(helpRender(), commandHelp, "    check text");
 
@@ -246,7 +265,7 @@ testRun(void)
         strLstAddZ(argList, "archive-push");
         strLstAddZ(argList, "buffer-size");
         strLstAddZ(argList, "buffer-size");
-        TEST_RESULT_VOID(configParse(strLstSize(argList), strLstPtr(argList), false), "parse too many options");
+        TEST_RESULT_VOID(harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "parse too many options");
         TEST_ERROR(helpRender(), ParamInvalidError, "only one option allowed for option help");
 
         argList = strLstNew();
@@ -254,11 +273,11 @@ testRun(void)
         strLstAddZ(argList, "help");
         strLstAddZ(argList, "archive-push");
         strLstAddZ(argList, BOGUS_STR);
-        TEST_RESULT_VOID(configParse(strLstSize(argList), strLstPtr(argList), false), "parse bogus option");
+        TEST_RESULT_VOID(harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "parse bogus option");
         TEST_ERROR(helpRender(), OptionInvalidError, "option 'BOGUS' is not valid for command 'archive-push'");
 
         // -------------------------------------------------------------------------------------------------------------------------
-        const char *optionHelp = strPtr(strNewFmt(
+        const char *optionHelp = strZ(strNewFmt(
             "%s - 'archive-push' command - 'buffer-size' option help\n"
             "\n"
             "Buffer size for file operations.\n"
@@ -281,17 +300,17 @@ testRun(void)
         strLstAddZ(argList, "archive-push");
         strLstAddZ(argList, "buffer-size");
         TEST_RESULT_VOID(
-            configParse(strLstSize(argList), strLstPtr(argList), false), "help for archive-push command, buffer-size option");
+            harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help for archive-push command, buffer-size option");
         TEST_RESULT_STR(helpRender(), strNewFmt("%s\ndefault: 1048576\n", optionHelp), "    check text");
 
         strLstAddZ(argList, "--buffer-size=32768");
         TEST_RESULT_VOID(
-            configParse(strLstSize(argList), strLstPtr(argList), false), "help for archive-push command, buffer-size option");
+            harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help for archive-push command, buffer-size option");
         TEST_RESULT_STR(helpRender(), strNewFmt("%s\ncurrent: 32768\ndefault: 1048576\n", optionHelp), "    check text");
 
         // -------------------------------------------------------------------------------------------------------------------------
-        optionHelp = strPtr(strNewFmt(
-            "%s - 'archive-push' command - 'repo1-s3-host' option help\n"
+        optionHelp = strZ(strNewFmt(
+            "%s - 'archive-push' command - 'repo-s3-host' option help\n"
             "\n"
             "S3 repository host.\n"
             "\n"
@@ -304,17 +323,17 @@ testRun(void)
         strLstAddZ(argList, "archive-push");
         strLstAddZ(argList, "repo1-s3-host");
         TEST_RESULT_VOID(
-            configParse(strLstSize(argList), strLstPtr(argList), false), "help for archive-push command, repo1-s3-host option");
+            harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help for archive-push command, repo1-s3-host option");
         TEST_RESULT_STR_Z(helpRender(), optionHelp, "    check text");
 
         strLstAddZ(argList, "--repo1-type=s3");
         strLstAddZ(argList, "--repo1-s3-host=s3-host");
         TEST_RESULT_VOID(
-            configParse(strLstSize(argList), strLstPtr(argList), false), "help for archive-push command, repo1-s3-host option");
+            harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help for archive-push command, repo1-s3-host option");
         TEST_RESULT_STR(helpRender(), strNewFmt("%s\ncurrent: s3-host\n", optionHelp), "    check text");
 
         // -------------------------------------------------------------------------------------------------------------------------
-        optionHelp = strPtr(strNewFmt(
+        optionHelp = strZ(strNewFmt(
             "%s - 'archive-push' command - 'repo-cipher-pass' option help\n"
             "\n"
             "Repository cipher passphrase.\n"
@@ -332,12 +351,12 @@ testRun(void)
         strLstAddZ(argList, "archive-push");
         strLstAddZ(argList, "repo-cipher-pass");
         TEST_RESULT_VOID(
-            configParse(strLstSize(argList), strLstPtr(argList), false), "help for archive-push command, repo1-s3-host option");
+            harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help for archive-push command, repo1-s3-host option");
         unsetenv("PGBACKREST_REPO1_CIPHER_PASS");
         TEST_RESULT_STR_Z(helpRender(), optionHelp, "    check text");
 
         // -------------------------------------------------------------------------------------------------------------------------
-        optionHelp = strPtr(strNewFmt(
+        optionHelp = strZ(strNewFmt(
             "%s - 'backup' command - 'repo-hardlink' option help\n"
             "\n"
             "Hardlink files between backups in the repository.\n"
@@ -358,12 +377,21 @@ testRun(void)
         strLstAddZ(argList, "backup");
         strLstAddZ(argList, "repo-hardlink");
         TEST_RESULT_VOID(
-            configParse(strLstSize(argList), strLstPtr(argList), false), "help for backup command, repo-hardlink option");
+            harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help for backup command, repo-hardlink option");
+        TEST_RESULT_STR_Z(helpRender(), optionHelp, "    check text");
+
+        argList = strLstNew();
+        strLstAddZ(argList, "/path/to/pgbackrest");
+        strLstAddZ(argList, "help");
+        strLstAddZ(argList, "backup");
+        strLstAddZ(argList, "hardlink");
+        TEST_RESULT_VOID(
+            harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help for backup command, deprecated hardlink option");
         TEST_RESULT_STR_Z(helpRender(), optionHelp, "    check text");
 
         // Check admonition
         // -------------------------------------------------------------------------------------------------------------------------
-        optionHelp = strPtr(strNewFmt(
+        optionHelp = strZ(strNewFmt(
             "%s - 'backup' command - 'repo-retention-archive' option help\n"
             "\n"
             "Number of backups worth of continuous WAL to retain.\n"
@@ -394,7 +422,7 @@ testRun(void)
         strLstAddZ(argList, "backup");
         strLstAddZ(argList, "repo-retention-archive");
         TEST_RESULT_VOID(
-            configParse(strLstSize(argList), strLstPtr(argList), false), "help for backup command, repo-retention-archive option");
+            harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "help for backup command, repo-retention-archive option");
         TEST_RESULT_STR_Z(helpRender(), optionHelp, "    check admonition text");
     }
 
@@ -403,13 +431,13 @@ testRun(void)
     {
         StringList *argList = strLstNew();
         strLstAddZ(argList, "/path/to/pgbackrest");
-        TEST_RESULT_VOID(configParse(strLstSize(argList), strLstPtr(argList), false), "parse help from empty command line");
+        TEST_RESULT_VOID(harnessCfgLoadRaw(strLstSize(argList), strLstPtr(argList)), "parse help from empty command line");
 
         // Redirect stdout to a file
         int stdoutSave = dup(STDOUT_FILENO);
         String *stdoutFile = strNewFmt("%s/stdout.help", testPath());
 
-        THROW_ON_SYS_ERROR(freopen(strPtr(stdoutFile), "w", stdout) == NULL, FileWriteError, "unable to reopen stdout");
+        THROW_ON_SYS_ERROR(freopen(strZ(stdoutFile), "w", stdout) == NULL, FileWriteError, "unable to reopen stdout");
 
         // Not in a test wrapper to avoid writing to stdout
         cmdHelp();

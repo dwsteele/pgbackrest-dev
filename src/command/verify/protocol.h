@@ -1,22 +1,23 @@
 /***********************************************************************************************************************************
-Handle IO Write
-
-Write to a handle using the IoWrite interface.
+Verify Protocol Handler
 ***********************************************************************************************************************************/
-#ifndef COMMON_IO_HANDLEWRITE_H
-#define COMMON_IO_HANDLEWRITE_H
+#ifndef COMMAND_VERIFY_PROTOCOL_H
+#define COMMAND_VERIFY_PROTOCOL_H
 
-#include "common/io/write.h"
+#include "common/type/string.h"
+#include "common/type/variantList.h"
+#include "protocol/server.h"
 
 /***********************************************************************************************************************************
-Constructors
+Constants
 ***********************************************************************************************************************************/
-IoWrite *ioHandleWriteNew(const String *name, int handle);
+#define PROTOCOL_COMMAND_VERIFY_FILE                                "verifyFile"
+    STRING_DECLARE(PROTOCOL_COMMAND_VERIFY_FILE_STR);
 
 /***********************************************************************************************************************************
-Helper functions
+Functions
 ***********************************************************************************************************************************/
-// Write a string to the specified handle
-void ioHandleWriteOneStr(int handle, const String *string);
+// Process protocol requests
+bool verifyProtocol(const String *command, const VariantList *paramList, ProtocolServer *server);
 
 #endif

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE doc SYSTEM "doc.dtd">
-<doc title="{[project]} User Guide" subtitle="{[user-guide-subtitle]} / {[postgres]} {[pg-version]}" cmd-line-len="85">
+<doc title="{[project]} User Guide" subtitle="{[user-guide-subtitle]} / {[postgres]} {[pg-version-min]}-{[pg-version-max]}" cmd-line-len="85">
     <description>The {[project]} User Guide demonstrates how to quickly and easily setup {[project]} for your {[postgres]} database. Step-by-step instructions lead the user through all the important features of the fastest, most reliable {[postgres]} backup and restore solution.</description>
 
     <!-- Variables used by the rest of the script -->
@@ -16,9 +16,17 @@
         <variable key="os-centos7-title">RHEL &amp; CentOS 7</variable>
 
         <!-- Base PostgreSQL versions -->
-        <variable key="os-debian-pg-version">10</variable>
+        <variable key="os-debian-pg-version">12</variable>
+        <variable key="os-debian-pg-version-min">12</variable>
+        <variable key="os-debian-pg-version-max">13</variable>
+
         <variable key="os-centos6-pg-version">9.5</variable>
-        <variable key="os-centos7-pg-version">9.6</variable>
+        <variable key="os-centos6-pg-version-min">9.2</variable>
+        <variable key="os-centos6-pg-version-max">9.5</variable>
+
+        <variable key="os-centos7-pg-version">10</variable>
+        <variable key="os-centos7-pg-version-min">9.6</variable>
+        <variable key="os-centos7-pg-version-max">11</variable>
 
         <!-- User-defined package to use in documentation (use "apt" to install the current PGDG apt package) -->
         <variable key="package">none</variable>
@@ -58,18 +66,28 @@
         <variable key="fake-cert-path-relative">resource/fake-cert</variable>
         <variable key="fake-cert-path">{[host-repo-path]}/doc/{[fake-cert-path-relative]}</variable>
 
+        <!-- PostreSQL versions to run documentation for and min/max versions represented -->
         <variable key="pg-version" if="{[os-type-is-debian]}">{[os-debian-pg-version]}</variable>
+        <variable key="pg-version-min" if="{[os-type-is-debian]}">{[os-debian-pg-version-min]}</variable>
+        <variable key="pg-version-max" if="{[os-type-is-debian]}">{[os-debian-pg-version-max]}</variable>
+
         <variable key="pg-version" if="{[os-type-is-centos6]}">{[os-centos6-pg-version]}</variable>
+        <variable key="pg-version-min" if="{[os-type-is-centos6]}">{[os-centos6-pg-version-min]}</variable>
+        <variable key="pg-version-max" if="{[os-type-is-centos6]}">{[os-centos6-pg-version-max]}</variable>
+
         <variable key="pg-version" if="{[os-type-is-centos7]}">{[os-centos7-pg-version]}</variable>
+        <variable key="pg-version-min" if="{[os-type-is-centos7]}">{[os-centos7-pg-version-min]}</variable>
+        <variable key="pg-version-max" if="{[os-type-is-centos7]}">{[os-centos7-pg-version-max]}</variable>
+
         <variable key="pg-version-nodot" eval="y">my $version = '{[pg-version]}'; $version =~ s/\.//g; return $version;</variable>
 
         <!-- WAL level should be the minimum required for replication -->
         <variable key="wal-level" if="{[pg-version]} &lt; 9.6">hot_standby</variable>
         <variable key="wal-level" if="{[pg-version]} &gt;= 9.6">replica</variable>
 
-        <variable key="pg-version-upgrade" if="{[os-type-is-debian]}">11</variable>
+        <variable key="pg-version-upgrade" if="{[os-type-is-debian]}">13</variable>
         <variable key="pg-version-upgrade" if="{[os-type-is-centos6]}">9.6</variable>
-        <variable key="pg-version-upgrade" if="{[os-type-is-centos7]}">10</variable>
+        <variable key="pg-version-upgrade" if="{[os-type-is-centos7]}">11</variable>
         <variable key="pg-version-upgrade-nodot" eval="y">my $version = '{[pg-version-upgrade]}'; $version =~ s/\.//g; return $version;</variable>
 
         <variable key="pg-bin-path" if="{[os-type-is-debian]}">/usr/lib/postgresql/{[pg-version]}/bin</variable>
@@ -123,16 +141,27 @@
         <variable key="postgres-pgpass">{[pg-home-path]}/.pgpass</variable>
 
         <variable key="postgres-log-demo" if="{[os-type-is-debian]}">/var/log/postgresql/postgresql-{[pg-version]}-{[postgres-cluster-demo]}.log</variable>
-        <variable key="postgres-log-demo" if="{[os-type-is-centos]}">{[pg-path]}/pg_log/postgresql.log</variable>
+        <variable key="postgres-log-demo" if="{[os-type-is-centos]} &amp;&amp; {[pg-version]} &lt; 10">{[pg-path]}/pg_log/postgresql.log</variable>
+        <variable key="postgres-log-demo" if="{[os-type-is-centos]} &amp;&amp; {[pg-version]} &gt;= 10">{[pg-path]}/log/postgresql.log</variable>
 
         <variable key="postgres-log-pgstartup-demo" if="{[os-type-is-centos]}">/var/lib/pgsql/{[pg-version]}/pgstartup.log</variable>
 
-        <variable key="postgres-recovery-demo" if="{[pg-version]} &lt; 12">{[pg-path]}/recovery.conf</variable>
-        <variable key="postgres-recovery-demo" if="{[pg-version]} &gt;= 12">{[pg-path]}/postgresql.auto.conf</variable>
+        <variable key="pg-recovery-file-demo" if="{[pg-version]} &lt; 12">recovery.conf</variable>
+        <variable key="pg-recovery-file-demo" if="{[pg-version]} &gt;= 12">postgresql.auto.conf</variable>
+        <variable key="pg-recovery-path-demo">{[pg-path]}/{[pg-recovery-file-demo]}</variable>
 
         <!-- Select correct WAL switch function based on the version of PostgreSQL -->
         <variable key="pg-switch-wal" if="{[pg-version]} &lt; 10">pg_switch_xlog</variable>
         <variable key="pg-switch-wal" if="{[pg-version]} &gt;= 10">pg_switch_wal</variable>
+
+        <!-- Azure Settings -->
+        <variable key="azure-all">n</variable>                      <!-- Build all the documentation with Azure? -->
+        <variable key="azure-local">y</variable>
+        <variable key="azure-account">pgbackrest</variable>
+        <variable key="azure-container">demo-container</variable>
+        <variable key="azure-repo">demo-repo</variable>
+        <variable key="azure-key-type">shared</variable>
+        <variable key="azure-key">YXpLZXk=</variable>
 
         <!-- S3 Settings -->
         <variable key="s3-all">n</variable>                         <!-- Build all the documentation with S3? -->
@@ -152,6 +181,9 @@
         <variable key="host-user" eval="y">use English; getpwuid($UID) eq 'root' ? 'vagrant' : getpwuid($UID) . ''</variable>
         <variable key="host-mount">{[host-repo-path]}:{[pgbackrest-repo-path]}</variable>
         <variable key="image-repo">pgbackrest/test</variable>
+
+        <variable key="host-azure-id">azure</variable>
+        <variable key="host-azure">azure-server</variable>
 
         <variable key="host-s3-id">s3</variable>
         <variable key="host-s3">s3-server</variable>
@@ -335,7 +367,7 @@
 
         # Install PostgreSQL
         RUN rpm --import http://yum.postgresql.org/RPM-GPG-KEY-PGDG-10 &amp;&amp; \
-            rpm -ivh https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-6-x86_64/pgdg-redhat-repo-latest.noarch.rpm &amp;&amp; \
+            rpm -ivh https://download.postgresql.org/pub/repos/yum/reporpms/EL-6-x86_64/pgdg-redhat-repo-latest.noarch.rpm &amp;&amp; \
             yum install -y postgresql{[pg-version-nodot]}-server postgresql{[pg-version-upgrade-nodot]}-server
 
         # Create an ssh key for root so all hosts can ssh to each other as root
@@ -379,7 +411,7 @@
 
         # Install PostgreSQL
         RUN rpm --import http://yum.postgresql.org/RPM-GPG-KEY-PGDG-10 &amp;&amp; \
-            rpm -ivh https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm  &amp;&amp; \
+            rpm -ivh https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm &amp;&amp; \
             yum install -y postgresql{[pg-version-nodot]}-server postgresql{[pg-version-upgrade-nodot]}-server
 
         # Create an ssh key for root so all hosts can ssh to each other as root
@@ -606,6 +638,40 @@
     </block-define>
 
     <!-- ======================================================================================================================= -->
+    <block-define id="azure-setup">
+        <p><backrest/> supports locating repositories in <proper>Azure-compatible</proper> object stores.  The container used to store the repository must be created in advance &amp;mdash; <backrest/> will not do it automatically.  The repository can be located in the container root (<path>/</path>) but it's usually best to place it in a subpath so object store logs or other data can also be stored in the container without conflicts.</p>
+
+        <backrest-config host="{[azure-setup-host]}" file="{[backrest-config-demo]}" owner="{[azure-setup-config-owner]}">
+            <title>Configure <proper>Azure</proper></title>
+
+            <backrest-config-option section="global" key="repo1-type">azure</backrest-config-option>
+            <backrest-config-option section="global" key="repo1-path">/{[azure-repo]}</backrest-config-option>
+            <backrest-config-option section="global" key="repo1-azure-account">{[azure-account]}</backrest-config-option>
+            <backrest-config-option if="'{[azure-key-type]}' ne 'shared'" section="global" key="repo1-azure-key-type">{[azure-key-type]}</backrest-config-option>
+            <backrest-config-option section="global" key="repo1-azure-key">{[azure-key]}</backrest-config-option>
+            <backrest-config-option section="global" key="repo1-azure-container">{[azure-container]}</backrest-config-option>
+            <backrest-config-option if="'{[azure-local]}' eq 'y'" section="global" key="repo1-azure-host">blob.core.windows.net</backrest-config-option>
+
+            <backrest-config-option section="global" key="process-max">4</backrest-config-option>
+        </backrest-config>
+
+        <execute-list if="'{[azure-local]}' eq 'y'" host="{[azure-setup-host]}" show="n">
+            <title>Create the container</title>
+
+            <!-- Set host entries to redirect to local azure server -->
+            <execute user="root" user-force="y" show="n">
+                <exe-cmd>echo "{[host-azure-ip]} blob.core.windows.net" | tee -a /etc/hosts</exe-cmd>
+            </execute>
+
+            <execute user="{[azure-setup-user]}" if="'{[azure-setup-create-container]}' eq 'y'" show='n'>
+                <exe-cmd>{[project-exe]} repo-create</exe-cmd>
+            </execute>
+        </execute-list>
+
+        <p>Shared access signatures may be used by setting the <br-option>repo1-azure-key-type</br-option> option to <id>sas</id> and the <br-option>repo1-azure-key</br-option> option to the shared access signature token.</p>
+    </block-define>
+
+    <!-- ======================================================================================================================= -->
     <block-define id="s3-setup">
         <p><backrest/> supports locating repositories in <proper>S3-compatible</proper> object stores.  The bucket used to store the repository must be created in advance &amp;mdash; <backrest/> will not do it automatically.  The repository can be located in the bucket root (<path>/</path>) but it's usually best to place it in a subpath so object store logs or other data can also be stored in the bucket without conflicts.</p>
 
@@ -643,12 +709,15 @@
     <section id="introduction">
         <title>Introduction</title>
 
+        <!-- Create Azure server first to allow it time to boot before being used -->
+        <host-add if="'{[azure-local]}' eq 'y'" id="{[host-azure-id]}" name="{[host-azure]}" user="root" image="mcr.microsoft.com/azure-storage/azurite" os="{[os-type]}" option="-v {[fake-cert-path]}/azure-server.crt:/root/public.crt:ro -v {[fake-cert-path]}/azure-server.key:/root/private.key:ro -e AZURITE_ACCOUNTS='{[azure-account]}:{[azure-key]}'" param="azurite-blob --blobPort 443 --blobHost 0.0.0.0 --cert=/root/public.crt --key=/root/private.key" update-hosts="n"/>
+
         <!-- Create S3 server first to allow it time to boot before being used -->
         <host-add if="'{[s3-local]}' eq 'y'" id="{[host-s3-id]}" name="{[host-s3]}" user="root" image="minio/minio:RELEASE.2020-05-06T23-23-25Z" os="{[os-type]}" option="-v {[fake-cert-path]}/s3-server.crt:/root/.minio/certs/public.crt:ro -v {[fake-cert-path]}/s3-server.key:/root/.minio/certs/private.key:ro -e MINIO_REGION={[s3-region]} -e MINIO_DOMAIN={[s3-endpoint]} -e MINIO_BROWSER=off -e MINIO_ACCESS_KEY={[s3-key]} -e MINIO_SECRET_KEY={[s3-key-secret]}" param="server /data --address :443" update-hosts="n"/>
 
         <p>This user guide is intended to be followed sequentially from beginning to end &amp;mdash; each section depends on the last.  For example, the <link section="/backup">Backup</link> section relies on setup that is performed in the <link section="/quickstart">Quick Start</link> section.  Once <backrest/> is up and running then skipping around is possible but following the user guide in order is recommended the first time through.</p>
 
-        <p>Although the examples are targeted at {[user-guide-os]} and <postgres/> {[pg-version]}, it should be fairly easy to apply this guide to any Unix distribution and <postgres/> version. The only OS-specific commands are those to create, start, stop, and drop <postgres/> clusters.  The <backrest/> commands will be the same on any Unix system though the location to install the executable may vary.
+        <p>Although the examples are targeted at {[user-guide-os]} and <postgres/> {[pg-version-min]}-{[pg-version-max]}, it should be fairly easy to apply this guide to any Unix distribution and <postgres/> version. The only OS-specific commands are those to create, start, stop, and drop <postgres/> clusters.  The <backrest/> commands will be the same on any Unix system though the location to install the executable may vary.
 
         Configuration information and documentation for PostgreSQL can be found in the <postgres/> <link url='http://www.postgresql.org/docs/{[pg-version]}/static/index.html'>Manual</link>.</p>
 
@@ -967,6 +1036,18 @@
         </section>
 
         <!-- =================================================================================================================== -->
+        <section id="azure-support" if="'{[azure-all]}' eq 'y'">
+            <title>Azure-Compatible Object Store Support</title>
+
+            <block id="azure-setup">
+                <block-variable-replace key="azure-setup-host">{[host-pg1]}</block-variable-replace>
+                <block-variable-replace key="azure-setup-user">postgres</block-variable-replace>
+                <block-variable-replace key="azure-setup-config-owner">postgres:postgres</block-variable-replace>
+                <block-variable-replace key="azure-setup-create-container">y</block-variable-replace>
+            </block>
+        </section>
+
+        <!-- =================================================================================================================== -->
         <section id="s3-support" if="'{[s3-all]}' eq 'y'">
             <title>S3-Compatible Object Store Support</title>
 
@@ -1168,19 +1249,7 @@
                 </execute>
             </execute-list>
 
-            <p>Each stanza has a separate section and it is possible to limit output to a single stanza with the <br-option>--stanza</br-option> option.  The stanza '<id>status</id>' gives a brief indication of the stanza's health.  If this is '<id>ok</id>' then <backrest/> is functioning normally.  The '<id>wal archive min/max</id>' shows the minimum and maximum WAL currently stored in the archive.  Note that there may be gaps due to archive retention policies or other reasons.</p>
-
-            <p>The '<id>backup/expire running</id>' message will appear beside the '<id>status</id>' information if one of those commands is currently running on the host.</p>
-
-            <p>The backups are displayed oldest to newest.  The oldest backup will <i>always</i> be a full backup (indicated by an <id>F</id> at the end of the label) but the newest backup can be full, differential (ends with <id>D</id>), or incremental (ends with <id>I</id>).</p>
-
-            <p>The '<id>timestamp start/stop</id>' defines the time period when the backup ran.  The '<id>timestamp stop</id>' can be used to determine the backup to use when performing Point-In-Time Recovery.  More information about Point-In-Time Recovery can be found in the <link section="/pitr">Point-In-Time Recovery</link> section.</p>
-
-            <p>The '<id>wal start/stop</id>' defines the WAL range that is required to make the database consistent when restoring.  The <cmd>backup</cmd> command will ensure that this WAL range is in the archive before completing.</p>
-
-            <p>The '<id>database size</id>' is the full uncompressed size of the database while '<id>backup size</id>' is the amount of data actually backed up (these will be the same for full backups).  The '<id>repository size</id>' includes all the files from this backup and any referenced backups that are required to restore the database while '<id>repository backup size</id>' includes only the files in this backup (these will also be the same for full backups).  Repository sizes reflect compressed file sizes if compression is enabled in <backrest/> or the filesystem.</p>
-
-            <p>The '<id>backup reference list</id>' contains the additional backups that are required to restore this backup.</p>
+            <cmd-description key="info"/>
         </section>
 
         <!-- SECTION => QUICKSTART - PERFORM RESTORE -->
@@ -1903,7 +1972,7 @@
         <p>Now the restore can be performed with time-based recovery to bring back the missing table.</p>
 
         <execute-list host="{[host-pg1]}">
-            <title>Stop <postgres/>, restore the {[postgres-cluster-demo]} cluster to <id>{[time-recovery-timestamp]}</id>, and display <file>recovery.conf</file></title>
+            <title>Stop <postgres/>, restore the {[postgres-cluster-demo]} cluster to <id>{[time-recovery-timestamp]}</id>, and display <file>{[pg-recovery-file-demo]}</file></title>
 
             <execute user="root">
                 <exe-cmd>{[pg-cluster-stop]}</exe-cmd>
@@ -1920,12 +1989,12 @@
             </execute>
 
             <execute user="postgres" output="y">
-                <exe-cmd>cat {[postgres-recovery-demo]}</exe-cmd>
+                <exe-cmd>cat {[pg-recovery-path-demo]}</exe-cmd>
                 <exe-highlight>recovery_target_time</exe-highlight>
             </execute>
         </execute-list>
 
-        <p>The <file>recovery.conf</file> file has been automatically generated by <backrest/> so <postgres/> can be started immediately. Once <postgres/> has finished recovery the table will exist again and can be queried.</p>
+        <p><backrest/> has automatically generated the recovery settings in <file>{[pg-recovery-file-demo]}</file> so <postgres/> can be started immediately. Once <postgres/> has finished recovery the table will exist again and can be queried.</p>
 
         <execute-list host="{[host-pg1]}">
             <title>Start <postgres/> and check that the important table exists</title>
@@ -2077,6 +2146,41 @@
         </execute-list>
     </section>
 
+    <!-- ======================================================================================================================= -->
+    <section id="azure-support" if="'{[azure-all]}' ne 'y'" depend="/quickstart/configure-archiving">
+        <title>Azure-Compatible Object Store Support</title>
+
+        <block id="azure-setup">
+            <block-variable-replace key="azure-setup-host">{[host-pg1]}</block-variable-replace>
+            <block-variable-replace key="azure-setup-user">postgres</block-variable-replace>
+            <block-variable-replace key="azure-setup-config-owner">postgres:postgres</block-variable-replace>
+            <block-variable-replace key="azure-setup-create-container">y</block-variable-replace>
+        </block>
+
+        <p>Commands are run exactly as if the repository were stored on a local disk.</p>
+
+        <execute-list host="{[host-pg1]}">
+            <title>Create the stanza</title>
+
+            <execute user="postgres" output="y">
+                <exe-cmd>{[project-exe]} {[dash]}-stanza={[postgres-cluster-demo]} {[dash]}-log-level-console=info stanza-create</exe-cmd>
+                <exe-highlight>completed successfully</exe-highlight>
+            </execute>
+        </execute-list>
+
+        <p>File creation time in object stores is relatively slow so commands benefit by increasing <br-option>process-max</br-option> to parallelize file creation.</p>
+
+        <execute-list host="{[host-pg1]}">
+            <title>Backup the {[postgres-cluster-demo]} cluster</title>
+
+            <execute user="postgres" output="y">
+                <exe-cmd>{[project-exe]} {[dash]}-stanza={[postgres-cluster-demo]}
+                    --log-level-console=info backup</exe-cmd>
+                <exe-highlight>no prior backup exists|full backup size</exe-highlight>
+            </execute>
+        </execute-list>
+    </section>
+
     <!-- SECTION => S3-SUPPORT -->
     <section id="s3-support" if="'{[s3-all]}' ne 'y'" depend="/quickstart/configure-archiving">
         <title>S3-Compatible Object Store Support</title>
@@ -2088,7 +2192,9 @@
             <block-variable-replace key="s3-setup-create-bucket">y</block-variable-replace>
         </block>
 
-        <p>A role should be created to run <backrest/> and the bucket permissions should be set as restrictively as possible.  This sample <proper>Amazon S3</proper> policy will restrict all reads and writes to the bucket and repository path.</p>
+        <p>A role should be created to run <backrest/> and the bucket permissions should be set as restrictively as possible. If the role is associated with an instance in <proper>AWS</proper> then <backrest/> will automatically retrieve temporary credentials when <br-option>repo1-s3-key-type=auto</br-option>, which means that keys do not need to be explicitly set in <file>{[backrest-config-demo]}</file>.</p>
+
+        <p>This sample <proper>Amazon S3</proper> policy will restrict all reads and writes to the bucket and repository path.</p>
 
         <code-block title="Sample Amazon S3 Policy">
             {
@@ -2219,6 +2325,8 @@
 
             <p>A new host named <host>repository</host> is created to store the cluster backups.</p>
 
+            <admonition type="note">The <backrest/> version installed on the <host>repository</host> host must exactly match the version installed on the <postgres/> host.</admonition>
+
             <host-add id="{[host-repo1-id]}" name="{[host-repo1]}" user="{[host-repo1-user]}" image="{[host-repo1-image]}" os="{[os-type]}" mount="{[host-repo1-mount]}" option="{[host-option]}"/>
 
             <p>The <user>{[br-user]}</user> user is created to own the <backrest/> repository.  Any user can own the repository but it is best not to use <user>postgres</user> (if it exists) to avoid confusion.</p>
@@ -2344,6 +2452,15 @@
                 </execute>
             </execute-list> -->
 
+            <p if="'{[azure-all]}' eq 'y'">Configure Azure-compatible object store if required.</p>
+
+            <block id="azure-setup" if="'{[azure-all]}' eq 'y'">
+                <block-variable-replace key="azure-setup-host">{[host-repo1]}</block-variable-replace>
+                <block-variable-replace key="azure-setup-user">{[br-user]}</block-variable-replace>
+                <block-variable-replace key="azure-setup-config-owner">{[br-user]}:{[br-group]}</block-variable-replace>
+                <block-variable-replace key="azure-setup-create-container">n</block-variable-replace>
+            </block>
+
             <p if="'{[s3-all]}' eq 'y'">Configure S3-compatible object store if required.</p>
 
             <block id="s3-setup" if="'{[s3-all]}' eq 'y'">
@@ -2358,6 +2475,20 @@
             <execute-list host="{[host-repo1]}">
                 <title>Create the stanza</title>
 
+                <!-- Delete the azure stanza so the server can be reused -->
+                <execute if="'{[azure-all]}' eq 'y'" user="{[br-user]}" output="n" show="n">
+                    <exe-cmd>{[project-exe]} {[dash]}-stanza={[postgres-cluster-demo]} stop</exe-cmd>
+                </execute>
+
+                <execute if="'{[azure-all]}' eq 'y'" user="{[br-user]}" output="n" show="n">
+                    <exe-cmd>{[project-exe]} {[dash]}-stanza={[postgres-cluster-demo]} {[dash]}-force stanza-delete</exe-cmd>
+                </execute>
+
+                <execute if="'{[azure-all]}' eq 'y'" user="{[br-user]}" output="n" show="n">
+                    <exe-cmd>{[project-exe]} {[dash]}-stanza={[postgres-cluster-demo]} start</exe-cmd>
+                </execute>
+
+                <!-- Create the stanza -->
                 <execute user="{[br-user]}" output="y" filter="n">
                     <exe-cmd>{[project-exe]} {[dash]}-stanza={[postgres-cluster-demo]} stanza-create</exe-cmd>
                 </execute>
@@ -2647,6 +2778,8 @@
 
             <p>Now the standby can be created with the <cmd>restore</cmd> command.</p>
 
+            <admonition type="important">If the cluster is intended to be promoted without becoming the new primary (e.g. for reporting or testing), use <br-option>--archive-mode=off</br-option> or set <pg-option>archive_mode=off</pg-option> in <file>postgresql.conf</file> to disable archiving. If archiving is not disabled then the repository may be polluted with WAL that can make restores more difficult.</admonition>
+
             <execute-list host="{[host-pg2]}">
                 <title>Restore the {[postgres-cluster-demo]} standby cluster</title>
 
@@ -2659,7 +2792,7 @@
                 </execute>
 
                 <execute user="postgres" output="y" filter="n">
-                    <exe-cmd>cat {[postgres-recovery-demo]}</exe-cmd>
+                    <exe-cmd>cat {[pg-recovery-path-demo]}</exe-cmd>
                 </execute>
             </execute-list>
 
@@ -2848,11 +2981,11 @@
                 </execute>
 
                 <execute user="postgres" output="y" filter="n">
-                    <exe-cmd>cat {[postgres-recovery-demo]}</exe-cmd>
+                    <exe-cmd>cat {[pg-recovery-path-demo]}</exe-cmd>
                 </execute>
             </execute-list>
 
-            <admonition type="note">The <pg-setting>primary_conninfo</pg-setting> setting has been written into the <file>recovery.conf</file> file.  Configuring recovery settings in <backrest/> means that the <file>recovery.conf</file> file does not need to be stored elsewhere since it will be properly recreated with each restore.  The <br-setting>{[dash]}-type=preserve</br-setting> option can be used with the <cmd>restore</cmd> to leave the existing <file>recovery.conf</file> file in place if that behavior is preferred.</admonition>
+            <admonition type="note">The <pg-setting>primary_conninfo</pg-setting> setting has been written into the <file>{[pg-recovery-file-demo]}</file> file because it was configured as a <br-option>recovery-option</br-option> in <file>{[project-exe]}.conf</file>. The <br-setting>{[dash]}-type=preserve</br-setting> option can be used with the <cmd>restore</cmd> to leave the existing <file>{[pg-recovery-file-demo]}</file> file in place if that behavior is preferred.</admonition>
 
             <p if="{[os-type-is-centos]}">By default {[user-guide-os]} stores the <file>postgresql.conf</file> file in the <postgres/> data directory.  That means the change made to <file>postgresql.conf</file> was overwritten by the last restore and the <pg-option>hot_standby</pg-option> setting must be enabled again.  Other solutions to this problem are to store the <file>postgresql.conf</file> file elsewhere or to enable the <pg-option>hot_standby</pg-option> setting on the <host>{[host-pg1]}</host> host where it will be ignored.</p>
 

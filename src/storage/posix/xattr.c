@@ -40,7 +40,7 @@ storagePosixInfoXAttr(const String *path, const String *name)
 
         do
         {
-            getResult = getxattr(strPtr(path), strPtr(name), bufPtr(buffer), bufSize(buffer) - 1);
+            getResult = getxattr(strZ(path), strZ(name), bufPtr(buffer), bufSize(buffer) - 1);
 
             if (getResult == -1)
             {
@@ -50,10 +50,10 @@ storagePosixInfoXAttr(const String *path, const String *name)
 
                 if (errno == ERANGE)
                 {
-                    ssize_t size = getxattr(strPtr(path), strPtr(name), NULL, 0);
+                    ssize_t size = getxattr(strZ(path), strZ(name), NULL, 0);
 
                     THROW_ON_SYS_ERROR_FMT(
-                        size == -1, FileReadError, "unable to get xattr '%s' size for path '%s'", strPtr(name), strPtr(path));
+                        size == -1, FileReadError, "unable to get xattr '%s' size for path '%s'", strZ(name), strZ(path));
 
                     LOG_DEBUG_FMT("resize to %zd", size);
 
@@ -62,7 +62,7 @@ storagePosixInfoXAttr(const String *path, const String *name)
                 else
                 {
                     THROW_SYS_ERROR_CODE_FMT(
-                        errno, FileReadError, "unable to get xattr '%s' for path '%s'", strPtr(name), strPtr(path));
+                        errno, FileReadError, "unable to get xattr '%s' for path '%s'", strZ(name), strZ(path));
                 }
             }
             else

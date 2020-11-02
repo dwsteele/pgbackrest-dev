@@ -37,7 +37,7 @@ storagePosixInfoXAttr(const String *path, const String *name)
     String *result = NULL;
 
     if (harnessXAttrLocal.xAttr != NULL)
-        result = strDup(varStr(kvGet(harnessXAttrLocal.xAttr, VARSTR(strNewFmt("%s:%s", strPtr(path), strPtr(name))))));
+        result = strDup(varStr(kvGet(harnessXAttrLocal.xAttr, VARSTR(strNewFmt("%s:%s", strZ(path), strZ(name))))));
 
     FUNCTION_HARNESS_RESULT(STRING, result);
 }
@@ -67,7 +67,7 @@ storagePosixInfoXAttrSet(const String *path, const String *name, const Buffer *v
         MEM_CONTEXT_END();
     }
 
-    kvPut(harnessXAttrLocal.xAttr, VARSTR(strNewFmt("%s:%s", strPtr(path), strPtr(name))), VARSTR(strNewBuf(value)));
+    kvPut(harnessXAttrLocal.xAttr, VARSTR(strNewFmt("%s:%s", strZ(path), strZ(name))), VARSTR(strNewBuf(value)));
 
     FUNCTION_HARNESS_RESULT_VOID();
 }

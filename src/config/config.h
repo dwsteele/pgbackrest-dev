@@ -10,9 +10,9 @@ config/parse.c sets the command and options and determines which options are val
 #include "common/lock.h"
 #include "common/log.h"
 #include "common/type/stringList.h"
-#include "config/define.h"
 
 #include "config/config.auto.h"
+#include "config/define.auto.h"
 
 /***********************************************************************************************************************************
 Command Role Enum
@@ -95,6 +95,19 @@ bool cfgParameterAllowed(void);
 const StringList *cfgCommandParam(void);
 
 /***********************************************************************************************************************************
+Option Group Functions
+***********************************************************************************************************************************/
+// Are any options in the group with the specified index valid for the command and set by the user (i.e. not default)?
+bool cfgOptionGroupIdxTest(ConfigOptionGroup groupId, unsigned int index);
+
+// Total indexed groups, 0 if the group is not valid. Note that there may be gaps so each group index will need to be tested with
+// cfgOptionGroupIdxTest() to make sure it contains data.
+unsigned int cfgOptionGroupIdxTotal(ConfigOptionGroup groupId);
+
+// Are any options in the group valid for the command?
+bool cfgOptionGroupValid(ConfigOptionGroup groupId);
+
+/***********************************************************************************************************************************
 Option Functions
 
 Access option values, indexes, and determine if an option is valid for the current command.
@@ -114,9 +127,6 @@ uint64_t cfgOptionUInt64(ConfigOption optionId);
 
 // Get index for option
 unsigned int cfgOptionIndex(ConfigOption optionId);
-
-// Get total indexed values for option
-unsigned int cfgOptionIndexTotal(ConfigOption optionDefId);
 
 // Option name by id
 const char *cfgOptionName(ConfigOption optionId);
@@ -148,10 +158,6 @@ config/load.c.
 ***********************************************************************************************************************************/
 // Initialize or reinitialize the configuration data
 void cfgInit(void);
-
-// Get the define id for this command. This can be done by just casting the id to the define id. There may be a time when they are
-// not one to one and this function can be modified to do the mapping.
-ConfigDefineCommand cfgCommandDefIdFromId(ConfigCommand commandId);
 
 // Was help requested?
 bool cfgCommandHelp(void);
@@ -186,9 +192,6 @@ ConfigDefineOption cfgOptionDefIdFromId(ConfigOption optionId);
 
 // Parse a host option and extract the host and port (if it exists)
 String *cfgOptionHostPort(ConfigOption optionId, unsigned int *port);
-
-// Get option id by name
-int cfgOptionId(const char *optionName);
 
 // Get the id for this option define
 ConfigOption cfgOptionIdFromDefId(ConfigDefineOption optionDefId, unsigned int index);

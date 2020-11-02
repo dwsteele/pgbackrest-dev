@@ -25,13 +25,6 @@ Storage path constants
     STRING_DECLARE(STORAGE_PATH_BACKUP_STR);
 
 /***********************************************************************************************************************************
-Repository storage types
-***********************************************************************************************************************************/
-#define STORAGE_TYPE_CIFS                                           "cifs"
-#define STORAGE_TYPE_POSIX                                          "posix"
-#define STORAGE_TYPE_S3                                             "s3"
-
-/***********************************************************************************************************************************
 Functions
 ***********************************************************************************************************************************/
 // Initialize dry-run for the current command. No writes are allowed until dry-run has been intitialized and no writes are allowed
@@ -44,11 +37,11 @@ void storageHelperDryRunInit(bool dryRun);
 const Storage *storageLocal(void);
 const Storage *storageLocalWrite(void);
 
-// PostgreSQL storage by Id
-const Storage *storagePgId(unsigned int hostId);
-const Storage *storagePgIdWrite(unsigned int hostId);
+// PostgreSQL storage by cfgOptGrpPg index
+const Storage *storagePgIdx(unsigned int pgIdx);
+const Storage *storagePgIdxWrite(unsigned int pgIdx);
 
-// PostgreSQL storage for the host-id or the default of 1
+// PostgreSQL storage default (calculated from host-id, when set, or the first cfgOptGrpPg index)
 const Storage *storagePg(void);
 const Storage *storagePgWrite(void);
 

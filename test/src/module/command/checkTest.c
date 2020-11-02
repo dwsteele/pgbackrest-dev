@@ -27,13 +27,13 @@ testRun(void)
     Storage *storageTest = storagePosixNewP(strNew(testPath()), .write = true);
 
     String *pg1 = strNew("pg1");
-    String *pg1Path = strNewFmt("%s/%s", testPath(), strPtr(pg1));
-    String *pg1PathOpt = strNewFmt("--pg1-path=%s", strPtr(pg1Path));
+    String *pg1Path = strNewFmt("%s/%s", testPath(), strZ(pg1));
+    String *pg1PathOpt = strNewFmt("--pg1-path=%s", strZ(pg1Path));
     String *pg8 = strNew("pg8");
-    String *pg8Path = strNewFmt("%s/%s", testPath(), strPtr(pg8));
-    String *pg8PathOpt = strNewFmt("--pg8-path=%s", strPtr(pg8Path));
+    String *pg8Path = strNewFmt("%s/%s", testPath(), strZ(pg8));
+    String *pg8PathOpt = strNewFmt("--pg8-path=%s", strZ(pg8Path));
     String *stanza = strNew("test1");
-    String *stanzaOpt = strNewFmt("--stanza=%s", strPtr(stanza));
+    String *stanzaOpt = strNewFmt("--stanza=%s", strZ(stanza));
     StringList *argList = strLstNew();
 
     // *****************************************************************************************************************************
@@ -65,7 +65,7 @@ testRun(void)
         // -------------------------------------------------------------------------------------------------------------------------
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", strPtr(pg1Path), true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, strZ(pg1Path), true, NULL, NULL),
             HRNPQ_MACRO_CLOSE(1),
             HRNPQ_MACRO_DONE()
         });
@@ -86,8 +86,8 @@ testRun(void)
         // Two standbys found but no primary
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", "/pgdata", true, NULL, NULL),
-            HRNPQ_MACRO_OPEN_92(8, "dbname='postgres' port=5433", "/pgdata", true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, "/pgdata", true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(8, "dbname='postgres' port=5433", PG_VERSION_92, "/pgdata", true, NULL, NULL),
 
             HRNPQ_MACRO_CLOSE(8),
             HRNPQ_MACRO_CLOSE(1),
@@ -108,14 +108,13 @@ testRun(void)
 
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", "/pgdata", true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, "/pgdata", true, NULL, NULL),
             HRNPQ_MACRO_CLOSE(1),
             HRNPQ_MACRO_DONE()
         });
 
         // Only confirming we get passed the check for isRepoLocal || more than one pg-path configured
-        TEST_ERROR_FMT(
-            cmdCheck(), FileMissingError, "unable to open missing file '%s/global/pg_control' for read", strPtr(pg1Path));
+        TEST_ERROR_FMT(cmdCheck(), FileMissingError, "unable to open missing file '%s/global/pg_control' for read", strZ(pg1Path));
 
         // backup-standby set without standby
         // -------------------------------------------------------------------------------------------------------------------------
@@ -130,23 +129,23 @@ testRun(void)
         // Primary database connection ok
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", strPtr(pg1Path), false, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, strZ(pg1Path), false, NULL, NULL),
             HRNPQ_MACRO_CLOSE(1),
             HRNPQ_MACRO_DONE()
         });
 
         TEST_ERROR_FMT(
             cmdCheck(), FileMissingError, "unable to open missing file '%s' for read",
-            strPtr(strNewFmt("%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL, strPtr(pg1Path))));
+            strZ(strNewFmt("%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL, strZ(pg1Path))));
         harnessLogResult(
-            strPtr(strNewFmt("P00   WARN: option '%s' is enabled but standby is not properly configured",
+            strZ(strNewFmt("P00   WARN: option '%s' is enabled but standby is not properly configured",
             cfgOptionName(cfgOptBackupStandby))));
 
         // Standby and primary database
         // -------------------------------------------------------------------------------------------------------------------------
         // Create pg_control for standby
         storagePutP(
-            storageNewWriteP(storageTest, strNewFmt("%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL, strPtr(pg1))),
+            storageNewWriteP(storageTest, strNewFmt("%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL, strZ(pg1))),
             pgControlTestToBuffer((PgControl){.version = PG_VERSION_92, .systemId = 6569239123849665679}));
 
         argList = strLstNew();
@@ -161,8 +160,8 @@ testRun(void)
         // Standby database path doesn't match pg_control
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", testPath(), true, NULL, NULL),
-            HRNPQ_MACRO_OPEN_92(8, "dbname='postgres' port=5433", strPtr(pg8Path), false, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, testPath(), true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(8, "dbname='postgres' port=5433", PG_VERSION_92, strZ(pg8Path), false, NULL, NULL),
 
             HRNPQ_MACRO_CLOSE(8),
             HRNPQ_MACRO_CLOSE(1),
@@ -174,15 +173,14 @@ testRun(void)
             cmdCheck(), DbMismatchError, "version '%s' and path '%s' queried from cluster do not match version '%s' and '%s'"
             " read from '%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL "'\n"
             "HINT: the pg1-path and pg1-port settings likely reference different clusters.",
-            strPtr(pgVersionToStr(PG_VERSION_92)), testPath(), strPtr(pgVersionToStr(PG_VERSION_92)), strPtr(pg1Path),
-            strPtr(pg1Path));
+            strZ(pgVersionToStr(PG_VERSION_92)), testPath(), strZ(pgVersionToStr(PG_VERSION_92)), strZ(pg1Path), strZ(pg1Path));
 
         // Standby - Stanza has not yet been created
         // -------------------------------------------------------------------------------------------------------------------------
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", strPtr(pg1Path), true, NULL, NULL),
-            HRNPQ_MACRO_OPEN_92(8, "dbname='postgres' port=5433", strPtr(pg8Path), false, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, strZ(pg1Path), true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(8, "dbname='postgres' port=5433", PG_VERSION_92, strZ(pg8Path), false, NULL, NULL),
 
             HRNPQ_MACRO_CLOSE(8),
             HRNPQ_MACRO_CLOSE(1),
@@ -199,14 +197,14 @@ testRun(void)
             "HINT: is archive_command configured correctly in postgresql.conf?\n"
             "HINT: has a stanza-create been performed?\n"
             "HINT: use --no-archive-check to disable archive checks during backup if you have an alternate archiving scheme.",
-            testPath(), testPath(), strPtr(strNewFmt("%s/repo/archive/test1/archive.info", testPath())),
-            strPtr(strNewFmt("%s/repo/archive/test1/archive.info.copy", testPath())));
+            testPath(), testPath(), strZ(strNewFmt("%s/repo/archive/test1/archive.info", testPath())),
+            strZ(strNewFmt("%s/repo/archive/test1/archive.info.copy", testPath())));
 
         // Standby - Stanza created
         // -------------------------------------------------------------------------------------------------------------------------
         // Create pg_control for primary
         storagePutP(
-            storageNewWriteP(storageTest, strNewFmt("%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL, strPtr(pg8))),
+            storageNewWriteP(storageTest, strNewFmt("%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL, strZ(pg8))),
             pgControlTestToBuffer((PgControl){.version = PG_VERSION_92, .systemId = 6569239123849665679}));
 
         // Create info files
@@ -239,8 +237,8 @@ testRun(void)
 
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", strPtr(pg1Path), true, NULL, NULL),
-            HRNPQ_MACRO_OPEN_92(8, "dbname='postgres' port=5433", strPtr(pg8Path), false, "off", NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, strZ(pg1Path), true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(8, "dbname='postgres' port=5433", PG_VERSION_92, strZ(pg8Path), false, "off", NULL),
 
             HRNPQ_MACRO_CLOSE(1),
             HRNPQ_MACRO_CLOSE(8),
@@ -264,7 +262,7 @@ testRun(void)
         // Error when WAL segment not found
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", strPtr(pg1Path), false, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, strZ(pg1Path), false, NULL, NULL),
             HRNPQ_MACRO_CREATE_RESTORE_POINT(1, "1/1"),
             HRNPQ_MACRO_WAL_SWITCH(1, "xlog", "000000010000000100000001"),
             HRNPQ_MACRO_CLOSE(1),
@@ -275,7 +273,8 @@ testRun(void)
             cmdCheck(), ArchiveTimeoutError,
             "WAL segment 000000010000000100000001 was not archived before the 500ms timeout\n"
             "HINT: check the archive_command to ensure that all options are correct (especially --stanza).\n"
-            "HINT: check the PostgreSQL server log for errors.");
+            "HINT: check the PostgreSQL server log for errors.\n"
+            "HINT: run the 'start' command if the stanza was previously stopped.");
 
         // Create WAL segment
         Buffer *buffer = bufNew(16 * 1024 * 1024);
@@ -285,7 +284,7 @@ testRun(void)
         // WAL segment is found
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", strPtr(pg1Path), false, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, strZ(pg1Path), false, NULL, NULL),
             HRNPQ_MACRO_CREATE_RESTORE_POINT(1, "1/1"),
             HRNPQ_MACRO_WAL_SWITCH(1, "xlog", "000000010000000100000001"),
             HRNPQ_MACRO_CLOSE(1),
@@ -300,7 +299,7 @@ testRun(void)
 
         TEST_RESULT_VOID(cmdCheck(), "check primary, WAL archived");
         harnessLogResult(
-            strPtr(
+            strZ(
                 strNewFmt(
                     "P00   INFO: WAL segment 000000010000000100000001 successfully archived to '%s/repo/archive/test1/9.2-1/"
                         "0000000100000001/000000010000000100000001-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
@@ -318,8 +317,8 @@ testRun(void)
         argList = strLstNew();
         strLstAdd(argList, stanzaOpt);
         strLstAdd(argList, pg1PathOpt);
-        strLstAddZ(argList, "--pg5-host=localhost");
-        strLstAddZ(argList, "--" CFGOPT_PG5_HOST_CMD "=pgbackrest-bogus");
+        hrnCfgArgKeyRawZ(argList, cfgOptPgHost, 5, "localhost");
+        hrnCfgArgKeyRawZ(argList, cfgOptPgHostCmd, 5, "pgbackrest-bogus");
         strLstAddZ(argList, "--pg5-path=/path/to/pg5");
         strLstAdd(argList, strNewFmt("--pg5-host-user=%s", testUser()));
         harnessCfgLoad(cfgCmdCheck, argList);
@@ -362,8 +361,8 @@ testRun(void)
 
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", strPtr(pg1Path), false, NULL, NULL),
-            HRNPQ_MACRO_OPEN_92(8, "dbname='postgres' port=5433", "/badpath", true, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, strZ(pg1Path), false, NULL, NULL),
+            HRNPQ_MACRO_OPEN_GE_92(8, "dbname='postgres' port=5433", PG_VERSION_92, "/badpath", true, NULL, NULL),
 
             HRNPQ_MACRO_CLOSE(1),
             HRNPQ_MACRO_CLOSE(8),
@@ -372,34 +371,33 @@ testRun(void)
 
         TEST_ASSIGN(db, dbGet(false, false, false), "get primary and standby");
 
-        TEST_RESULT_VOID(checkDbConfig(PG_VERSION_92, db.primaryId, db.primary, false), "valid db config");
+        TEST_RESULT_VOID(checkDbConfig(PG_VERSION_92, db.primaryIdx, db.primary, false), "valid db config");
 
         // Version mismatch
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_ERROR_FMT(
-            checkDbConfig(PG_VERSION_94, db.primaryId, db.primary, false), DbMismatchError,
+            checkDbConfig(PG_VERSION_94, db.primaryIdx, db.primary, false), DbMismatchError,
             "version '%s' and path '%s' queried from cluster do not match version '%s' and '%s' read from '%s/"
             PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL "'\n"
             "HINT: the pg1-path and pg1-port settings likely reference different clusters.",
-            strPtr(pgVersionToStr(PG_VERSION_92)), strPtr(pg1Path), strPtr(pgVersionToStr(PG_VERSION_94)), strPtr(pg1Path),
-            strPtr(pg1Path));
+            strZ(pgVersionToStr(PG_VERSION_92)), strZ(pg1Path), strZ(pgVersionToStr(PG_VERSION_94)), strZ(pg1Path), strZ(pg1Path));
 
         // Path mismatch
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_ERROR_FMT(
-            checkDbConfig(PG_VERSION_92, db.standbyId, db.standby, true), DbMismatchError,
+            checkDbConfig(PG_VERSION_92, db.standbyIdx, db.standby, true), DbMismatchError,
             "version '%s' and path '%s' queried from cluster do not match version '%s' and '%s' read from '%s/"
             PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL "'\n"
             "HINT: the pg8-path and pg8-port settings likely reference different clusters.",
-            strPtr(pgVersionToStr(PG_VERSION_92)), strPtr(dbPgDataPath(db.standby)), strPtr(pgVersionToStr(PG_VERSION_92)),
-            strPtr(pg8Path), strPtr(pg8Path));
+            strZ(pgVersionToStr(PG_VERSION_92)), strZ(dbPgDataPath(db.standby)), strZ(pgVersionToStr(PG_VERSION_92)), strZ(pg8Path),
+            strZ(pg8Path));
 
         // archive-check=false
         // -------------------------------------------------------------------------------------------------------------------------
         strLstAddZ(argList, "--no-archive-check");
         harnessCfgLoad(cfgCmdCheck, argList);
 
-        TEST_RESULT_VOID(checkDbConfig(PG_VERSION_92, db.primaryId, db.primary, false), "valid db config --no-archive-check");
+        TEST_RESULT_VOID(checkDbConfig(PG_VERSION_92, db.primaryIdx, db.primary, false), "valid db config --no-archive-check");
 
         // archive-check not valid for command
         // -------------------------------------------------------------------------------------------------------------------------
@@ -412,7 +410,7 @@ testRun(void)
         harnessCfgLoad(cfgCmdStanzaCreate, argList);
 
         TEST_RESULT_VOID(
-            checkDbConfig(PG_VERSION_92, db.primaryId, db.primary, false), "valid db config, archive-check not valid for command");
+            checkDbConfig(PG_VERSION_92, db.primaryIdx, db.primary, false), "valid db config, archive-check not valid for command");
 
         TEST_RESULT_VOID(dbFree(db.primary), "free primary");
         TEST_RESULT_VOID(dbFree(db.standby), "free standby");
@@ -427,14 +425,14 @@ testRun(void)
 
         harnessPqScriptSet((HarnessPq [])
         {
-            HRNPQ_MACRO_OPEN_92(1, "dbname='postgres' port=5432", strPtr(pg1Path), false, "always", NULL),
+            HRNPQ_MACRO_OPEN_GE_92(1, "dbname='postgres' port=5432", PG_VERSION_92, strZ(pg1Path), false, "always", NULL),
             HRNPQ_MACRO_CLOSE(1),
             HRNPQ_MACRO_DONE()
         });
 
         TEST_ASSIGN(db, dbGet(true, true, false), "get primary");
         TEST_ERROR_FMT(
-            checkDbConfig(PG_VERSION_92, db.primaryId, db.primary, false), FeatureNotSupportedError,
+            checkDbConfig(PG_VERSION_92, db.primaryIdx, db.primary, false), FeatureNotSupportedError,
             "archive_mode=always not supported");
 
         TEST_RESULT_VOID(dbFree(db.primary), "free primary");
@@ -446,14 +444,14 @@ testRun(void)
         InfoArchive *archiveInfo = infoArchiveNew(PG_VERSION_96, 6569239123849665679, NULL);
         InfoPgData archivePg = infoPgData(infoArchivePg(archiveInfo), infoPgDataCurrentId(infoArchivePg(archiveInfo)));
 
-        InfoBackup *backupInfo = infoBackupNew(PG_VERSION_96, 6569239123849665679, NULL);
+        InfoBackup *backupInfo = infoBackupNew(PG_VERSION_96, 6569239123849665679, pgCatalogTestVersion(PG_VERSION_96), NULL);
         InfoPgData backupPg = infoPgData(infoBackupPg(backupInfo), infoPgDataCurrentId(infoBackupPg(backupInfo)));
 
         TEST_RESULT_VOID(checkStanzaInfo(&archivePg, &backupPg), "stanza info files match");
 
         // Create a corrupted backup file - system id
         // -------------------------------------------------------------------------------------------------------------------------
-        backupInfo = infoBackupNew(PG_VERSION_96, 6569239123849665999, NULL);
+        backupInfo = infoBackupNew(PG_VERSION_96, 6569239123849665999, pgCatalogTestVersion(PG_VERSION_96), NULL);
         backupPg = infoPgData(infoBackupPg(backupInfo), infoPgDataCurrentId(infoBackupPg(backupInfo)));
 
         TEST_ERROR_FMT(
@@ -464,7 +462,7 @@ testRun(void)
 
         // Create a corrupted backup file - system id and version
         // -------------------------------------------------------------------------------------------------------------------------
-        backupInfo = infoBackupNew(PG_VERSION_95, 6569239123849665999, NULL);
+        backupInfo = infoBackupNew(PG_VERSION_95, 6569239123849665999, pgCatalogTestVersion(PG_VERSION_95), NULL);
         backupPg = infoPgData(infoBackupPg(backupInfo), infoPgDataCurrentId(infoBackupPg(backupInfo)));
 
         TEST_ERROR_FMT(
@@ -475,7 +473,7 @@ testRun(void)
 
         // Create a corrupted backup file - version
         // -------------------------------------------------------------------------------------------------------------------------
-        backupInfo = infoBackupNew(PG_VERSION_95, 6569239123849665679, NULL);
+        backupInfo = infoBackupNew(PG_VERSION_95, 6569239123849665679, pgCatalogTestVersion(PG_VERSION_95), NULL);
         backupPg = infoPgData(infoBackupPg(backupInfo), infoPgDataCurrentId(infoBackupPg(backupInfo)));
 
         TEST_ERROR_FMT(
@@ -486,7 +484,7 @@ testRun(void)
 
         // Create a corrupted backup file - db id
         // -------------------------------------------------------------------------------------------------------------------------
-        infoBackupPgSet(backupInfo, PG_VERSION_96, 6569239123849665679);
+        infoBackupPgSet(backupInfo, PG_VERSION_96, 6569239123849665679, pgCatalogTestVersion(PG_VERSION_96));
         backupPg = infoPgData(infoBackupPg(backupInfo), infoPgDataCurrentId(infoBackupPg(backupInfo)));
 
         TEST_ERROR_FMT(
@@ -500,7 +498,7 @@ testRun(void)
         argList = strLstNew();
         strLstAddZ(argList, "--no-online");
         strLstAdd(argList, stanzaOpt);
-        strLstAdd(argList, strNewFmt("--pg1-path=%s/%s", testPath(), strPtr(stanza)));
+        strLstAdd(argList, strNewFmt("--pg1-path=%s/%s", testPath(), strZ(stanza)));
         strLstAdd(argList, strNewFmt("--repo1-path=%s/repo", testPath()));
         strLstAddZ(argList, "--repo1-cipher-type=aes-256-cbc");
         setenv("PGBACKREST_REPO1_CIPHER_PASS", "12345678", true);
@@ -508,7 +506,7 @@ testRun(void)
 
         // Create pg_control
         storagePutP(
-            storageNewWriteP(storageTest, strNewFmt("%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL, strPtr(stanza))),
+            storageNewWriteP(storageTest, strNewFmt("%s/" PG_PATH_GLOBAL "/" PG_FILE_PGCONTROL, strZ(stanza))),
             pgControlTestToBuffer((PgControl){.version = PG_VERSION_96, .systemId = 6569239123849665679}));
 
         // Create info files

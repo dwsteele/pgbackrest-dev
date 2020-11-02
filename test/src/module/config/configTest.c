@@ -20,16 +20,9 @@ testRun(void)
         TEST_RESULT_INT(cfgCommandId(BOGUS_STR, false), cfgCmdNone, "command none id from bogus");
         TEST_RESULT_INT(cfgCommandId("archive-push", true), cfgCmdArchivePush, "command id from name");
 
-        TEST_ERROR(
-            cfgCommandDefIdFromId(CFG_COMMAND_TOTAL), AssertError, "assertion 'commandId < cfgCmdNone' failed");
-        TEST_RESULT_INT(cfgCommandDefIdFromId(cfgCmdBackup), cfgDefCmdBackup, "command id to def id");
-
         TEST_RESULT_Z(cfgCommandName(cfgCmdBackup), "backup", "command name from id");
 
         TEST_RESULT_INT(cfgOptionDefIdFromId(cfgOptPgHost + 6), cfgDefOptPgHost, "option id to def id");
-
-        TEST_RESULT_INT(cfgOptionId("target"), cfgOptTarget, "option id from name");
-        TEST_RESULT_INT(cfgOptionId(BOGUS_STR), -1, "option id from invalid option name");
 
         TEST_ERROR(
             cfgOptionIdFromDefId(999999, 6), AssertError,
@@ -42,9 +35,6 @@ testRun(void)
         TEST_ERROR(cfgOptionIndex(CFG_OPTION_TOTAL), AssertError, "assertion 'optionId < CFG_OPTION_TOTAL' failed");
         TEST_RESULT_INT(cfgOptionIndex(cfgOptPgHostCmd + 6), 6, "option index");
         TEST_RESULT_INT(cfgOptionIndex(cfgOptCompressLevel), 0, "option index");
-
-        TEST_RESULT_INT(cfgOptionIndexTotal(cfgOptPgPath), 8, "option index total");
-        TEST_RESULT_INT(cfgOptionIndexTotal(cfgOptLogLevelConsole), 1, "option index total");
 
         TEST_RESULT_Z(cfgOptionName(cfgOptBackupStandby), "backup-standby", "option id from name");
     }
@@ -121,9 +111,9 @@ testRun(void)
         TEST_RESULT_INT(strLstSize(cfgCommandParam()), 1, "command param list is set");
 
         // -------------------------------------------------------------------------------------------------------------------------
-        TEST_RESULT_PTR(cfgExe(), NULL, "exe defaults to null");
+        TEST_RESULT_STR(cfgExe(), NULL, "exe defaults to null");
         TEST_RESULT_VOID(cfgExeSet(strNew("/path/to/exe")), "set exe");
-        TEST_RESULT_Z(strPtr(cfgExe()), "/path/to/exe", "exe is set");
+        TEST_RESULT_Z(strZ(cfgExe()), "/path/to/exe", "exe is set");
 
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_RESULT_BOOL(cfgOptionNegate(cfgOptConfig), false, "negate defaults to false");
@@ -143,6 +133,30 @@ testRun(void)
         TEST_RESULT_BOOL(cfgOptionTest(cfgOptConfig), false, "option valid but value is null");
         TEST_RESULT_VOID(cfgOptionSet(cfgOptConfig, cfgSourceParam, varNewStrZ("cfg")), "set option config");
         TEST_RESULT_BOOL(cfgOptionTest(cfgOptConfig), true, "option valid and value not null");
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        TEST_TITLE("option groups");
+
+        TEST_RESULT_BOOL(cfgOptionGroupValid(cfgOptGrpPg), false, "pg option group is not valid");
+        TEST_RESULT_BOOL(cfgOptionGroupIdxTest(cfgOptGrpPg, 0), false, "pg option group index 0 is not set");
+        TEST_RESULT_UINT(cfgOptionGroupIdxTotal(cfgOptGrpPg), 0, "pg option group index total is 0");
+
+        TEST_RESULT_VOID(cfgOptionValidSet(cfgOptPgPath + 1, true), "set pg1-path valid");
+        TEST_RESULT_BOOL(cfgOptionGroupValid(cfgOptGrpPg), true, "pg option group is valid");
+        TEST_RESULT_BOOL(cfgOptionGroupIdxTest(cfgOptGrpPg, 0), true, "pg option group index 0 is set");
+        TEST_RESULT_BOOL(cfgOptionGroupIdxTest(cfgOptGrpPg, 1), false, "pg option group index 1 is not set");
+        TEST_RESULT_UINT(cfgOptionGroupIdxTotal(cfgOptGrpPg), 1, "pg option group index total is 1");
+
+        TEST_RESULT_VOID(cfgOptionValidSet(cfgOptPgPath + 7, true), "set pg7-path valid");
+        TEST_RESULT_VOID(cfgOptionSet(cfgOptPgPath + 7, cfgSourceParam, VARSTRDEF("/path")), "set pg7-path");
+        TEST_RESULT_BOOL(cfgOptionGroupIdxTest(cfgOptGrpPg, 1), false, "pg option group index 1 is not set");
+        TEST_RESULT_BOOL(cfgOptionGroupIdxTest(cfgOptGrpPg, 7), true, "pg option group index 7 is set");
+        TEST_RESULT_UINT(cfgOptionGroupIdxTotal(cfgOptGrpPg), 8, "pg option group index total is 8");
+
+        TEST_RESULT_VOID(cfgOptionValidSet(cfgOptPgPath + 5, true), "set pg5-path valid");
+        TEST_RESULT_VOID(cfgOptionSet(cfgOptPgPath + 5, cfgSourceDefault, VARSTRDEF("/path")), "set pg5-path");
+        TEST_RESULT_BOOL(cfgOptionGroupIdxTest(cfgOptGrpPg, 5), false, "pg option group index 5 is not set");
+        TEST_RESULT_UINT(cfgOptionGroupIdxTotal(cfgOptGrpPg), 8, "pg option group index total is 8");
 
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_RESULT_PTR(cfgOption(cfgOptOnline), NULL, "online is null");
@@ -200,7 +214,7 @@ testRun(void)
         TEST_ERROR(cfgOptionStr(cfgOptStanza), AssertError, "option 'stanza' is not valid for the current command");
         TEST_RESULT_VOID(cfgOptionValidSet(cfgOptStanza, true), "set stanza valid");
         TEST_ERROR(cfgOptionStr(cfgOptStanza), AssertError, "option 'stanza' is null but non-null was requested");
-        TEST_RESULT_PTR(cfgOptionStrNull(cfgOptStanza), NULL, "stanza defaults to null");
+        TEST_RESULT_STR(cfgOptionStrNull(cfgOptStanza), NULL, "stanza defaults to null");
         TEST_ERROR(
             cfgOptionSet(cfgOptStanza, cfgSourceParam, varNewDbl(1.1)), AssertError,
             "option 'stanza' must be set with String variant");
@@ -256,7 +270,7 @@ testRun(void)
         TEST_RESULT_VOID(cfgCommandSet(cfgCmdBackup, cfgCmdRoleDefault), "backup command");
 
         TEST_ERROR(
-            strPtr(varStr(cfgOptionDefaultValue(cfgDefOptDbInclude))), AssertError, "default value not available for option type 4");
+            strZ(varStr(cfgOptionDefaultValue(cfgDefOptDbInclude))), AssertError, "default value not available for option type 4");
         TEST_RESULT_STR_Z(varStr(cfgOptionDefault(cfgOptType)), "incr", "backup type default");
         TEST_RESULT_BOOL(varBool(cfgOptionDefault(cfgOptArchiveAsync)), false, "archive async default");
         TEST_RESULT_DOUBLE(varDbl(cfgOptionDefault(cfgOptProtocolTimeout)), 1830, "backup protocol-timeout default");

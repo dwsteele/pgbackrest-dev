@@ -7,6 +7,7 @@ Exec Configuration
 
 #include "common/debug.h"
 #include "common/log.h"
+#include "config/define.h"
 #include "config/exec.h"
 
 /**********************************************************************************************************************************/
@@ -27,7 +28,6 @@ cfgExecParam(ConfigCommand commandId, ConfigCommandRole commandRoleId, const Key
     {
         // Loop though options and add the ones that apply to the specified command
         result = strLstNew();
-        ConfigDefineCommand commandDefId = cfgCommandDefIdFromId(commandId);
 
         for (ConfigOption optionId = 0; optionId < CFG_OPTION_TOTAL; optionId++)
         {
@@ -36,7 +36,7 @@ cfgExecParam(ConfigCommand commandId, ConfigCommandRole commandRoleId, const Key
             // Skip the option if it is not valid for the specified command or if is secure.  Also skip repo1-cipher-type because
             // there's no point of passing it if the other process doesn't have access to repo1-cipher-pass.  There is probably a
             // better way to do this...
-            if (!cfgDefOptionValid(commandDefId, optionDefId) || cfgDefOptionSecure(optionDefId) ||
+            if (!cfgDefOptionValid(commandId, optionDefId) || cfgDefOptionSecure(optionDefId) ||
                 optionDefId == cfgDefOptRepoCipherType)
             {
                 continue;
@@ -96,8 +96,8 @@ cfgExecParam(ConfigCommand commandId, ConfigCommandRole commandRoleId, const Key
                             strLstAdd(
                                 valueList,
                                 strNewFmt(
-                                    "%s=%s", strPtr(varStr(varLstGet(keyList, keyIdx))),
-                                        strPtr(varStrForce(kvGet(optionKv, varLstGet(keyList, keyIdx))))));
+                                    "%s=%s", strZ(varStr(varLstGet(keyList, keyIdx))),
+                                    strZ(varStrForce(kvGet(optionKv, varLstGet(keyList, keyIdx))))));
                         }
                     }
                     else if (varType(value) == varTypeVariantList)
@@ -116,10 +116,10 @@ cfgExecParam(ConfigCommand commandId, ConfigCommandRole commandRoleId, const Key
                     {
                         const String *value = strLstGet(valueList, valueListIdx);
 
-                        if (quote && strchr(strPtr(value), ' ') != NULL)
-                            value = strNewFmt("\"%s\"", strPtr(value));
+                        if (quote && strchr(strZ(value), ' ') != NULL)
+                            value = strNewFmt("\"%s\"", strZ(value));
 
-                        strLstAdd(result, strNewFmt("--%s=%s", cfgOptionName(optionId), strPtr(value)));
+                        strLstAdd(result, strNewFmt("--%s=%s", cfgOptionName(optionId), strZ(value)));
                     }
                 }
             }
