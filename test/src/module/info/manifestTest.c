@@ -1058,16 +1058,15 @@ testRun(void)
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("run 13, offline");
 
-        // !!! FIX THIS TEST
-        // const String *xAttrKey = STRDEF("user.pgb");
-        //
-        // TEST_RESULT_VOID(
-        //     storagePosixInfoXAttrSet(storagePathP(storagePg, STRDEF("pg_hba.conf")), xAttrKey, BUFSTRDEF("XlinkX")),
-        //     "set link xattr");
+        const String *xAttrKey = STRDEF("user.pgb");
+
+        TEST_RESULT_VOID(
+            storagePosixInfoXAttrSet(storagePathP(storagePg, STRDEF("pg_hba.conf")), xAttrKey, BUFSTRDEF("XlinkX")),
+            "set link xattr");
 
         // pg_wal not ignored
         StringList *xAttrList = strLstNew();
-        // strLstAdd(xAttrList, xAttrKey);
+        strLstAdd(xAttrList, xAttrKey);
 
         TEST_ASSIGN(
             manifest,
@@ -1090,48 +1089,57 @@ testRun(void)
                 "pg_data/postgresql.conf={\"file\":\"postgresql.conf\",\"path\":\"../config\",\"type\":\"link\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={\"size\":3,\"timestamp\":1565282100}\n"
-                "pg_data/base/1/555_init={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_init.1={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_vm.1_vm={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
-                "pg_data/base/1/PG_VERSION={\"master\":false,\"size\":0,\"timestamp\":1565282120}\n"
-                "pg_data/base/1/pg_filenode.map={\"master\":false,\"size\":0,\"timestamp\":1565282120}\n"
-                "pg_data/global/pg_control={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_clog/BOGUS={\"size\":0,\"timestamp\":1565282121}\n"
-                "pg_data/pg_hba.conf={\"size\":9,\"timestamp\":1565282117}\n"
-                "pg_data/pg_multixact/BOGUS={\"master\":false,\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_wal/000000010000000000000001={\"size\":7,\"timestamp\":1565282120}\n"
-                "pg_data/pg_xact/BOGUS={\"master\":false,\"size\":0,\"timestamp\":1565282122}\n"
-                "pg_data/pg_xlog/000000020000000000000002={\"size\":6,\"timestamp\":1565282100}\n"
-                "pg_data/postgresql.conf={\"size\":14,\"timestamp\":1565282116}\n"
-                "pg_data/recovery.conf={\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/recovery.done={\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/PG_VERSION={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":3,\"timestamp\":1565282100}\n"
+                "pg_data/base/1/555_init={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
+                    ",\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_init.1={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
+                    ",\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_vm.1_vm={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
+                    ",\"timestamp\":1565282114}\n"
+                "pg_data/base/1/PG_VERSION={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
+                    ",\"timestamp\":1565282120}\n"
+                "pg_data/base/1/pg_filenode.map={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
+                    ",\"timestamp\":1565282120}\n"
+                "pg_data/global/pg_control={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_clog/BOGUS={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":0,\"timestamp\":1565282121}\n"
+                "pg_data/pg_hba.conf={\"atr\":{\"xtr\":{\"user.pgb\":\"XlinkX\"}},\"size\":9,\"timestamp\":1565282117}\n"
+                "pg_data/pg_multixact/BOGUS={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
+                    ",\"timestamp\":1565282101}\n"
+                "pg_data/pg_wal/000000010000000000000001={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":7"
+                    ",\"timestamp\":1565282120}\n"
+                "pg_data/pg_xact/BOGUS={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
+                    ",\"timestamp\":1565282122}\n"
+                "pg_data/pg_xlog/000000020000000000000002={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":6"
+                    ",\"timestamp\":1565282100}\n"
+                "pg_data/postgresql.conf={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":14,\"timestamp\":1565282116}\n"
+                "pg_data/recovery.conf={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/recovery.done={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":0,\"timestamp\":1565282101}\n"
                 TEST_MANIFEST_FILE_DEFAULT_PRIMARY_TRUE
                 "\n"
                 "[target:link]\n"
-                "pg_data/pg_hba.conf={\"destination\":\"../config/pg_hba.conf\"}\n"
-                "pg_data/pg_xlog={\"destination\":\"{[path]}/wal\"}\n"
-                "pg_data/postgresql.conf={\"destination\":\"../config/postgresql.conf\"}\n"
+                "pg_data/pg_hba.conf={\"atr\":{\"xtr\":{\"user.pgb\":\"XlinkX\"}},\"destination\":\"../config/pg_hba.conf\"}\n"
+                "pg_data/pg_xlog={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"destination\":\"{[path]}/wal\"}\n"
+                "pg_data/postgresql.conf={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"destination\":\"../config/postgresql.conf\"}\n"
                 TEST_MANIFEST_LINK_DEFAULT
                 "\n"
                 "[target:path]\n"
-                "pg_data={}\n"
-                "pg_data/base={}\n"
-                "pg_data/base/1={}\n"
-                "pg_data/global={}\n"
-                "pg_data/pg_clog={}\n"
-                "pg_data/pg_dynshmem={}\n"
-                "pg_data/pg_multixact={}\n"
-                "pg_data/pg_notify={}\n"
-                "pg_data/pg_replslot={}\n"
-                "pg_data/pg_serial={}\n"
-                "pg_data/pg_snapshots={}\n"
-                "pg_data/pg_stat_tmp={\"mode\":\"0750\"}\n"
-                "pg_data/pg_subtrans={}\n"
-                "pg_data/pg_tblspc={}\n"
-                "pg_data/pg_wal={}\n"
-                "pg_data/pg_xact={}\n"
-                "pg_data/pg_xlog={}\n"
+                "pg_data={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/base={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/base/1={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/global={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_clog={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_dynshmem={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_multixact={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_notify={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_replslot={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_serial={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_snapshots={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_stat_tmp={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"mode\":\"0750\"}\n"
+                "pg_data/pg_subtrans={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_tblspc={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_wal={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_xact={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data/pg_xlog={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
                 TEST_MANIFEST_PATH_DEFAULT))),
             "check manifest");
 
