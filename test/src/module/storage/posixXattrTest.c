@@ -1,6 +1,8 @@
 /***********************************************************************************************************************************
 Test Posix Extended Attributes
 ***********************************************************************************************************************************/
+#include <unistd.h>
+
 #include "storage/posix/storage.h"
 
 /***********************************************************************************************************************************
@@ -56,13 +58,13 @@ testRun(void)
         TEST_TITLE("error on missing file");
 
         TEST_ERROR(
-            storagePosixInfoXAttr(STRDEF(BOGUS_STR), attrName), FileReadError,
+            storagePosixInfoXAttr(STRDEF(BOGUS_STR), false, attrName), FileReadError,
             "unable to get xattr 'user.pgbackrest' for path 'BOGUS': [2] No such file or directory");
 
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("extended attribute does not exist");
 
-        TEST_RESULT_PTR(storagePosixInfoXAttr(fileName, attrName), NULL, "check attr");
+        TEST_RESULT_PTR(storagePosixInfoXAttr(fileName, false, attrName), NULL, "check attr");
 
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("short extended attribute");
@@ -70,7 +72,21 @@ testRun(void)
         const Buffer *attrVal = BUFSTRDEF("sample");
 
         storagePosixInfoXAttrSet(fileName, attrName, attrVal);
-        TEST_RESULT_STR(storagePosixInfoXAttr(fileName, attrName), strNewBuf(attrVal), "check attr");
+        TEST_RESULT_STR(storagePosixInfoXAttr(fileName, false, attrName), strNewBuf(attrVal), "check attr");
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        TEST_TITLE("link to file has no attribute");
+
+        const String *linkName = strNewFmt("%s/link", testPath());
+
+        THROW_ON_SYS_ERROR(symlink(strZ(fileName), strZ(linkName)) == -1, FileOpenError, "unable to create symlink");
+
+        TEST_RESULT_PTR(storagePosixInfoXAttr(linkName, false, attrName), NULL, "check attr");
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        TEST_TITLE("link to file with short extended attribute");
+
+        TEST_RESULT_STR(storagePosixInfoXAttr(linkName, true, attrName), strNewBuf(attrVal), "check attr");
 
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("long extended attribute");
@@ -81,7 +97,12 @@ testRun(void)
             "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
 
         storagePosixInfoXAttrSet(fileName, attrName, attrValLong);
-        TEST_RESULT_STR(storagePosixInfoXAttr(fileName, attrName), strNewBuf(attrValLong), "check attr");
+        TEST_RESULT_STR(storagePosixInfoXAttr(fileName, false, attrName), strNewBuf(attrValLong), "check attr");
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        TEST_TITLE("link to file with long extended attribute");
+
+        TEST_RESULT_STR(storagePosixInfoXAttr(linkName, true, attrName), strNewBuf(attrValLong), "check attr");
 #endif // HAVE_XATTR
     }
 

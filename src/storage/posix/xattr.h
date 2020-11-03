@@ -17,7 +17,7 @@ Functions
 ***********************************************************************************************************************************/
 #ifdef HAVE_XATTR
 
-String *storagePosixInfoXAttr(const String *path, const String *name);
+String *storagePosixInfoXAttr(const String *path, bool followLink, const String *name);
 
 #endif // HAVE_XATTR
 

@@ -11,6 +11,6 @@ Shim functions for getting and setting extended attributes that cannot normally 
 /***********************************************************************************************************************************
 Functions
 ***********************************************************************************************************************************/
-void storagePosixInfoXAttrSet(const String *path, const String *name, const Buffer *value);
+void storagePosixInfoXAttrSet(const String *path, bool followLink, const String *name, const Buffer *value);
 
 #endif

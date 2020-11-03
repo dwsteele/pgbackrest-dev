@@ -21,10 +21,11 @@ VARIANT_STRDEF_EXTERN(STORAGE_POSIX_XATTR_KEY_VAR,                  STORAGE_POSI
 #ifdef HAVE_XATTR
 
 String *
-storagePosixInfoXAttr(const String *path, const String *name)
+storagePosixInfoXAttr(const String *path, bool followLink, const String *name)
 {
     FUNCTION_LOG_BEGIN(logLevelTrace);
         FUNCTION_LOG_PARAM(STRING, path);
+        FUNCTION_LOG_PARAM(BOOL, followLink);
         FUNCTION_LOG_PARAM(STRING, name);
     FUNCTION_LOG_END();
 
@@ -40,7 +41,10 @@ storagePosixInfoXAttr(const String *path, const String *name)
 
         do
         {
-            getResult = getxattr(strZ(path), strZ(name), bufPtr(buffer), bufSize(buffer) - 1);
+            if (followLink)
+                getResult = getxattr(strZ(path), strZ(name), bufPtr(buffer), bufSize(buffer) - 1);
+            else
+                getResult = lgetxattr(strZ(path), strZ(name), bufPtr(buffer), bufSize(buffer) - 1);
 
             if (getResult == -1)
             {
@@ -50,7 +54,8 @@ storagePosixInfoXAttr(const String *path, const String *name)
 
                 if (errno == ERANGE)
                 {
-                    ssize_t size = getxattr(strZ(path), strZ(name), NULL, 0);
+                    ssize_t size = followLink ?
+                        getxattr(strZ(path), strZ(name), NULL, 0) : lgetxattr(strZ(path), strZ(name), NULL, 0);
 
                     THROW_ON_SYS_ERROR_FMT(
                         size == -1, FileReadError, "unable to get xattr '%s' size for path '%s'", strZ(name), strZ(path));

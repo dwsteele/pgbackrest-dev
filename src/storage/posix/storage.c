@@ -139,7 +139,7 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
                             const Variant *xAttrKey = varLstGet(xAttrKeyList, xAttrKeyIdx);
 
                             // Store extended attribute value
-                            const String *xAttrValue = storagePosixInfoXAttr(file, varStr(xAttrKey));
+                            const String *xAttrValue = storagePosixInfoXAttr(file, param.followLink, varStr(xAttrKey));
                             kvPut(kvXAttr, xAttrKey, VARSTR(xAttrValue));
 
                             if (varEq(xAttrKey, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR))

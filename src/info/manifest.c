@@ -1082,7 +1082,7 @@ manifestNewBuild(
 
 #ifdef DEBUG_MEM
                 // Make sure that the temp context did not grow too much during the loop
-                ASSERT(memContextSize(memContextCurrent()) - sizeBegin < 256);
+                ASSERT(memContextSize(memContextCurrent()) - sizeBegin < 512);
 #endif
             }
         }

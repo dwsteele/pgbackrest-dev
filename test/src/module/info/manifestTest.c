@@ -1061,8 +1061,14 @@ testRun(void)
         const String *xAttrKey = STRDEF("user.pgb");
 
         TEST_RESULT_VOID(
-            storagePosixInfoXAttrSet(storagePathP(storagePg, STRDEF("pg_hba.conf")), xAttrKey, BUFSTRDEF("XlinkX")),
-            "set link xattr");
+            storagePosixInfoXAttrSet(storagePathP(storagePg, STRDEF("pg_hba.conf")), true, xAttrKey, BUFSTRDEF("XfileX")),
+            "set file xattr");
+        TEST_RESULT_VOID(
+            storagePosixInfoXAttrSet(storagePathP(storagePg, STRDEF("pg_hba.conf")), false, xAttrKey, BUFSTRDEF("XlinkX")),
+            "set link xattr (link points file with different xattr)");
+        TEST_RESULT_VOID(
+            storagePosixInfoXAttrSet(storagePathP(storagePg, NULL), true, xAttrKey, BUFSTRDEF("XpathX")),
+            "set path xattr");
 
         // pg_wal not ignored
         StringList *xAttrList = strLstNew();
@@ -1102,7 +1108,7 @@ testRun(void)
                     ",\"timestamp\":1565282120}\n"
                 "pg_data/global/pg_control={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":0,\"timestamp\":1565282101}\n"
                 "pg_data/pg_clog/BOGUS={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":0,\"timestamp\":1565282121}\n"
-                "pg_data/pg_hba.conf={\"atr\":{\"xtr\":{\"user.pgb\":\"XlinkX\"}},\"size\":9,\"timestamp\":1565282117}\n"
+                "pg_data/pg_hba.conf={\"atr\":{\"xtr\":{\"user.pgb\":\"XfileX\"}},\"size\":9,\"timestamp\":1565282117}\n"
                 "pg_data/pg_multixact/BOGUS={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
                     ",\"timestamp\":1565282101}\n"
                 "pg_data/pg_wal/000000010000000000000001={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":7"
@@ -1123,7 +1129,7 @@ testRun(void)
                 TEST_MANIFEST_LINK_DEFAULT
                 "\n"
                 "[target:path]\n"
-                "pg_data={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data={\"atr\":{\"xtr\":{\"user.pgb\":\"XpathX\"}}}\n"
                 "pg_data/base={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
                 "pg_data/base/1={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
                 "pg_data/global={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
@@ -1756,8 +1762,8 @@ testRun(void)
             "\n"                                                                                                                   \
             "[target:file]\n"                                                                                                      \
             "pg_data/=equal=more=={\"master\":true,\"mode\":\"0640\",\"size\":0,\"timestamp\":1565282120}\n"                       \
-            "pg_data/PG_VERSION={\"checksum\":\"184473f470864e067ee3a22e64b47b0a1c356f29\",\"master\":true"                        \
-                ",\"reference\":\"20190818-084502F_20190819-084506D\",\"size\":4,\"timestamp\":1565282114}\n"                      \
+            "pg_data/PG_VERSION={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"checksum\":\"184473f470864e067ee3a22e64b47b0a1c356f29\""  \
+                ",\"master\":true,\"reference\":\"20190818-084502F_20190819-084506D\",\"size\":4,\"timestamp\":1565282114}\n"      \
             "pg_data/base/16384/17000={\"checksum\":\"e0101dd8ffb910c9c202ca35b5f828bcb9697bed\",\"checksum-page\":false"          \
                 ",\"checksum-page-error\":[1],\"repo-size\":4096,\"size\":8192,\"timestamp\":1565282114}\n"                        \
             "pg_data/base/16384/PG_VERSION={\"checksum\":\"184473f470864e067ee3a22e64b47b0a1c356f29\",\"group\":false,\"size\":4"  \
@@ -1781,7 +1787,7 @@ testRun(void)
         #define TEST_MANIFEST_LINK                                                                                                 \
             "\n"                                                                                                                   \
             "[target:link]\n"                                                                                                      \
-            "pg_data/pg_stat={\"destination\":\"../pg_stat\"}\n"                                                                   \
+            "pg_data/pg_stat={\"atr\":{\"xtr\":{\"user.pgb\":\"XlinkX\"}},\"destination\":\"../pg_stat\"}\n"                       \
             "pg_data/postgresql.conf={\"destination\":\"../pg_config/postgresql.conf\",\"group\":false,\"user\":\"user1\"}\n"
 
         #define TEST_MANIFEST_LINK_DEFAULT                                                                                         \
@@ -1794,7 +1800,7 @@ testRun(void)
             "\n"                                                                                                                   \
             "[target:path]\n"                                                                                                      \
             "pg_data={\"user\":\"user2\"}\n"                                                                                       \
-            "pg_data/base={\"group\":\"group2\"}\n"                                                                                \
+            "pg_data/base={\"atr\":{\"xtr\":{\"user.pgb\":\"XpathX\"}},\"group\":\"group2\"}\n"                                    \
             "pg_data/base/16384={\"mode\":\"0750\"}\n"                                                                             \
             "pg_data/base/32768={}\n"                                                                                              \
             "pg_data/base/65536={\"user\":false}\n"
