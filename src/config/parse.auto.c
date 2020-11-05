@@ -2734,18 +2734,6 @@ static const struct option optionList[] =
         .has_arg = required_argument,
         .val = PARSE_OPTION_FLAG | cfgOptType,
     },
-
-    // xattr option
-    // -----------------------------------------------------------------------------------------------------------------------------
-    {
-        .name = "xattr",
-        .has_arg = required_argument,
-        .val = PARSE_OPTION_FLAG | cfgOptXattr,
-    },
-    {
-        .name = "reset-xattr",
-        .val = PARSE_OPTION_FLAG | PARSE_RESET_FLAG | cfgOptXattr,
-    },
     // Terminate option list
     {
         .name = NULL
@@ -2868,7 +2856,6 @@ static const ConfigOption optionResolveOrder[] =
     cfgOptTcpKeepAliveIdle,
     cfgOptTcpKeepAliveInterval,
     cfgOptType,
-    cfgOptXattr,
     cfgOptArchiveCheck,
     cfgOptArchiveCopy,
     cfgOptForce,

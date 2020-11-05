@@ -366,7 +366,6 @@ STRING_EXTERN(CFGOPT_TCP_KEEP_ALIVE_COUNT_STR,                      CFGOPT_TCP_K
 STRING_EXTERN(CFGOPT_TCP_KEEP_ALIVE_IDLE_STR,                       CFGOPT_TCP_KEEP_ALIVE_IDLE);
 STRING_EXTERN(CFGOPT_TCP_KEEP_ALIVE_INTERVAL_STR,                   CFGOPT_TCP_KEEP_ALIVE_INTERVAL);
 STRING_EXTERN(CFGOPT_TYPE_STR,                                      CFGOPT_TYPE);
-STRING_EXTERN(CFGOPT_XATTR_STR,                                     CFGOPT_XATTR);
 
 /***********************************************************************************************************************************
 Option data
@@ -2371,15 +2370,6 @@ static ConfigOptionData configOptionData[CFG_OPTION_TOTAL] = CONFIG_OPTION_LIST
         CONFIG_OPTION_NAME("type")
         CONFIG_OPTION_INDEX(0)
         CONFIG_OPTION_DEFINE_ID(cfgDefOptType)
-        CONFIG_OPTION_GROUP(false)
-    )
-
-    //------------------------------------------------------------------------------------------------------------------------------
-    CONFIG_OPTION
-    (
-        CONFIG_OPTION_NAME("xattr")
-        CONFIG_OPTION_INDEX(0)
-        CONFIG_OPTION_DEFINE_ID(cfgDefOptXattr)
         CONFIG_OPTION_GROUP(false)
     )
 )

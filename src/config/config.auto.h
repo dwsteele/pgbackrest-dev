@@ -198,10 +198,8 @@ Option constants
     STRING_DECLARE(CFGOPT_TCP_KEEP_ALIVE_INTERVAL_STR);
 #define CFGOPT_TYPE                                                 "type"
     STRING_DECLARE(CFGOPT_TYPE_STR);
-#define CFGOPT_XATTR                                                "xattr"
-    STRING_DECLARE(CFGOPT_XATTR_STR);
 
-#define CFG_OPTION_TOTAL                                            208
+#define CFG_OPTION_TOTAL                                            207
 
 /***********************************************************************************************************************************
 Command enum
@@ -452,7 +450,6 @@ typedef enum
     cfgOptTcpKeepAliveIdle,
     cfgOptTcpKeepAliveInterval,
     cfgOptType,
-    cfgOptXattr,
 } ConfigOption;
 
 #endif

@@ -58,12 +58,7 @@ testRun(void)
     {
         Storage *storageRemote = NULL;
         TEST_ASSIGN(storageRemote, storageRepoGet(strNew(STORAGE_POSIX_TYPE), false), "get remote repo storage");
-        TEST_RESULT_UINT(
-            storageInterface(storageRemote).feature, storageInterface(storageTest).feature
-#ifndef HAVE_XATTR
-            ^ 1 << storageFeatureExtAttr
-#endif // HAVE_XATTR
-            , "    check features");
+        TEST_RESULT_UINT(storageInterface(storageRemote).feature, storageInterface(storageTest).feature, "    check features");
         TEST_RESULT_BOOL(storageFeature(storageRemote, storageFeaturePath), true, "    check path feature");
         TEST_RESULT_BOOL(storageFeature(storageRemote, storageFeatureCompress), true, "    check compress feature");
         TEST_RESULT_STR(storagePathP(storageRemote, NULL), strNewFmt("%s/repo", testPath()), "    check path");
@@ -74,12 +69,8 @@ testRun(void)
             storageRemoteProtocol(PROTOCOL_COMMAND_STORAGE_FEATURE_STR, varLstNew(), server), true, "protocol feature");
         TEST_RESULT_STR(
             strNewBuf(serverWrite),
-            strNewFmt(
-                ".\"%s/repo\"\n.%" PRIu64 "\n{}\n", testPath(), storageInterface(storageTest).feature
-#ifndef HAVE_XATTR
-            ^ 1 << storageFeatureExtAttr
-#endif // HAVE_XATTR
-            ), "check result");
+            strNewFmt(".\"%s/repo\"\n.%" PRIu64 "\n{}\n", testPath(), storageInterface(storageTest).feature),
+            "check result");
 
         bufUsedSet(serverWrite, 0);
 

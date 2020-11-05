@@ -221,7 +221,7 @@ testRun(void)
         TEST_RESULT_STR_Z(info.user, testUser(), "    check user");
         TEST_RESULT_UINT(info.groupId, getgid(), "    check group id");
         TEST_RESULT_STR_Z(info.group, testGroup(), "    check group");
-        TEST_RESULT_PTR(info.attribute, NULL, "    check attribute");
+        TEST_RESULT_PTR(info.extension, NULL, "    check extension");
 
         // -------------------------------------------------------------------------------------------------------------------------
         const Buffer *buffer = BUFSTRDEF("TESTFILE");
@@ -234,11 +234,7 @@ testRun(void)
         TEST_RESULT_INT(system(strZ(strNewFmt("sudo chown 99999:99999 %s", strZ(fileName)))), 0, "set invalid user/group");
 #endif // TEST_CONTAINER_REQUIRED
 
-        TEST_ASSIGN(info, storageInfoP(storageTest, fileName
-#ifdef HAVE_LIBSELINUX
-            , .attribute = jsonToKv(STRDEF("{\"xtr\":{\"security.selinux\":null}}"))
-#endif // HAVE_LIBSELINUX
-            ), "get file info");
+        TEST_ASSIGN(info, storageInfoP(storageTest, fileName), "get file info");
         TEST_RESULT_STR(info.name, NULL, "    name is not set");
         TEST_RESULT_BOOL(info.exists, true, "    check exists");
         TEST_RESULT_INT(info.type, storageTypeFile, "    check type");
@@ -250,25 +246,7 @@ testRun(void)
         TEST_RESULT_STR(info.user, NULL, "    check user");
         TEST_RESULT_STR(info.group, NULL, "    check group");
 #endif // TEST_CONTAINER_REQUIRED
-#ifdef HAVE_LIBSELINUX
-        TEST_RESULT_STR_Z(
-            jsonFromKv(info.attribute),
-            "{\"sel\":{\"ctx\":null},\"xtr\":{\"security.selinux\":null}}",
-            "    check attribute");
-#else // HAVE_LIBSELINUX
-        TEST_RESULT_PTR(info.attribute, NULL, "    check attribute");
-#endif // HAVE_LIBSELINUX
-
-        // -------------------------------------------------------------------------------------------------------------------------
-        TEST_ERROR(
-            storageInfoP(storageTest, fileName, .attribute = jsonToKv(STRDEF("{\"bogus\":null}"))), AssertError,
-            "invalid attribute key 'bogus'");
-
-#ifndef HAVE_LIBSELINUX
-        TEST_ERROR(
-            storageInfoP(storageTest, fileName, .attribute = jsonToKv(STRDEF("{\"xtr\":{\"security.selinux\":null}}"))),
-            OptionInvalidValueError, "pgBackRest not compiled with SELinux support");
-#endif // HAVE_LIBSELINUX
+        TEST_RESULT_PTR(info.extension, NULL, "    check extension");
 
         storageRemoveP(storageTest, fileName, .errorOnMissing = true);
 
@@ -278,16 +256,11 @@ testRun(void)
 
 #ifdef HAVE_LIBSELINUX
         TEST_RESULT_VOID(
-            storagePosixInfoXAttrSet(linkName, varStr(STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR), BUFSTRDEF("ycontexty")),
+            storagePosixInfoXAttrSet(linkName, false, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR, BUFSTRDEF("ycontexty")),
             "set SELinux context");
 #endif // HAVE_LIBSELINUX
 
-        TEST_ASSIGN(
-            info, storageInfoP(storageTest, linkName
-#ifdef HAVE_LIBSELINUX
-            , .attribute = jsonToKv(STRDEF("{\"xtr\":{\"security.selinux\":null}}"))
-#endif // HAVE_LIBSELINUX
-            ), "get link info");
+        TEST_ASSIGN(info, storageInfoP(storageTest, linkName), "get link info");
 
         TEST_RESULT_STR(info.name, NULL, "    name is not set");
         TEST_RESULT_BOOL(info.exists, true, "    check exists");
@@ -299,11 +272,9 @@ testRun(void)
         TEST_RESULT_STR_Z(info.group, testGroup(), "    check group");
 #ifdef HAVE_LIBSELINUX
         TEST_RESULT_STR_Z(
-            jsonFromKv(info.attribute),
-            "{\"sel\":{\"ctx\":\"YCONTEXTY\"},\"xtr\":{\"security.selinux\":\"ycontexty\"}}",
-            "    check attribute");
+            jsonFromKv(info.extension), "{\"mls\":{\"scr\":\"ycontexty\",\"sct\":\"YCONTEXTY\"}}", "    check extension");
 #else // HAVE_LIBSELINUX
-        TEST_RESULT_PTR(info.attribute, NULL, "    check attribute");
+        TEST_RESULT_PTR(info.extension, NULL, "    check extension");
 #endif // HAVE_LIBSELINUX
 
         TEST_ASSIGN(info, storageInfoP(storageTest, linkName, .followLink = true), "get info from path pointed to by link");
@@ -315,7 +286,7 @@ testRun(void)
         TEST_RESULT_STR(info.linkDestination, NULL, "    check link destination");
         TEST_RESULT_STR_Z(info.user, "root", "    check user");
         TEST_RESULT_STR_Z(info.group, "root", "    check group");
-        TEST_RESULT_PTR(info.attribute, NULL, "    check null ext attr");
+        TEST_RESULT_PTR(info.extension, NULL, "    check null ext attr");
 
         storageRemoveP(storageTest, linkName, .errorOnMissing = true);
 
@@ -385,7 +356,7 @@ testRun(void)
 
         TEST_RESULT_VOID(
             storagePosixInfoListEntry(
-                (StoragePosix *)storageDriver(storageTest), strNew("pg"), strNew("missing"), storageInfoLevelBasic, NULL,
+                (StoragePosix *)storageDriver(storageTest), strNew("pg"), strNew("missing"), storageInfoLevelBasic,
                 hrnStorageInfoListCallback, &callbackData),
             "missing path");
         TEST_RESULT_STR_Z(callbackData.content, "", "    check content");
@@ -409,6 +380,13 @@ testRun(void)
 
         storagePutP(storageNewWriteP(storageTest, strNew("pg/file"), .modeFile = 0660), BUFSTRDEF("TESTDATA"));
 
+#ifdef HAVE_LIBSELINUX
+        TEST_RESULT_VOID(
+            storagePosixInfoXAttrSet(
+                strNewFmt("%s/pg/file", testPath()), false, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR, BUFSTRDEF("XfileX")),
+            "set SELinux context");
+#endif // HAVE_LIBSELINUX
+
         ASSERT(system(strZ(strNewFmt("ln -s ../file %s/pg/link", testPath()))) == 0);
         ASSERT(system(strZ(strNewFmt("mkfifo -m 777 %s/pg/pipe", testPath()))) == 0);
 
@@ -425,35 +403,22 @@ testRun(void)
 
         TEST_RESULT_VOID(
             storageInfoListP(
-                storageTest, strNew("pg"), hrnStorageInfoListCallback, &callbackData, .sortOrder = sortOrderAsc
-#ifdef HAVE_LIBSELINUX
-            , .attribute = jsonToKv(STRDEF("{\"xtr\":{\"security.selinux\":null}}"))
-#endif // HAVE_LIBSELINUX
-            ),
+                storageTest, strNew("pg"), hrnStorageInfoListCallback, &callbackData, .sortOrder = sortOrderAsc),
             "directory with one dot file sorted");
         TEST_RESULT_STR_Z(
             callbackData.content,
             ". {path"
-#ifdef HAVE_LIBSELINUX
-            ", a={\"sel\":{\"ctx\":null},\"xtr\":{\"security.selinux\":null}}"
-#endif // HAVE_LIBSELINUX
             "}\n"
 #ifdef TEST_CONTAINER_REQUIRED
             ".include {path, m=0755, u=77777, g=77777"
-#ifdef HAVE_LIBSELINUX
-            ", a={\"sel\":{\"ctx\":null},\"xtr\":{\"security.selinux\":null}}"
-#endif // HAVE_LIBSELINUX
             "}\n"
 #endif // TEST_CONTAINER_REQUIRED
             "file {file, s=8, m=0660"
 #ifdef HAVE_LIBSELINUX
-            ", a={\"sel\":{\"ctx\":null},\"xtr\":{\"security.selinux\":null}}"
+            ", e={\"mls\":{\"scr\":\"XfileX\",\"sct\":\"XFILEX\"}}"
 #endif // HAVE_LIBSELINUX
             "}\n"
             "link {link, d=../file"
-#ifdef HAVE_LIBSELINUX
-            ", a={\"sel\":{\"ctx\":null},\"xtr\":{\"security.selinux\":null}}"
-#endif // HAVE_LIBSELINUX
             "}\n"
             "pipe {special}\n",
             "    check content");
@@ -478,25 +443,36 @@ testRun(void)
             "path/file {file, s=8}\n"
             "path {path, m=0700}\n"
             "link {link, d=../file}\n"
-            "file {file, s=8, m=0660}\n"
+            "file {file, s=8, m=0660"
+#ifdef HAVE_LIBSELINUX
+            ", e={\"mls\":{\"scr\":\"XfileX\",\"sct\":\"XFILEX\"}}"
+#endif // HAVE_LIBSELINUX
+            "}\n"
             ". {path}\n",
             "    check content");
 
         // -------------------------------------------------------------------------------------------------------------------------
         callbackData.content = strNew("");
 
+#ifdef HAVE_LIBSELINUX
         TEST_RESULT_VOID(
-            storagePosixInfoXAttrSet(strNewFmt("%s/pg/path", testPath()), STRDEF("user.pgb"), BUFSTRDEF("data")),
-            "set extended attribute");
+            storagePosixInfoXAttrSet(
+                strNewFmt("%s/pg/path", testPath()), false, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR, BUFSTRDEF("data")),
+            "set extended extension");
+#endif // HAVE_LIBSELINUX
 
         TEST_RESULT_VOID(
             storageInfoListP(
                 storageTest, strNew("pg"), hrnStorageInfoListCallback, &callbackData, .sortOrder = sortOrderAsc,
-                .expression = STRDEF("^path"), .attribute = jsonToKv(STRDEF("{\"xtr\":{\"user.pgb\":null}}"))),
+                .expression = STRDEF("^path")),
             "filter");
         TEST_RESULT_STR_Z(
             callbackData.content,
-            "path {path, m=0700, a={\"xtr\":{\"user.pgb\":\"data\"}}}\n",
+            "path {path, m=0700"
+#ifdef HAVE_LIBSELINUX
+            ", e={\"mls\":{\"scr\":\"data\",\"sct\":\"DATA\"}}"
+#endif // HAVE_LIBSELINUX
+            "}\n",
             "    check content");
 
         // -------------------------------------------------------------------------------------------------------------------------

@@ -1650,7 +1650,7 @@ testRun(void)
 
             // Create a backup manifest that looks like a halted backup manifest
             Manifest *manifestResume = manifestNewBuild(
-                storagePg(), PG_VERSION_95, pgCatalogTestVersion(PG_VERSION_95), true, false, NULL, strLstNew(), NULL);
+                storagePg(), PG_VERSION_95, pgCatalogTestVersion(PG_VERSION_95), true, false, NULL, NULL);
             ManifestData *manifestResumeData = (ManifestData *)manifestData(manifestResume);
 
             manifestResumeData->backupType = backupTypeFull;
@@ -1738,7 +1738,7 @@ testRun(void)
 
             // Create a backup manifest that looks like a halted backup manifest
             Manifest *manifestResume = manifestNewBuild(
-                storagePg(), PG_VERSION_95, pgCatalogTestVersion(PG_VERSION_95), true, false, NULL, strLstNew(), NULL);
+                storagePg(), PG_VERSION_95, pgCatalogTestVersion(PG_VERSION_95), true, false, NULL, NULL);
             ManifestData *manifestResumeData = (ManifestData *)manifestData(manifestResume);
 
             manifestResumeData->backupType = backupTypeFull;
@@ -1932,7 +1932,7 @@ testRun(void)
 
             // Create a backup manifest that looks like a halted backup manifest
             Manifest *manifestResume = manifestNewBuild(
-                storagePg(), PG_VERSION_95, pgCatalogTestVersion(PG_VERSION_95), true, false, NULL, strLstNew(), NULL);
+                storagePg(), PG_VERSION_95, pgCatalogTestVersion(PG_VERSION_95), true, false, NULL, NULL);
             ManifestData *manifestResumeData = (ManifestData *)manifestData(manifestResume);
 
             manifestResumeData->backupType = backupTypeDiff;
@@ -2467,8 +2467,6 @@ testRun(void)
             hrnCfgArgRawZ(argList, cfgOptRepoRetentionFull, "1");
             strLstAddZ(argList, "--" CFGOPT_TYPE "=" BACKUP_TYPE_INCR);
             strLstAddZ(argList, "--" CFGOPT_DELTA);
-            hrnCfgArgRawZ(argList, cfgOptXattr, "security.selinux");
-
             hrnCfgArgRawBool(argList, cfgOptRepoHardlink, true);
             harnessCfgLoad(cfgCmdBackup, argList);
 
@@ -2503,8 +2501,6 @@ testRun(void)
                 "P00   INFO: check archive for segment(s) 0000002C05DB8EB000000000:0000002C05DB8EB000000000\n"
                 "P00   INFO: new backup label = 20191027-181320F_20191030-014640I");
 
-            #define XATTR_NULL "\"atr\":{\"sel\":{\"ctx\":null},\"xtr\":{\"security.selinux\":null}}"
-
             TEST_RESULT_STR_Z_KEYRPL(
                 testBackupValidate(storageRepo(), STRDEF(STORAGE_REPO_BACKUP "/latest")),
                 ". {link, d=20191027-181320F_20191030-014640I}\n"
@@ -2529,30 +2525,29 @@ testRun(void)
                 "pg_tblspc/32768={\"path\":\"../../pg1-tblspc/32768\",\"tablespace-id\":\"32768\",\"tablespace-name\":\"tblspc32768\",\"type\":\"link\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={" XATTR_NULL ",\"checksum\":\"17ba0791499db908433b80f37c5fbc89b870084b\""
-                    ",\"reference\":\"20191027-181320F\",\"size\":2,\"timestamp\":1572200000}\n"
+                "pg_data/PG_VERSION={\"checksum\":\"17ba0791499db908433b80f37c5fbc89b870084b\",\"reference\":\"20191027-181320F\""
+                    ",\"size\":2,\"timestamp\":1572200000}\n"
                 "pg_data/backup_label={\"checksum\":\"8e6f41ac87a7514be96260d65bacbffb11be77dc\",\"size\":17"
                     ",\"timestamp\":1572400002}\n"
-                "pg_data/global/pg_control={" XATTR_NULL ",\"reference\":\"20191027-181320F\",\"size\":8192"
-                    ",\"timestamp\":1572400000}\n"
-                "pg_data/postgresql.conf={" XATTR_NULL ",\"checksum\":\"e3db315c260e79211b7b52587123b7aa060f30ab\""
+                "pg_data/global/pg_control={\"reference\":\"20191027-181320F\",\"size\":8192,\"timestamp\":1572400000}\n"
+                "pg_data/postgresql.conf={\"checksum\":\"e3db315c260e79211b7b52587123b7aa060f30ab\""
                     ",\"reference\":\"20191027-181320F\",\"size\":11,\"timestamp\":1570000000}\n"
-                "pg_tblspc/32768/PG_11_201809051/1/5={" XATTR_NULL ",\"checksum-page\":true,\"master\":false"
-                    ",\"reference\":\"20191027-181320F\",\"size\":0,\"timestamp\":1572200000}\n"
+                "pg_tblspc/32768/PG_11_201809051/1/5={\"checksum-page\":true,\"master\":false,\"reference\":\"20191027-181320F\""
+                    ",\"size\":0,\"timestamp\":1572200000}\n"
                 "\n"
                 "[target:link]\n"
-                "pg_data/pg_tblspc/32768={" XATTR_NULL ",\"destination\":\"../../pg1-tblspc/32768\"}\n"
+                "pg_data/pg_tblspc/32768={\"destination\":\"../../pg1-tblspc/32768\"}\n"
                 "\n"
                 "[target:path]\n"
-                "pg_data={" XATTR_NULL "}\n"
-                "pg_data/base={" XATTR_NULL "}\n"
-                "pg_data/global={" XATTR_NULL "}\n"
-                "pg_data/pg_tblspc={" XATTR_NULL "}\n"
-                "pg_data/pg_wal={" XATTR_NULL "}\n"
+                "pg_data={}\n"
+                "pg_data/base={}\n"
+                "pg_data/global={}\n"
+                "pg_data/pg_tblspc={}\n"
+                "pg_data/pg_wal={}\n"
                 "pg_tblspc={}\n"
                 "pg_tblspc/32768={}\n"
-                "pg_tblspc/32768/PG_11_201809051={" XATTR_NULL "}\n"
-                "pg_tblspc/32768/PG_11_201809051/1={" XATTR_NULL "}\n",
+                "pg_tblspc/32768/PG_11_201809051={}\n"
+                "pg_tblspc/32768/PG_11_201809051/1={}\n",
                 "compare file list");
 
             // Remove test files

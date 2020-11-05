@@ -156,7 +156,6 @@ use constant CFGOPT_SCK_KEEP_ALIVE                                  => 'sck-keep
 use constant CFGOPT_TCP_KEEP_ALIVE_COUNT                            => 'tcp-keep-alive-count';
 use constant CFGOPT_TCP_KEEP_ALIVE_IDLE                             => 'tcp-keep-alive-idle';
 use constant CFGOPT_TCP_KEEP_ALIVE_INTERVAL                         => 'tcp-keep-alive-interval';
-use constant CFGOPT_XATTR                                           => 'xattr';
 
 # Commands
 use constant CFGOPT_CMD_SSH                                         => 'cmd-ssh';
@@ -1482,18 +1481,6 @@ my %hConfigDefine =
             &CFGCMD_STANZA_UPGRADE => {},
             &CFGCMD_VERIFY => {},
         }
-    },
-
-    &CFGOPT_XATTR =>
-    {
-        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
-        &CFGDEF_TYPE => CFGDEF_TYPE_LIST,
-        &CFGDEF_REQUIRED => false,
-        &CFGDEF_COMMAND =>
-        {
-            &CFGCMD_BACKUP => {},
-            &CFGCMD_RESTORE => {},
-        },
     },
 
     # Repository options

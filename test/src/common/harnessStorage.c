@@ -166,9 +166,9 @@ hrnStorageInfoListCallback(void *callbackData, const StorageInfo *info)
                 }
             }
 
-            if (info->level >= storageInfoLevelDetail && info->attribute != NULL)
+            if (info->level >= storageInfoLevelDetail && info->extension != NULL)
             {
-                strCatFmt(data->content, ", a=%s", strZ(jsonFromKv(info->attribute)));
+                strCatFmt(data->content, ", e=%s", strZ(jsonFromKv(info->extension)));
             }
         }
     }

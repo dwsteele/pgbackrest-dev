@@ -101,7 +101,7 @@ typedef struct ManifestFile
     const VariantList *checksumPageErrorList;                       // List of page checksum errors if there are any
     const String *user;                                             // User name
     const String *group;                                            // Group name
-    const KeyValue *attribute;                                      // Additional attributes (if any)
+    const KeyValue *extension;                                      // Extension data (if any)
     const String *reference;                                        // Reference to a prior backup
     uint64_t size;                                                  // Original size
     uint64_t sizeRepo;                                              // Size in repo
@@ -117,7 +117,7 @@ typedef struct ManifestLink
     const String *destination;                                      // Link destination
     const String *user;                                             // User name
     const String *group;                                            // Group name
-    const KeyValue *attribute;                                      // Additional attributes (if any)
+    const KeyValue *extension;                                      // Extension data (if any)
 } ManifestLink;
 
 /***********************************************************************************************************************************
@@ -129,7 +129,7 @@ typedef struct ManifestPath
     mode_t mode;                                                    // Directory mode
     const String *user;                                             // User name
     const String *group;                                            // Group name
-    const KeyValue *attribute;                                      // Additional attributes (if any)
+    const KeyValue *extension;                                      // Extension data (if any)
 } ManifestPath;
 
 /***********************************************************************************************************************************
@@ -157,7 +157,7 @@ Constructors
 // Build a new manifest for a PostgreSQL data directory
 Manifest *manifestNewBuild(
     const Storage *storagePg, unsigned int pgVersion, unsigned int pgCatalogVersion, bool online, bool checksumPage,
-    const StringList *excludeList, const StringList *xAttrList, const VariantList *tablespaceList);
+    const StringList *excludeList, const VariantList *tablespaceList);
 
 // Load a manifest from IO
 Manifest *manifestNewLoad(IoRead *read);

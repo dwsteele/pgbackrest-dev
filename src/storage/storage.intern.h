@@ -71,9 +71,6 @@ typedef struct StorageInterfaceInfoParam
 
     // Should symlinks be followed?  Only required on storage that supports symlinks.
     bool followLink;
-
-    // Additional attributes (if any) to return. The logic for fetching these attributes is contained in the driver.
-    const KeyValue *attribute;
 } StorageInterfaceInfoParam;
 
 typedef StorageInfo StorageInterfaceInfo(
@@ -157,9 +154,6 @@ typedef struct StorageInterfaceInfoListParam
     // using the prefix returned from regExpPrefix(). This may cause extra results to be sent to the callback but won't exclude
     // anything that matches the expression exactly.
     const String *expression;
-
-    // Additional attributes (if any) to return. The logic for fetching these attributes is contained in the driver.
-    const KeyValue *attribute;
 } StorageInterfaceInfoListParam;
 
 typedef bool StorageInterfaceInfoList(

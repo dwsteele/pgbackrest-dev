@@ -1948,8 +1948,7 @@ cmdBackup(void)
         // Build the manifest
         Manifest *manifest = manifestNewBuild(
             backupData->storagePrimary, infoPg.version, infoPg.catalogVersion, cfgOptionBool(cfgOptOnline),
-            cfgOptionBool(cfgOptChecksumPage), strLstNewVarLst(cfgOptionLst(cfgOptExclude)),
-            strLstNewVarLst(cfgOptionLst(cfgOptXattr)), backupStartResult.tablespaceList);
+            cfgOptionBool(cfgOptChecksumPage), strLstNewVarLst(cfgOptionLst(cfgOptExclude)), backupStartResult.tablespaceList);
 
         // Validate the manifest using the copy start time
         manifestBuildValidate(

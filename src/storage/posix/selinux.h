@@ -9,25 +9,21 @@ SELinux Functions
 /***********************************************************************************************************************************
 SELinux constants
 ***********************************************************************************************************************************/
-#define STORAGE_POSIX_SELINUX_KEY                                   "sel"
-    VARIANT_DECLARE(STORAGE_POSIX_SELINUX_KEY_VAR);
+// MLS extension keys
+#define STORAGE_POSIX_MLS_KEY                                       "mls"
+    VARIANT_DECLARE(STORAGE_POSIX_MLS_KEY_VAR);
+#define STORAGE_POSIX_MLS_SELINUX_CONTEXT_RAW_KEY                   "scr"
+    VARIANT_DECLARE(STORAGE_POSIX_MLS_SELINUX_CONTEXT_RAW_KEY_VAR);
+#define STORAGE_POSIX_MLS_SELINUX_CONTEXT_TRANSLATED_KEY            "sct"
+    VARIANT_DECLARE(STORAGE_POSIX_MLS_SELINUX_CONTEXT_TRANSLATED_KEY_VAR);
 
 // Extended attribute
-VARIANT_DECLARE(STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR);
-
-#ifdef HAVE_LIBSELINUX
-
-#define STORAGE_POSIX_SELINUX_KEY_CONTEXT                           "ctx"
-    VARIANT_DECLARE(STORAGE_POSIX_SELINUX_KEY_CONTEXT_VAR);
-
-#endif // HAVE_LIBSELINUX
+#define STORAGE_POSIX_SELINUX_XATTR_CONTEXT                         "security.selinux"
+    STRING_DECLARE(STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR);
 
 /***********************************************************************************************************************************
 Functions
 ***********************************************************************************************************************************/
-// Was the binary compiled with SELinux?
-void storagePosixSelCheck(void);
-
 #ifdef HAVE_LIBSELINUX
 
 // Convert an SELinux context to a raw extended attribute

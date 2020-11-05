@@ -149,7 +149,6 @@ typedef enum
     cfgDefOptTcpKeepAliveIdle,
     cfgDefOptTcpKeepAliveInterval,
     cfgDefOptType,
-    cfgDefOptXattr,
 } ConfigDefineOption;
 
 #endif

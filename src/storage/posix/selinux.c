@@ -15,33 +15,19 @@ SELinux Functions
 #include "version.h"
 
 /***********************************************************************************************************************************
-SELinux context extended attribute
+SELinux constants
 ***********************************************************************************************************************************/
-VARIANT_STRDEF_EXTERN(STORAGE_POSIX_SELINUX_KEY_VAR,                STORAGE_POSIX_SELINUX_KEY);
-VARIANT_STRDEF_EXTERN(STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR,      "security.selinux");
+// MLS extension keys
+VARIANT_STRDEF_EXTERN(STORAGE_POSIX_MLS_KEY_VAR,                                STORAGE_POSIX_MLS_KEY);
+VARIANT_STRDEF_EXTERN(STORAGE_POSIX_MLS_SELINUX_CONTEXT_RAW_KEY_VAR,            STORAGE_POSIX_MLS_SELINUX_CONTEXT_RAW_KEY);
+VARIANT_STRDEF_EXTERN(STORAGE_POSIX_MLS_SELINUX_CONTEXT_TRANSLATED_KEY_VAR,     STORAGE_POSIX_MLS_SELINUX_CONTEXT_TRANSLATED_KEY);
+
+// Extended attribute
+STRING_EXTERN(STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR,              STORAGE_POSIX_SELINUX_XATTR_CONTEXT);
 
 #ifdef HAVE_LIBSELINUX
 
-VARIANT_STRDEF_EXTERN(STORAGE_POSIX_SELINUX_KEY_CONTEXT_VAR,        STORAGE_POSIX_SELINUX_KEY_CONTEXT);
-
-#endif // HAVE_LIBSELINUX
-
 /**********************************************************************************************************************************/
-void
-storagePosixSelCheck(void)
-{
-    FUNCTION_TEST_VOID();
-
-#ifndef HAVE_LIBSELINUX
-        THROW_FMT(OptionInvalidValueError, PROJECT_NAME " not compiled with SELinux support");
-#endif // HAVE_LIBSELINUX
-
-    FUNCTION_TEST_RETURN_VOID();
-}
-
-/**********************************************************************************************************************************/
-#ifdef HAVE_LIBSELINUX
-
 String *
 storagePosixSelContextTransToRaw(const String *translated)
 {

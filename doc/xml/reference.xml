@@ -257,18 +257,6 @@
                         <example>630</example>
                     </config-key>
 
-                    <!-- ======================================================================================================= -->
-                    <config-key id="xattr" name="Backup/Restore Extended Attribute">
-                        <summary>Backup/restore extended attribute.</summary>
-
-                        <text>The specified extended attribute(s) will be added to the backup when this option is set.
-
-                        On restore, all extended attributes will be applied by default when present. !!! HOW TO PREVENT THEM FROM
-                        BEING APPLIED???.</text>
-
-                        <example>n</example>
-                    </config-key>
-
                     <!-- CONFIG - GENERAL SECTION - SCK-KEEP-ALIVE KEY -->
                     <config-key id="sck-keep-alive" name="Keep Alive">
                         <summary>Keep-alive enable.</summary>

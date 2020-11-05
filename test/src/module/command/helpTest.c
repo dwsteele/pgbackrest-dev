@@ -173,7 +173,6 @@ testRun(void)
             "  --tcp-keep-alive-count           keep-alive count\n"
             "  --tcp-keep-alive-idle            keep-alive idle time\n"
             "  --tcp-keep-alive-interval        keep-alive interval time\n"
-            "  --xattr                          backup/restore extended attribute\n"
             "\n"
             "Log Options:\n"
             "\n"

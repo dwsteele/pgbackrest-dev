@@ -18,7 +18,6 @@
 
 - Store default sections before file/link/path sections to avoid two passes on load.
 - Format backup labels using gmtime().
-- Allow mixed compression types in a backup set
 
 ## Options
 

@@ -19,7 +19,6 @@ Backup Manifest Handler
 #include "info/manifest.h"
 #include "postgres/interface.h"
 #include "postgres/version.h"
-#include "storage/posix/xattr.h"
 #include "storage/storage.h"
 #include "version.h"
 
@@ -50,9 +49,6 @@ STRING_STATIC(MANIFEST_SECTION_TARGET_LINK_DEFAULT_STR,             "target:link
 STRING_STATIC(MANIFEST_SECTION_TARGET_PATH_STR,                     "target:path");
 STRING_STATIC(MANIFEST_SECTION_TARGET_PATH_DEFAULT_STR,             "target:path:default");
 
-#define MANIFEST_KEY_ATTRIBUTE                                      "atr"
-    // !!! STRING_STATIC(MANIFEST_KEY_ATTRIBUTE_STR,                       MANIFEST_KEY_ATTRIBUTE);
-    VARIANT_STRDEF_STATIC(MANIFEST_KEY_ATTRIBUTE_VAR,               MANIFEST_KEY_ATTRIBUTE);
 #define MANIFEST_KEY_BACKUP_ARCHIVE_START                           "backup-archive-start"
     STRING_STATIC(MANIFEST_KEY_BACKUP_ARCHIVE_START_STR,            MANIFEST_KEY_BACKUP_ARCHIVE_START);
 #define MANIFEST_KEY_BACKUP_ARCHIVE_STOP                            "backup-archive-stop"
@@ -92,6 +88,8 @@ STRING_STATIC(MANIFEST_SECTION_TARGET_PATH_DEFAULT_STR,             "target:path
     STRING_STATIC(MANIFEST_KEY_DB_VERSION_STR,                      MANIFEST_KEY_DB_VERSION);
 #define MANIFEST_KEY_DESTINATION                                    "destination"
     VARIANT_STRDEF_STATIC(MANIFEST_KEY_DESTINATION_VAR,             MANIFEST_KEY_DESTINATION);
+#define MANIFEST_KEY_EXTENSION                                      "ext"
+    VARIANT_STRDEF_STATIC(MANIFEST_KEY_EXTENSION_VAR,               MANIFEST_KEY_EXTENSION);
 #define MANIFEST_KEY_FILE                                           "file"
     VARIANT_STRDEF_STATIC(MANIFEST_KEY_FILE_VAR,                    MANIFEST_KEY_FILE);
 #define MANIFEST_KEY_GROUP                                          "group"
@@ -236,7 +234,7 @@ manifestFileAdd(Manifest *this, const ManifestFile *file)
     {
         ManifestFile fileAdd =
         {
-            .attribute = file->attribute == NULL ? NULL : kvDup(file->attribute),
+            .extension = file->extension == NULL ? NULL : kvDup(file->extension),
             .checksumPage = file->checksumPage,
             .checksumPageError = file->checksumPageError,
             .checksumPageErrorList = varLstDup(file->checksumPageErrorList),
@@ -298,7 +296,7 @@ manifestLinkAdd(Manifest *this, const ManifestLink *link)
     {
         ManifestLink linkAdd =
         {
-            .attribute = link->attribute == NULL ? NULL : kvDup(link->attribute),
+            .extension = link->extension == NULL ? NULL : kvDup(link->extension),
             .destination = strDup(link->destination),
             .name = strDup(link->name),
             .group = manifestOwnerCache(this, link->group),
@@ -328,7 +326,7 @@ manifestPathAdd(Manifest *this, const ManifestPath *path)
     {
         ManifestPath pathAdd =
         {
-            .attribute = path->attribute == NULL ? NULL : kvDup(path->attribute),
+            .extension = path->extension == NULL ? NULL : kvDup(path->extension),
             .mode = path->mode,
             .name = strDup(path->name),
             .group = manifestOwnerCache(this, path->group),
@@ -411,7 +409,6 @@ typedef struct ManifestBuildData
     RegExp *dbPathExp;                                              // Identify paths containing relations
     RegExp *tempRelationExp;                                        // Identify temp relations
     RegExp *standbyExp;                                             // Identify files that must be copied from the primary
-    KeyValue *attributeKey;                                         // Attributes to get for files/links/paths
     const VariantList *tablespaceList;                              // List of tablespaces in the database
     StringList *excludeContent;                                     // Exclude contents of directories
     StringList *excludeSingle;                                      // Exclude a single file/link/path
@@ -489,7 +486,7 @@ manifestBuildCallback(void *data, const StorageInfo *info)
                 .mode = info->mode,
                 .user = info->user,
                 .group = info->group,
-                .attribute = info->attribute,
+                .extension = info->extension,
             };
 
             manifestPathAdd(buildData.manifest, &path);
@@ -576,8 +573,7 @@ manifestBuildCallback(void *data, const StorageInfo *info)
                 buildDataSub.dbPath = regExpMatch(buildData.dbPathExp, manifestName);
 
             storageInfoListP(
-                buildDataSub.storagePg, buildDataSub.pgPath, manifestBuildCallback, &buildDataSub, .sortOrder = sortOrderAsc,
-                .attribute = buildDataSub.attributeKey);
+                buildDataSub.storagePg, buildDataSub.pgPath, manifestBuildCallback, &buildDataSub, .sortOrder = sortOrderAsc);
 
             break;
         }
@@ -655,7 +651,7 @@ manifestBuildCallback(void *data, const StorageInfo *info)
                 .mode = info->mode,
                 .user = info->user,
                 .group = info->group,
-                .attribute = info->attribute,
+                .extension = info->extension,
                 .size = info->size,
                 .sizeRepo = info->size,
                 .timestamp = info->timeModified,
@@ -688,8 +684,7 @@ manifestBuildCallback(void *data, const StorageInfo *info)
             const String *linkDestinationAbsolute = strPathAbsolute(info->linkDestination, buildData.pgPath);
 
             StorageInfo linkedCheck = storageInfoP(
-                buildData.storagePg, linkDestinationAbsolute, .ignoreMissing = true, .noPathEnforce = true,
-                .attribute = buildData.attributeKey);
+                buildData.storagePg, linkDestinationAbsolute, .ignoreMissing = true, .noPathEnforce = true);
 
             if (linkedCheck.exists && linkedCheck.type == storageTypeLink)
             {
@@ -704,7 +699,7 @@ manifestBuildCallback(void *data, const StorageInfo *info)
                 .name = manifestName,
                 .user = info->user,
                 .group = info->group,
-                .attribute = info->attribute,
+                .extension = info->extension,
                 .destination = info->linkDestination,
             };
 
@@ -804,7 +799,7 @@ manifestBuildCallback(void *data, const StorageInfo *info)
             // Add info about the linked file/path
             const String *linkPgPath = strNewFmt("%s/%s", strZ(buildData.pgPath), strZ(linkName));
             StorageInfo linkedInfo = storageInfoP(
-                buildData.storagePg, linkPgPath, .followLink = true, .ignoreMissing = true, .attribute = buildData.attributeKey);
+                buildData.storagePg, linkPgPath, .followLink = true, .ignoreMissing = true);
             linkedInfo.name = linkName;
 
             // If the link destination exists then proceed as usual
@@ -844,7 +839,7 @@ manifestBuildCallback(void *data, const StorageInfo *info)
 
             // If the link check was successful but the destination does not exist then check it again to generate an error
             if (!linkedInfo.exists)
-                storageInfoP(buildData.storagePg, linkPgPath, .followLink = true, .attribute = buildData.attributeKey);
+                storageInfoP(buildData.storagePg, linkPgPath, .followLink = true);
 
             break;
         }
@@ -869,7 +864,7 @@ manifestBuildCallback(void *data, const StorageInfo *info)
 Manifest *
 manifestNewBuild(
     const Storage *storagePg, unsigned int pgVersion, unsigned int pgCatalogVersion, bool online, bool checksumPage,
-    const StringList *excludeList, const StringList *xAttrList, const VariantList *tablespaceList)
+    const StringList *excludeList, const VariantList *tablespaceList)
 {
     FUNCTION_LOG_BEGIN(logLevelDebug);
         FUNCTION_LOG_PARAM(STORAGE, storagePg);
@@ -878,14 +873,12 @@ manifestNewBuild(
         FUNCTION_LOG_PARAM(BOOL, online);
         FUNCTION_LOG_PARAM(BOOL, checksumPage);
         FUNCTION_LOG_PARAM(STRING_LIST, excludeList);
-        FUNCTION_LOG_PARAM(STRING_LIST, xAttrList);
         FUNCTION_LOG_PARAM(VARIANT_LIST, tablespaceList);
     FUNCTION_LOG_END();
 
     ASSERT(storagePg != NULL);
     ASSERT(pgVersion != 0);
     ASSERT(!checksumPage || pgVersion >= PG_VERSION_93);
-    ASSERT(xAttrList != NULL);
 
     Manifest *this = NULL;
 
@@ -964,22 +957,9 @@ manifestNewBuild(
                 }
             }
 
-            // Build list of attributes
-            // ---------------------------------------------------------------------------------------------------------------------
-            if (strLstSize(xAttrList) > 0)
-            {
-                KeyValue *attributeKey = kvNew();
-                KeyValue *kvXAttr = kvPutKv(attributeKey, STORAGE_POSIX_XATTR_KEY_VAR);
-
-                for (unsigned int xAttrIdx = 0; xAttrIdx < strLstSize(xAttrList); xAttrIdx++)
-                    kvPut(kvXAttr, VARSTR(strLstGet(xAttrList, xAttrIdx)), NULL);
-
-                buildData.attributeKey = attributeKey;
-            }
-
             // Build manifest
             // ---------------------------------------------------------------------------------------------------------------------
-            StorageInfo info = storageInfoP(storagePg, buildData.pgPath, .followLink = true, .attribute = buildData.attributeKey);
+            StorageInfo info = storageInfoP(storagePg, buildData.pgPath, .followLink = true);
 
             ManifestPath path =
             {
@@ -987,7 +967,7 @@ manifestNewBuild(
                 .mode = info.mode,
                 .user = info.user,
                 .group = info.group,
-                .attribute = info.attribute,
+                .extension = info.extension,
             };
 
             manifestPathAdd(this, &path);
@@ -1003,8 +983,7 @@ manifestNewBuild(
 
             // Gather info for the rest of the files/links/paths
             storageInfoListP(
-                storagePg, buildData.pgPath, manifestBuildCallback, &buildData, .errorOnMissing = true, .sortOrder = sortOrderAsc,
-                .attribute = buildData.attributeKey);
+                storagePg, buildData.pgPath, manifestBuildCallback, &buildData, .errorOnMissing = true, .sortOrder = sortOrderAsc);
 
             // These may not be in order even if the incoming data was sorted
             lstSort(this->fileList, sortOrderAsc);
@@ -1491,8 +1470,8 @@ manifestLoadCallback(void *callbackData, const String *section, const String *ke
                     file.checksumPageErrorList = varVarLst(checksumPageErrorList);
             }
 
-            if (kvKeyExists(fileKv, MANIFEST_KEY_ATTRIBUTE_VAR))
-                file.attribute = varKv(kvGet(fileKv, MANIFEST_KEY_ATTRIBUTE_VAR));
+            if (kvKeyExists(fileKv, MANIFEST_KEY_EXTENSION_VAR))
+                file.extension = varKv(kvGet(fileKv, MANIFEST_KEY_EXTENSION_VAR));
 
             if (kvKeyExists(fileKv, MANIFEST_KEY_GROUP_VAR))
             {
@@ -1538,8 +1517,8 @@ manifestLoadCallback(void *callbackData, const String *section, const String *ke
                 .name = key,
             };
 
-            if (kvKeyExists(pathKv, MANIFEST_KEY_ATTRIBUTE_VAR))
-                path.attribute = varKv(kvGet(pathKv, MANIFEST_KEY_ATTRIBUTE_VAR));
+            if (kvKeyExists(pathKv, MANIFEST_KEY_EXTENSION_VAR))
+                path.extension = varKv(kvGet(pathKv, MANIFEST_KEY_EXTENSION_VAR));
 
             if (kvKeyExists(pathKv, MANIFEST_KEY_GROUP_VAR))
             {
@@ -1580,8 +1559,8 @@ manifestLoadCallback(void *callbackData, const String *section, const String *ke
                 .destination = varStr(kvGet(linkKv, MANIFEST_KEY_DESTINATION_VAR)),
             };
 
-            if (kvKeyExists(linkKv, MANIFEST_KEY_ATTRIBUTE_VAR))
-                link.attribute = varKv(kvGet(linkKv, MANIFEST_KEY_ATTRIBUTE_VAR));
+            if (kvKeyExists(linkKv, MANIFEST_KEY_EXTENSION_VAR))
+                link.extension = varKv(kvGet(linkKv, MANIFEST_KEY_EXTENSION_VAR));
 
             if (kvKeyExists(linkKv, MANIFEST_KEY_GROUP_VAR))
             {
@@ -2138,8 +2117,8 @@ manifestSaveCallback(void *callbackData, const String *sectionNext, InfoSave *in
                 const ManifestFile *file = manifestFile(manifest, fileIdx);
                 KeyValue *fileKv = kvNew();
 
-                if (file->attribute != NULL)
-                    kvPut(fileKv, MANIFEST_KEY_ATTRIBUTE_VAR, varNewKv(kvDup(file->attribute)));
+                if (file->extension != NULL)
+                    kvPut(fileKv, MANIFEST_KEY_EXTENSION_VAR, varNewKv(kvDup(file->extension)));
 
                 // Save if the file size is not zero and the checksum exists.  The checksum might not exist if this is a partial
                 // save performed during a backup.
@@ -2211,8 +2190,8 @@ manifestSaveCallback(void *callbackData, const String *sectionNext, InfoSave *in
                 const ManifestLink *link = manifestLink(manifest, linkIdx);
                 KeyValue *linkKv = kvNew();
 
-                if (link->attribute != NULL)
-                    kvPut(linkKv, MANIFEST_KEY_ATTRIBUTE_VAR, varNewKv(kvDup(link->attribute)));
+                if (link->extension != NULL)
+                    kvPut(linkKv, MANIFEST_KEY_EXTENSION_VAR, varNewKv(kvDup(link->extension)));
 
                 if (!varEq(manifestOwnerVar(link->user), saveData->linkUserDefault))
                     kvPut(linkKv, MANIFEST_KEY_USER_VAR, manifestOwnerVar(link->user));
@@ -2254,8 +2233,8 @@ manifestSaveCallback(void *callbackData, const String *sectionNext, InfoSave *in
                 const ManifestPath *path = manifestPath(manifest, pathIdx);
                 KeyValue *pathKv = kvNew();
 
-                if (path->attribute != NULL)
-                    kvPut(pathKv, MANIFEST_KEY_ATTRIBUTE_VAR, varNewKv(kvDup(path->attribute)));
+                if (path->extension != NULL)
+                    kvPut(pathKv, MANIFEST_KEY_EXTENSION_VAR, varNewKv(kvDup(path->extension)));
 
                 if (!varEq(manifestOwnerVar(path->group), saveData->pathGroupDefault))
                     kvPut(pathKv, MANIFEST_KEY_GROUP_VAR, manifestOwnerVar(path->group));

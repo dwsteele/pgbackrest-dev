@@ -55,7 +55,6 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
         FUNCTION_LOG_PARAM(STRING, file);
         FUNCTION_LOG_PARAM(ENUM, level);
         FUNCTION_LOG_PARAM(BOOL, param.followLink);
-        FUNCTION_LOG_PARAM(KEY_VALUE, param.attribute);
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
@@ -115,54 +114,23 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
                 result.linkDestination = strNewN(linkDestination, (size_t)linkDestinationSize);
             }
 
-            // Get attribute types (e.g. extended attributes)
-            if (param.attribute != NULL)
-            {
-                KeyValue *attribute = kvNew();
-                const VariantList *attributeKeyList = kvKeyList(param.attribute);
-
-                for (unsigned int attributeKeyIdx = 0; attributeKeyIdx < varLstSize(attributeKeyList); attributeKeyIdx++)
-                {
-                    const Variant *attributeKey = varLstGet(attributeKeyList, attributeKeyIdx);
-
-                    if (varEq(attributeKey, STORAGE_POSIX_XATTR_KEY_VAR))
-                    {
-                        const KeyValue *xAttr = varKv(kvGet(param.attribute, attributeKey));
-                        const VariantList *xAttrKeyList = kvKeyList(xAttr);
-
-                        ASSERT(varLstSize(xAttrKeyList) > 0);
-
-                        KeyValue *kvXAttr = kvPutKv(attribute, attributeKey);
-
-                        for (unsigned int xAttrKeyIdx = 0; xAttrKeyIdx < varLstSize(xAttrKeyList); xAttrKeyIdx++)
-                        {
-                            const Variant *xAttrKey = varLstGet(xAttrKeyList, xAttrKeyIdx);
-
-                            // Store extended attribute value
-                            const String *xAttrValue = storagePosixInfoXAttr(file, param.followLink, varStr(xAttrKey));
-                            kvPut(kvXAttr, xAttrKey, VARSTR(xAttrValue));
-
-                            if (varEq(xAttrKey, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_VAR))
-                            {
-                                // Check that SELinux is supported
-                                storagePosixSelCheck();
-
+            // Store SELinux context
 #ifdef HAVE_LIBSELINUX
-                                // Set translated context
-                                KeyValue *kvSELinux = kvPutKv(attribute, STORAGE_POSIX_SELINUX_KEY_VAR);
-                                kvPut(
-                                    kvSELinux, STORAGE_POSIX_SELINUX_KEY_CONTEXT_VAR,
-                                    VARSTR(storagePosixSelContextRawToTrans(xAttrValue)));
-#endif // HAVE_LIBSELINUX
-                            }
-                        }
-                    }
-                    else
-                        THROW_FMT(AssertError, "invalid attribute key '%s'", strZ(varStr(attributeKey)));
-                }
+            const String *seLinuxContext = storagePosixInfoXAttr(file, param.followLink, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR);
 
-                result.attribute = attribute;
+            if (seLinuxContext != NULL)
+            {
+                KeyValue *extension = kvNew();
+                KeyValue *mls = kvPutKv(extension, STORAGE_POSIX_MLS_KEY_VAR);
+
+                kvPut(mls, STORAGE_POSIX_MLS_SELINUX_CONTEXT_RAW_KEY_VAR, VARSTR(seLinuxContext));
+                kvPut(
+                    mls, STORAGE_POSIX_MLS_SELINUX_CONTEXT_TRANSLATED_KEY_VAR,
+                    VARSTR(storagePosixSelContextRawToTrans(seLinuxContext)));
+
+                result.extension = extension;
             }
+#endif // HAVE_LIBSELINUX
         }
     }
 
@@ -175,15 +143,14 @@ storagePosixInfo(THIS_VOID, const String *file, StorageInfoLevel level, StorageI
 // get complete test coverage this function must be split out.
 static void
 storagePosixInfoListEntry(
-    StoragePosix *this, const String *path, const String *name, StorageInfoLevel level, const KeyValue *attribute,
-    StorageInfoListCallback callback, void *callbackData)
+    StoragePosix *this, const String *path, const String *name, StorageInfoLevel level, StorageInfoListCallback callback,
+    void *callbackData)
 {
     FUNCTION_TEST_BEGIN();
         FUNCTION_TEST_PARAM(STORAGE_POSIX, this);
         FUNCTION_TEST_PARAM(STRING, path);
         FUNCTION_TEST_PARAM(STRING, name);
         FUNCTION_TEST_PARAM(ENUM, level);
-        FUNCTION_TEST_PARAM(KEY_VALUE, attribute);
         FUNCTION_TEST_PARAM(FUNCTIONP, callback);
         FUNCTION_TEST_PARAM_P(VOID, callbackData);
     FUNCTION_TEST_END();
@@ -194,7 +161,7 @@ storagePosixInfoListEntry(
     ASSERT(callback != NULL);
 
     StorageInfo storageInfo = storageInterfaceInfoP(
-        this, strEq(name, DOT_STR) ? strDup(path) : strNewFmt("%s/%s", strZ(path), strZ(name)), level, .attribute = attribute);
+        this, strEq(name, DOT_STR) ? strDup(path) : strNewFmt("%s/%s", strZ(path), strZ(name)), level);
 
     if (storageInfo.exists)
     {
@@ -218,7 +185,7 @@ storagePosixInfoList(
         FUNCTION_LOG_PARAM(ENUM, level);
         FUNCTION_LOG_PARAM(FUNCTIONP, callback);
         FUNCTION_LOG_PARAM_P(VOID, callbackData);
-        FUNCTION_LOG_PARAM(KEY_VALUE, param.attribute);
+        (void)param;                                                // No parameters are used
     FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
@@ -263,7 +230,7 @@ storagePosixInfoList(
                         }
                         // Else more info is required which requires a call to stat()
                         else
-                            storagePosixInfoListEntry(this, path, name, level, param.attribute, callback, callbackData);
+                            storagePosixInfoListEntry(this, path, name, level, callback, callbackData);
                     }
 
                     // Get next entry
@@ -659,9 +626,6 @@ storagePosixNewInternal(
         // If this is a posix driver then add link features
         if (strEq(type, STORAGE_POSIX_TYPE_STR))
             driver->interface.feature |=
-#ifdef HAVE_XATTR
-                1 << storageFeatureExtAttr |
-#endif
                 1 << storageFeatureHardLink | 1 << storageFeatureSymLink | 1 << storageFeaturePathSync |
                 1 << storageFeatureInfoDetail;
 

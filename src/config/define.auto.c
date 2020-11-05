@@ -6154,33 +6154,4 @@ static ConfigDefineOptionData configDefineOptionData[] = CFGDEFDATA_OPTION_LIST
             )
         )
     )
-
-    // -----------------------------------------------------------------------------------------------------------------------------
-    CFGDEFDATA_OPTION
-    (
-        CFGDEFDATA_OPTION_NAME("xattr")
-        CFGDEFDATA_OPTION_REQUIRED(false)
-        CFGDEFDATA_OPTION_SECTION(cfgDefSectionGlobal)
-        CFGDEFDATA_OPTION_TYPE(cfgDefOptTypeList)
-        CFGDEFDATA_OPTION_INTERNAL(false)
-
-        CFGDEFDATA_OPTION_INDEX_TOTAL(1)
-        CFGDEFDATA_OPTION_SECURE(false)
-
-        CFGDEFDATA_OPTION_HELP_SECTION("general")
-        CFGDEFDATA_OPTION_HELP_SUMMARY("Backup/restore extended attribute.")
-        CFGDEFDATA_OPTION_HELP_DESCRIPTION
-        (
-            "The specified extended attribute(s) will be added to the backup when this option is set.\n"
-            "\n"
-            "On restore, all extended attributes will be applied by default when present. !!! HOW TO PREVENT THEM FROM\n"
-            "BEING APPLIED???."
-        )
-
-        CFGDEFDATA_OPTION_COMMAND_LIST
-        (
-            CFGDEFDATA_OPTION_COMMAND(cfgCmdBackup)
-            CFGDEFDATA_OPTION_COMMAND(cfgCmdRestore)
-        )
-    )
 )

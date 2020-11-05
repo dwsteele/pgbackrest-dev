@@ -53,9 +53,6 @@ typedef enum
 
     // Does the storage support detailed info, i.e. user, group, mode, link destination, etc.
     storageFeatureInfoDetail,
-
-    // Does the storage support extended attributes? Extended attributes will be reported at storageInfoLevelDetail.
-    storageFeatureExtAttr,
 } StorageFeature;
 
 /***********************************************************************************************************************************
@@ -99,7 +96,6 @@ typedef struct StorageInfoParam
     bool ignoreMissing;
     bool followLink;
     bool noPathEnforce;
-    KeyValue *attribute;                                            // Additional attributes (if any)
 } StorageInfoParam;
 
 #define storageInfoP(this, fileExp, ...)                                                                                           \
@@ -118,7 +114,6 @@ typedef struct StorageInfoListParam
     bool recurse;
     SortOrder sortOrder;
     const String *expression;
-    const KeyValue *attribute;                                      // Additional attributes (if any)
 } StorageInfoListParam;
 
 #define storageInfoListP(this, fileExp, callback, callbackData, ...)                                                               \

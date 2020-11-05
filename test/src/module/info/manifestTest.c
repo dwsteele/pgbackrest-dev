@@ -6,6 +6,7 @@ Test Backup Manifest Handler
 #include "common/io/bufferRead.h"
 #include "common/io/bufferWrite.h"
 #include "info/infoBackup.h"
+#include "storage/posix/selinux.h"
 #include "storage/posix/storage.h"
 
 #include "common/harnessInfo.h"
@@ -281,8 +282,7 @@ testRun(void)
         Manifest *manifest = NULL;
         TEST_ASSIGN(
             manifest,
-            manifestNewBuild(
-                storagePg, PG_VERSION_83, pgCatalogTestVersion(PG_VERSION_83), false, false, exclusionList, strLstNew(), NULL),
+            manifestNewBuild(storagePg, PG_VERSION_83, pgCatalogTestVersion(PG_VERSION_83), false, false, exclusionList, NULL),
             "build manifest");
 
         Buffer *contentSave = bufNew(0);
@@ -407,8 +407,7 @@ testRun(void)
 
         // Test manifest - mode stored for shared cluster tablespace dir, pg_xlog contents ignored because online
         TEST_ASSIGN(
-            manifest,
-            manifestNewBuild(storagePg, PG_VERSION_84, pgCatalogTestVersion(PG_VERSION_84), true, false, NULL, strLstNew(), NULL),
+            manifest, manifestNewBuild(storagePg, PG_VERSION_84, pgCatalogTestVersion(PG_VERSION_84), true, false, NULL, NULL),
             "build manifest");
 
         contentSave = bufNew(0);
@@ -523,8 +522,7 @@ testRun(void)
 
         // Test tablespace error
         TEST_ERROR(
-            manifestNewBuild(
-                storagePg, PG_VERSION_90, pgCatalogTestVersion(PG_VERSION_90), false, false, NULL, strLstNew(), tablespaceList),
+            manifestNewBuild(storagePg, PG_VERSION_90, pgCatalogTestVersion(PG_VERSION_90), false, false, NULL, tablespaceList),
             AssertError,
             "tablespace with oid 1 not found in tablespace map\n"
             "HINT: was a tablespace created or dropped during the backup?");
@@ -538,8 +536,7 @@ testRun(void)
         // Test manifest - temp tables and pg_notify files ignored
         TEST_ASSIGN(
             manifest,
-            manifestNewBuild(
-                storagePg, PG_VERSION_90, pgCatalogTestVersion(PG_VERSION_90), false, false, NULL, strLstNew(), tablespaceList),
+            manifestNewBuild(storagePg, PG_VERSION_90, pgCatalogTestVersion(PG_VERSION_90), false, false, NULL, tablespaceList),
             "build manifest");
 
         contentSave = bufNew(0);
@@ -632,8 +629,7 @@ testRun(void)
 
         // Test manifest - temp tables, unlogged tables, pg_serial and pg_xlog files ignored
         TEST_ASSIGN(
-            manifest,
-            manifestNewBuild(storagePg, PG_VERSION_91, pgCatalogTestVersion(PG_VERSION_91), true, false, NULL, strLstNew(), NULL),
+            manifest, manifestNewBuild(storagePg, PG_VERSION_91, pgCatalogTestVersion(PG_VERSION_91), true, false, NULL, NULL),
             "build manifest");
 
         contentSave = bufNew(0);
@@ -718,8 +714,7 @@ testRun(void)
 
         // Test manifest - pg_snapshots files ignored
         TEST_ASSIGN(
-            manifest,
-            manifestNewBuild(storagePg, PG_VERSION_92, pgCatalogTestVersion(PG_VERSION_92), false, false, NULL, strLstNew(), NULL),
+            manifest, manifestNewBuild(storagePg, PG_VERSION_92, pgCatalogTestVersion(PG_VERSION_92), false, false, NULL, NULL),
             "build manifest");
 
         contentSave = bufNew(0);
@@ -861,8 +856,7 @@ testRun(void)
 
         // Test manifest - pg_dynshmem, pg_replslot and postgresql.auto.conf.tmp files ignored
         TEST_ASSIGN(
-            manifest,
-            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, true, NULL, strLstNew(), NULL),
+            manifest, manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, true, NULL, NULL),
             "build manifest");
 
         contentSave = bufNew(0);
@@ -957,8 +951,7 @@ testRun(void)
 
         // Tablespace link errors when correct verion not found
         TEST_ERROR_FMT(
-            manifestNewBuild(
-                storagePg, PG_VERSION_12, pgCatalogTestVersion(PG_VERSION_12), false, false, NULL, strLstNew(), NULL),
+            manifestNewBuild(storagePg, PG_VERSION_12, pgCatalogTestVersion(PG_VERSION_12), false, false, NULL, NULL),
             FileOpenError,
             "unable to get info for missing path/file '%s/pg/pg_tblspc/1/PG_12_201909212': [2] No such file or directory",
             testPath());
@@ -987,8 +980,7 @@ testRun(void)
         // and backup_label ignored. Old recovery files and pg_xlog are now just another file/directory and will not be ignored.
         // pg_wal contents will be ignored online. pg_clog pgVersion > 10 master:true, pg_xact pgVersion > 10 master:false
         TEST_ASSIGN(
-            manifest,
-            manifestNewBuild(storagePg, PG_VERSION_12, pgCatalogTestVersion(PG_VERSION_12), true, false, NULL, strLstNew(), NULL),
+            manifest, manifestNewBuild(storagePg, PG_VERSION_12, pgCatalogTestVersion(PG_VERSION_12), true, false, NULL, NULL),
             "build manifest");
 
         contentSave = bufNew(0);
@@ -1058,25 +1050,23 @@ testRun(void)
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("run 13, offline");
 
-        const String *xAttrKey = STRDEF("user.pgb");
-
         TEST_RESULT_VOID(
-            storagePosixInfoXAttrSet(storagePathP(storagePg, STRDEF("pg_hba.conf")), true, xAttrKey, BUFSTRDEF("XfileX")),
+            storagePosixInfoXAttrSet(
+                storagePathP(storagePg, STRDEF("pg_hba.conf")), true, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR, BUFSTRDEF("XfileX")),
             "set file xattr");
         TEST_RESULT_VOID(
-            storagePosixInfoXAttrSet(storagePathP(storagePg, STRDEF("pg_hba.conf")), false, xAttrKey, BUFSTRDEF("XlinkX")),
+            storagePosixInfoXAttrSet(
+                storagePathP(storagePg, STRDEF("pg_hba.conf")), false, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR,
+                BUFSTRDEF("XlinkX")),
             "set link xattr (link points file with different xattr)");
         TEST_RESULT_VOID(
-            storagePosixInfoXAttrSet(storagePathP(storagePg, NULL), true, xAttrKey, BUFSTRDEF("XpathX")),
+            storagePosixInfoXAttrSet(
+                storagePathP(storagePg, NULL), false, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR, BUFSTRDEF("XpathX")),
             "set path xattr");
 
         // pg_wal not ignored
-        StringList *xAttrList = strLstNew();
-        strLstAdd(xAttrList, xAttrKey);
-
         TEST_ASSIGN(
-            manifest,
-            manifestNewBuild(storagePg, PG_VERSION_13, pgCatalogTestVersion(PG_VERSION_13), false, false, NULL, xAttrList, NULL),
+            manifest, manifestNewBuild(storagePg, PG_VERSION_13, pgCatalogTestVersion(PG_VERSION_13), false, false, NULL, NULL),
             "build manifest");
 
         contentSave = bufNew(0);
@@ -1095,59 +1085,53 @@ testRun(void)
                 "pg_data/postgresql.conf={\"file\":\"postgresql.conf\",\"path\":\"../config\",\"type\":\"link\"}\n"
                 "\n"
                 "[target:file]\n"
-                "pg_data/PG_VERSION={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":3,\"timestamp\":1565282100}\n"
-                "pg_data/base/1/555_init={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
-                    ",\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_init.1={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
-                    ",\"timestamp\":1565282114}\n"
-                "pg_data/base/1/555_vm.1_vm={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
-                    ",\"timestamp\":1565282114}\n"
-                "pg_data/base/1/PG_VERSION={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
-                    ",\"timestamp\":1565282120}\n"
-                "pg_data/base/1/pg_filenode.map={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
-                    ",\"timestamp\":1565282120}\n"
-                "pg_data/global/pg_control={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/pg_clog/BOGUS={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":0,\"timestamp\":1565282121}\n"
-                "pg_data/pg_hba.conf={\"atr\":{\"xtr\":{\"user.pgb\":\"XfileX\"}},\"size\":9,\"timestamp\":1565282117}\n"
-                "pg_data/pg_multixact/BOGUS={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
-                    ",\"timestamp\":1565282101}\n"
-                "pg_data/pg_wal/000000010000000000000001={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":7"
-                    ",\"timestamp\":1565282120}\n"
-                "pg_data/pg_xact/BOGUS={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"master\":false,\"size\":0"
-                    ",\"timestamp\":1565282122}\n"
-                "pg_data/pg_xlog/000000020000000000000002={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":6"
-                    ",\"timestamp\":1565282100}\n"
-                "pg_data/postgresql.conf={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":14,\"timestamp\":1565282116}\n"
-                "pg_data/recovery.conf={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":0,\"timestamp\":1565282101}\n"
-                "pg_data/recovery.done={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/PG_VERSION={\"size\":3,\"timestamp\":1565282100}\n"
+                "pg_data/base/1/555_init={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_init.1={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/555_vm.1_vm={\"master\":false,\"size\":0,\"timestamp\":1565282114}\n"
+                "pg_data/base/1/PG_VERSION={\"master\":false,\"size\":0,\"timestamp\":1565282120}\n"
+                "pg_data/base/1/pg_filenode.map={\"master\":false,\"size\":0,\"timestamp\":1565282120}\n"
+                "pg_data/global/pg_control={\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_clog/BOGUS={\"size\":0,\"timestamp\":1565282121}\n"
+                "pg_data/pg_hba.conf={\"ext\":{\"mls\":{\"scr\":\"XfileX\",\"sct\":\"XFILEX\"}},\"size\":9"
+                    ",\"timestamp\":1565282117}\n"
+                "pg_data/pg_multixact/BOGUS={\"master\":false,\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/pg_wal/000000010000000000000001={\"size\":7,\"timestamp\":1565282120}\n"
+                "pg_data/pg_xact/BOGUS={\"master\":false,\"size\":0,\"timestamp\":1565282122}\n"
+                "pg_data/pg_xlog/000000020000000000000002={\"size\":6,\"timestamp\":1565282100}\n"
+                "pg_data/postgresql.conf={\"size\":14,\"timestamp\":1565282116}\n"
+                "pg_data/recovery.conf={\"size\":0,\"timestamp\":1565282101}\n"
+                "pg_data/recovery.done={\"size\":0,\"timestamp\":1565282101}\n"
                 TEST_MANIFEST_FILE_DEFAULT_PRIMARY_TRUE
                 "\n"
                 "[target:link]\n"
-                "pg_data/pg_hba.conf={\"atr\":{\"xtr\":{\"user.pgb\":\"XlinkX\"}},\"destination\":\"../config/pg_hba.conf\"}\n"
-                "pg_data/pg_xlog={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"destination\":\"{[path]}/wal\"}\n"
-                "pg_data/postgresql.conf={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"destination\":\"../config/postgresql.conf\"}\n"
+                "pg_data/pg_hba.conf={\"destination\":\"../config/pg_hba.conf\""
+                    ",\"ext\":{\"mls\":{\"scr\":\"XlinkX\",\"sct\":\"XLINKX\"}}}\n"
+                "pg_data/pg_xlog={\"destination\":\"{[path]}/wal\"}\n"
+                "pg_data/postgresql.conf={\"destination\":\"../config/postgresql.conf\"}\n"
                 TEST_MANIFEST_LINK_DEFAULT
                 "\n"
                 "[target:path]\n"
-                "pg_data={\"atr\":{\"xtr\":{\"user.pgb\":\"XpathX\"}}}\n"
-                "pg_data/base={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/base/1={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/global={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_clog={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_dynshmem={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_multixact={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_notify={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_replslot={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_serial={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_snapshots={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_stat_tmp={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"mode\":\"0750\"}\n"
-                "pg_data/pg_subtrans={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_tblspc={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_wal={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_xact={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
-                "pg_data/pg_xlog={\"atr\":{\"xtr\":{\"user.pgb\":null}}}\n"
+                "pg_data={\"ext\":{\"mls\":{\"scr\":\"XpathX\",\"sct\":\"XPATHX\"}}}\n"
+                "pg_data/base={}\n"
+                "pg_data/base/1={}\n"
+                "pg_data/global={}\n"
+                "pg_data/pg_clog={}\n"
+                "pg_data/pg_dynshmem={}\n"
+                "pg_data/pg_multixact={}\n"
+                "pg_data/pg_notify={}\n"
+                "pg_data/pg_replslot={}\n"
+                "pg_data/pg_serial={}\n"
+                "pg_data/pg_snapshots={}\n"
+                "pg_data/pg_stat_tmp={\"mode\":\"0750\"}\n"
+                "pg_data/pg_subtrans={}\n"
+                "pg_data/pg_tblspc={}\n"
+                "pg_data/pg_wal={}\n"
+                "pg_data/pg_xact={}\n"
+                "pg_data/pg_xlog={}\n"
                 TEST_MANIFEST_PATH_DEFAULT))),
             "check manifest");
+
 
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("error on link to pg_data");
@@ -1157,7 +1141,7 @@ testRun(void)
             FileOpenError, "unable to create symlink");
 
         TEST_ERROR(
-            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, false, NULL, strLstNew(), NULL),
+            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, false, NULL, NULL),
             LinkDestinationError, hrnReplaceKey("link 'link' destination '{[path]}/pg/base' is in PGDATA"));
 
         THROW_ON_SYS_ERROR(
@@ -1169,7 +1153,7 @@ testRun(void)
         storagePathCreateP(storagePgWrite, strNew(MANIFEST_TARGET_PGTBLSPC "/somedir"), .mode = 0700, .noParentCreate = true);
 
         TEST_ERROR(
-            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, false, NULL, strLstNew(), NULL),
+            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, false, NULL, NULL),
             LinkExpectedError, "'pg_data/pg_tblspc/somedir' is not a symlink - pg_tblspc should contain only symlinks");
 
         storagePathRemoveP(storagePgWrite, strNew(MANIFEST_TARGET_PGTBLSPC "/somedir"));
@@ -1180,7 +1164,7 @@ testRun(void)
         storagePutP(storageNewWriteP(storagePgWrite, strNew(MANIFEST_TARGET_PGTBLSPC "/somefile")), NULL);
 
         TEST_ERROR(
-            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, false, NULL, strLstNew(), NULL),
+            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, false, NULL, NULL),
             LinkExpectedError, "'pg_data/pg_tblspc/somefile' is not a symlink - pg_tblspc should contain only symlinks");
 
         storageRemoveP(storagePgWrite, strNew(MANIFEST_TARGET_PGTBLSPC "/somefile"));
@@ -1193,8 +1177,7 @@ testRun(void)
             "unable to create symlink");
 
         TEST_ERROR(
-            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, true, NULL, strLstNew(), NULL),
-            FileOpenError,
+            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, true, NULL, NULL), FileOpenError,
             hrnReplaceKey("unable to get info for missing path/file '{[path]}/pg/link-to-link': [2] No such file or directory"));
 
         THROW_ON_SYS_ERROR(
@@ -1212,7 +1195,7 @@ testRun(void)
             FileOpenError, "unable to create symlink");
 
         TEST_ERROR_FMT(
-            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, false, NULL, strLstNew(), NULL),
+            manifestNewBuild(storagePg, PG_VERSION_94, pgCatalogTestVersion(PG_VERSION_94), false, false, NULL, NULL),
             LinkDestinationError, "link '%s/pg/linktolink' cannot reference another link '%s/linktest'", testPath(), testPath());
 
         #undef TEST_MANIFEST_HEADER
@@ -1762,7 +1745,7 @@ testRun(void)
             "\n"                                                                                                                   \
             "[target:file]\n"                                                                                                      \
             "pg_data/=equal=more=={\"master\":true,\"mode\":\"0640\",\"size\":0,\"timestamp\":1565282120}\n"                       \
-            "pg_data/PG_VERSION={\"atr\":{\"xtr\":{\"user.pgb\":null}},\"checksum\":\"184473f470864e067ee3a22e64b47b0a1c356f29\""  \
+            "pg_data/PG_VERSION={\"checksum\":\"184473f470864e067ee3a22e64b47b0a1c356f29\",\"ext\":{\"xtr\":{\"user.pgb\":null}}"  \
                 ",\"master\":true,\"reference\":\"20190818-084502F_20190819-084506D\",\"size\":4,\"timestamp\":1565282114}\n"      \
             "pg_data/base/16384/17000={\"checksum\":\"e0101dd8ffb910c9c202ca35b5f828bcb9697bed\",\"checksum-page\":false"          \
                 ",\"checksum-page-error\":[1],\"repo-size\":4096,\"size\":8192,\"timestamp\":1565282114}\n"                        \
@@ -1787,7 +1770,7 @@ testRun(void)
         #define TEST_MANIFEST_LINK                                                                                                 \
             "\n"                                                                                                                   \
             "[target:link]\n"                                                                                                      \
-            "pg_data/pg_stat={\"atr\":{\"xtr\":{\"user.pgb\":\"XlinkX\"}},\"destination\":\"../pg_stat\"}\n"                       \
+            "pg_data/pg_stat={\"destination\":\"../pg_stat\",\"ext\":{\"xtr\":{\"user.pgb\":\"XlinkX\"}}}\n"                       \
             "pg_data/postgresql.conf={\"destination\":\"../pg_config/postgresql.conf\",\"group\":false,\"user\":\"user1\"}\n"
 
         #define TEST_MANIFEST_LINK_DEFAULT                                                                                         \
@@ -1800,7 +1783,7 @@ testRun(void)
             "\n"                                                                                                                   \
             "[target:path]\n"                                                                                                      \
             "pg_data={\"user\":\"user2\"}\n"                                                                                       \
-            "pg_data/base={\"atr\":{\"xtr\":{\"user.pgb\":\"XpathX\"}},\"group\":\"group2\"}\n"                                    \
+            "pg_data/base={\"ext\":{\"xtr\":{\"user.pgb\":\"XpathX\"}},\"group\":\"group2\"}\n"                                    \
             "pg_data/base/16384={\"mode\":\"0750\"}\n"                                                                             \
             "pg_data/base/32768={}\n"                                                                                              \
             "pg_data/base/65536={\"user\":false}\n"
