@@ -118,6 +118,8 @@ storageRemoteInfoWrite(ProtocolServer *server, const StorageInfo *info)
 
         if (info->type == storageTypeLink)
             protocolServerWriteLine(server, jsonFromStr(info->linkDestination));
+
+        protocolServerWriteLine(server, info->extension == NULL ? NULL_STR : jsonFromKv(info->extension));
     }
 
     FUNCTION_TEST_RETURN_VOID();

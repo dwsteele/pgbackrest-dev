@@ -55,6 +55,8 @@ storageRemoteInfoParse(ProtocolClient *client, StorageInfo *info)
 
         if (info->type == storageTypeLink)
             info->linkDestination = jsonToStr(protocolClientReadLine(client));
+
+        info->extension = varKv(jsonToVar(protocolClientReadLine(client)));
     }
 
     FUNCTION_TEST_RETURN_VOID();

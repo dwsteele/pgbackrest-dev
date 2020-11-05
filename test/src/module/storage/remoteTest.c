@@ -8,10 +8,12 @@ Test Remote Storage
 #include "common/io/bufferRead.h"
 #include "common/io/bufferWrite.h"
 #include "postgres/interface.h"
+#include "storage/posix/selinux.h"
 
 #include "common/harnessConfig.h"
 #include "common/harnessStorage.h"
 #include "common/harnessTest.h"
+#include "common/harnessXattr.h"
 
 /***********************************************************************************************************************************
 Test Run
@@ -185,11 +187,16 @@ testRun(void)
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("protocol output that is not tested elsewhere (basic)");
 
-        info = (StorageInfo){.level = storageInfoLevelDetail, .type = storageTypeLink, .linkDestination = STRDEF("../")};
+        KeyValue *kv = kvNew();
+        kvPut(kv, VARSTRDEF("key"), VARSTRDEF("value"));
+
+        info = (StorageInfo){
+            .level = storageInfoLevelDetail, .type = storageTypeLink, .linkDestination = STRDEF("../"), .extension = kv};
         TEST_RESULT_VOID(storageRemoteInfoWrite(server, &info), "write link info");
 
         ioWriteFlush(serverWriteIo);
-        TEST_RESULT_STR_Z(strNewBuf(serverWrite), ".2\n.0\n.0\n.null\n.0\n.null\n.0\n.\"../\"\n", "check result");
+        TEST_RESULT_STR_Z(
+            strNewBuf(serverWrite), ".2\n.0\n.0\n.null\n.0\n.null\n.0\n.\"../\"\n.{\"key\":\"value\"}\n", "check result");
 
         bufUsedSet(serverWrite, 0);
 
@@ -237,12 +244,14 @@ testRun(void)
         varLstAdd(paramList, varNewUInt(storageInfoLevelDetail));
         varLstAdd(paramList, varNewBool(false));
 
+        TEST_LOG_FMT("PATH IS %s", hrnReplaceKey("{[path]}/repo/test"));
+
         TEST_RESULT_BOOL(storageRemoteProtocol(PROTOCOL_COMMAND_STORAGE_INFO_STR, paramList, server), true, "protocol list");
         TEST_RESULT_STR_Z(
             strNewBuf(serverWrite),
             hrnReplaceKey(
                 "{\"out\":true}\n"
-                ".0\n.1555160001\n.6\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.416\n"
+                ".0\n.1555160001\n.6\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.416\n.null\n"
                 "{}\n"),
             "check result");
 
@@ -301,8 +310,8 @@ testRun(void)
         TEST_RESULT_STR_Z(
             strNewBuf(serverWrite),
             hrnReplaceKey(
-                ".\".\"\n.1\n.1555160000\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.488\n"
-                ".\"test\"\n.0\n.1555160001\n.6\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.416\n"
+                ".\".\"\n.1\n.1555160000\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.488\n.null\n"
+                ".\"test\"\n.0\n.1555160001\n.6\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.416\n.null\n"
                 ".\n"
                 "{\"out\":true}\n"),
             "check result");
