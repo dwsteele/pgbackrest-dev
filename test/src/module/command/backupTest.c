@@ -11,10 +11,12 @@ Test Backup Command
 #include "common/io/io.h"
 #include "postgres/interface/static.vendor.h"
 #include "storage/helper.h"
+#include "storage/posix/selinux.h"
 #include "storage/posix/storage.h"
 
 #include "common/harnessConfig.h"
 #include "common/harnessPq.h"
+#include "common/harnessXattr.h"
 
 /***********************************************************************************************************************************
 Get a list of all files in the backup and a redacted version of the manifest that can be tested against a static string
@@ -2477,6 +2479,14 @@ testRun(void)
                     &(struct utimbuf){.actime = backupTimeStart, .modtime = backupTimeStart}) != 0, FileWriteError,
                 "unable to set time");
 
+#ifdef HAVE_LIBSELINUX
+            TEST_RESULT_VOID(
+                storagePosixInfoXAttrSet(
+                    storagePathP(storagePg(), STRDEF("global/pg_control")), false, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR,
+                    BUFSTRDEF("XfileX")),
+                "set SELinux context");
+#endif // HAVE_LIBSELINUX
+
             // Run backup.  Make sure that the timeline selected converts to hexdecimal that can't be interpreted as decimal.
             testBackupPqScriptP(PG_VERSION_11, backupTimeStart, .timeline = 0x2C);
             TEST_RESULT_VOID(cmdBackup(), "backup");
@@ -2529,7 +2539,8 @@ testRun(void)
                     ",\"size\":2,\"timestamp\":1572200000}\n"
                 "pg_data/backup_label={\"checksum\":\"8e6f41ac87a7514be96260d65bacbffb11be77dc\",\"size\":17"
                     ",\"timestamp\":1572400002}\n"
-                "pg_data/global/pg_control={\"reference\":\"20191027-181320F\",\"size\":8192,\"timestamp\":1572400000}\n"
+                "pg_data/global/pg_control={\"ext\":{\"mls\":{\"scr\":\"XfileX\",\"sct\":\"XFILEX\"}},"
+                    "\"reference\":\"20191027-181320F\",\"size\":8192,\"timestamp\":1572400000}\n"
                 "pg_data/postgresql.conf={\"checksum\":\"e3db315c260e79211b7b52587123b7aa060f30ab\""
                     ",\"reference\":\"20191027-181320F\",\"size\":11,\"timestamp\":1570000000}\n"
                 "pg_tblspc/32768/PG_11_201809051/1/5={\"checksum-page\":true,\"master\":false,\"reference\":\"20191027-181320F\""
