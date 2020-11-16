@@ -8,6 +8,7 @@ Test Backup Manifest Handler
 #include "info/infoBackup.h"
 #include "storage/posix/selinux.h"
 #include "storage/posix/storage.h"
+#include "storage/posix/xattr.h"
 
 #include "common/harnessInfo.h"
 

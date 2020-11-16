@@ -13,6 +13,7 @@ Test Backup Command
 #include "storage/helper.h"
 #include "storage/posix/selinux.h"
 #include "storage/posix/storage.h"
+#include "storage/posix/xattr.h"
 
 #include "common/harnessConfig.h"
 #include "common/harnessPq.h"

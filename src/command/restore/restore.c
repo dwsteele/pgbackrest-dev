@@ -2166,6 +2166,20 @@ cmdRestore(void)
 
             restoreSeLinuxContext(storagePathP(storagePgWrite(), manifestPathPg(file->name)), true, file->extension);
         }
+
+        for (unsigned int linkIdx = 0; linkIdx < manifestLinkTotal(jobData.manifest); linkIdx++)
+        {
+            const ManifestLink *link = manifestLink(jobData.manifest, linkIdx);
+
+            restoreSeLinuxContext(storagePathP(storagePgWrite(), manifestPathPg(link->name)), false, link->extension);
+        }
+
+        for (unsigned int pathIdx = 0; pathIdx < manifestPathTotal(jobData.manifest); pathIdx++)
+        {
+            const ManifestPath *path = manifestPath(jobData.manifest, pathIdx);
+
+            restoreSeLinuxContext(storagePathP(storagePgWrite(), manifestPathPg(path->name)), true, path->extension);
+        }
 #endif // HAVE_LIBSELINUX
 
         // Write recovery settings

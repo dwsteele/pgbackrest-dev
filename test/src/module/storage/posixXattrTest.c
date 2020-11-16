@@ -69,7 +69,7 @@ testRun(void)
             "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
             "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
 
-        storagePosixInfoXAttrSet(fileName, false, attrName, attrValLong);
+        storagePosixInfoXAttrSet(linkName, true, attrName, attrValLong);
         TEST_RESULT_STR(storagePosixInfoXAttr(fileName, false, attrName), strNewBuf(attrValLong), "check attr");
 
         // -------------------------------------------------------------------------------------------------------------------------

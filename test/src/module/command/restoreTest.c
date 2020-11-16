@@ -2001,7 +2001,7 @@ testRun(void)
         strLstAdd(argList, strNewFmt("--pg1-path=%s", strZ(pgPath)));
         strLstAddZ(argList, "--delta");
         strLstAddZ(argList, "--type=none");
-        strLstAddZ(argList, "--link-map=pg_wal=../wal");
+        strLstAdd(argList, strNewFmt("--link-map=pg_wal=%s/wal", testPath()));
         strLstAddZ(argList, "--link-map=postgresql.conf=../config/postgresql.conf");
         strLstAddZ(argList, "--link-map=pg_hba.conf=../config/pg_hba.conf");
         harnessCfgLoad(cfgCmdRestore, argList);
@@ -2209,14 +2209,20 @@ testRun(void)
 
             // Path link to pg_wal
             name = STRDEF(MANIFEST_TARGET_PGDATA "/pg_wal");
-            const String *destination = STRDEF("../wal");
+            const String *destination = strNewFmt("%s/wal", testPath());
 
             manifestTargetAdd(manifest, &(ManifestTarget){.type = manifestTargetTypeLink, .name = name, .path = destination});
-            manifestPathAdd(manifest, &(ManifestPath){.name = name, .mode = 0700, .group = groupName(), .user = userName()});
+            manifestPathAdd(manifest,
+                &(ManifestPath){
+                    .name = name, .mode = 0700, .group = groupName(), .user = userName(),
+                    .extension = jsonToKv(STRDEF("{\"mls\":{\"scr\":\"xpathx\",\"sct\":\"XPATHX\"}}"))});
             manifestLinkAdd(
-                manifest, &(ManifestLink){.name = name, .destination = destination, .group = groupName(), .user = userName()});
+                manifest,
+                &(ManifestLink){
+                    .name = name, .destination = destination, .group = groupName(), .user = userName(),
+                    .extension = jsonToKv(STRDEF("{\"mls\":{\"scr\":\"xlinkx\",\"sct\":\"XLINKX\"}}"))});
             THROW_ON_SYS_ERROR(
-                symlink("../wal", strZ(strNewFmt("%s/pg_wal", strZ(pgPath)))) == -1, FileOpenError,
+                symlink(strZ(destination), strZ(strNewFmt("%s/pg_wal", strZ(pgPath)))) == -1, FileOpenError,
                 "unable to create symlink");
 
             // pg_tblspc/1
@@ -2271,7 +2277,7 @@ testRun(void)
         TEST_RESULT_LOG(
             "P00   INFO: restore backup set 20161219-212741F_20161219-212918I\n"
             "P00   INFO: map link 'pg_hba.conf' to '../config/pg_hba.conf'\n"
-            "P00   INFO: map link 'pg_wal' to '../wal'\n"
+            "P00   INFO: map link 'pg_wal' to '{[path]}/wal'\n"
             "P00   INFO: map link 'postgresql.conf' to '../config/postgresql.conf'\n"
             "P00 DETAIL: check '{[path]}/pg' exists\n"
             "P00 DETAIL: check '{[path]}/config' exists\n"
@@ -2336,7 +2342,7 @@ testRun(void)
             "pg_hba.conf {link, d=../config/pg_hba.conf}\n"
             "pg_tblspc {path}\n"
             "pg_tblspc/1 {link, d={[path]}/ts/1}\n"
-            "pg_wal {link, d=../wal}\n"
+            "pg_wal {link, d=/home/vagrant/test/test-0/wal, e={\"mls\":{\"scr\":\"xlinkx\",\"sct\":\"XLINKX\"}}}\n"
             "postgresql.conf {link, d=../config/postgresql.conf}\n");
 
         testRestoreCompare(
@@ -2347,8 +2353,8 @@ testRun(void)
             "PG_10_201707211 {path}\n");
 
         testRestoreCompare(
-            storagePg(), STRDEF("../wal"), manifest,
-            ". {path}\n");
+            storageTest, strNewFmt("%s/wal", testPath()), manifest,
+            ". {path, e={\"mls\":{\"scr\":\"xpathx\",\"sct\":\"XPATHX\"}}}\n");
 
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("incremental delta selective restore");
@@ -2388,8 +2394,10 @@ testRun(void)
             "P00 DETAIL: skip 'tablespace_map' -- tablespace links will be created based on mappings\n"
             "P00 DETAIL: remove 'global/pg_control' so cluster will not start if restore does not complete\n"
             "P00   INFO: remove invalid files/links/paths from '{[path]}/pg'\n"
+            "P00 DETAIL: remove link '{[path]}/pg/pg_wal' because destination changed\n"
             "P00   INFO: remove invalid files/links/paths from '{[path]}/wal'\n"
             "P00   INFO: remove invalid files/links/paths from '{[path]}/ts/1/PG_10_201707211'\n"
+            "P00 DETAIL: create symlink '{[path]}/pg/pg_wal' to '../wal'\n"
             "P01 DETAIL: restore zeroed file {[path]}/pg/base/32768/32769 (32KB, 49%)\n"
             "P01 DETAIL: restore file {[path]}/pg/base/16384/16385 - exists and matches backup (16KB, 74%)"
                 " checksum d74e5f7ebe52a3ed468ba08c5b6aefaccd1ca88f\n"

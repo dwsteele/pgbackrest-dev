@@ -119,8 +119,12 @@ storagePosixInfoXAttrSet(const String *path, bool followLink, const String *name
         MEM_CONTEXT_END();
     }
 
+    // if (strEqZ(path, "/home/vagrant/test/test-0/pg/pg_wal") && followLink)
+    //     THROW_FMT(AssertError, "FOLLOWING PATH LINK %s", strZ(hrnXAttrLinkToPath(path, followLink)));
+
     // Get link destination if this is a link and links are followed
     path = hrnXAttrLinkToPath(path, followLink);
+
 
     kvPut(harnessXAttrLocal.xAttr, VARSTR(strNewFmt("%s:%s", strZ(path), strZ(name))), VARSTR(strNewBuf(value)));
 
