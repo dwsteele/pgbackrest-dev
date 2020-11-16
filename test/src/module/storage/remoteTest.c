@@ -185,7 +185,7 @@ testRun(void)
         TEST_RESULT_STR_Z(info.group, testGroup(), "    check group");
 
         // -------------------------------------------------------------------------------------------------------------------------
-        TEST_TITLE("protocol output that is not tested elsewhere (basic)");
+        TEST_TITLE("protocol output that is not tested elsewhere (detail)");
 
         KeyValue *kv = kvNew();
         kvPut(kv, VARSTRDEF("key"), VARSTRDEF("value"));
