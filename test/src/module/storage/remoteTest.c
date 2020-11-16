@@ -13,7 +13,6 @@ Test Remote Storage
 #include "common/harnessConfig.h"
 #include "common/harnessStorage.h"
 #include "common/harnessTest.h"
-#include "common/harnessXattr.h"
 
 /***********************************************************************************************************************************
 Test Run
@@ -243,8 +242,6 @@ testRun(void)
         varLstAdd(paramList, varNewStrZ(hrnReplaceKey("{[path]}/repo/test")));
         varLstAdd(paramList, varNewUInt(storageInfoLevelDetail));
         varLstAdd(paramList, varNewBool(false));
-
-        TEST_LOG_FMT("PATH IS %s", hrnReplaceKey("{[path]}/repo/test"));
 
         TEST_RESULT_BOOL(storageRemoteProtocol(PROTOCOL_COMMAND_STORAGE_INFO_STR, paramList, server), true, "protocol list");
         TEST_RESULT_STR_Z(

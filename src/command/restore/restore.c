@@ -24,6 +24,8 @@ Restore Command
 #include "protocol/helper.h"
 #include "protocol/parallel.h"
 #include "storage/helper.h"
+#include "storage/posix/selinux.h"
+#include "storage/posix/xattr.h"
 #include "storage/write.intern.h"
 #include "version.h"
 
@@ -2022,6 +2024,49 @@ static ProtocolParallelJob *restoreJobCallback(void *data, unsigned int clientId
     FUNCTION_TEST_RETURN(result);
 }
 
+/***********************************************************************************************************************************
+Restore SELinux context
+***********************************************************************************************************************************/
+#ifdef HAVE_LIBSELINUX
+
+void restoreSeLinuxContext(const String *name, bool followLink, const KeyValue *extension)
+{
+    FUNCTION_TEST_BEGIN();
+        FUNCTION_TEST_PARAM(STRING, name);
+        FUNCTION_TEST_PARAM(BOOL, followLink);
+        FUNCTION_TEST_PARAM(KEY_VALUE, extension);
+    FUNCTION_TEST_END();
+
+    ASSERT(name != NULL);
+
+    // !!! This is not quite right. We have some dummy paths in the manifest that will never have extension data because they really
+    // represent paths in the repo. For now assume that all files/paths/links will have extension info when needed.
+    if (extension != NULL)
+    {
+        // Get mls data from extension data
+        const KeyValue *mls = varKv(kvGet(extension, STORAGE_POSIX_MLS_KEY_VAR));
+
+        // Get actual translated value from the file
+        const String *seLinuxContextTransActual = storagePosixSelContextRawToTrans(
+            storagePosixInfoXAttr(name, followLink, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR));
+
+        // Get expected translated value from mls data
+        const String *seLinuxContextTransExpected = varStr(kvGet(mls, STORAGE_POSIX_MLS_SELINUX_CONTEXT_TRANSLATED_KEY_VAR));
+
+        // If actual does not match expected then set expected
+        if (!strEq(seLinuxContextTransActual, seLinuxContextTransExpected))
+        {
+            storagePosixInfoXAttrSet(
+                name, followLink, STORAGE_POSIX_SELINUX_XATTR_CONTEXT_STR,
+                BUFSTR(storagePosixSelContextTransToRaw(seLinuxContextTransExpected)));
+        }
+    }
+
+    FUNCTION_TEST_RETURN_VOID();
+}
+
+#endif // HAVE_LIBSELINUX
+
 /**********************************************************************************************************************************/
 void
 cmdRestore(void)
@@ -2112,6 +2157,16 @@ cmdRestore(void)
             }
         }
         while (!protocolParallelDone(parallelExec));
+
+        // Restore SELinux contexts
+#ifdef HAVE_LIBSELINUX
+        for (unsigned int fileIdx = 0; fileIdx < manifestFileTotal(jobData.manifest); fileIdx++)
+        {
+            const ManifestFile *file = manifestFile(jobData.manifest, fileIdx);
+
+            restoreSeLinuxContext(storagePathP(storagePgWrite(), manifestPathPg(file->name)), true, file->extension);
+        }
+#endif // HAVE_LIBSELINUX
 
         // Write recovery settings
         restoreRecoveryWrite(jobData.manifest);

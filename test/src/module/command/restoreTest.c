@@ -2129,7 +2129,8 @@ testRun(void)
                 &(ManifestFile){
                     .name = STRDEF(TEST_PGDATA "base/16384/16385"), .size = 16384, .timestamp = 1482182860,
                     .mode = 0600, .group = groupName(), .user = userName(),
-                    .checksumSha1 = "d74e5f7ebe52a3ed468ba08c5b6aefaccd1ca88f"});
+                    .checksumSha1 = "d74e5f7ebe52a3ed468ba08c5b6aefaccd1ca88f",
+                    .extension = jsonToKv(STRDEF("{\"mls\":{\"scr\":\"xfilex\",\"sct\":\"XFILEX\"}}"))});
             storagePutP(storageNewWriteP(storageRepoWrite(), STRDEF(TEST_REPO_PATH "base/16384/16385")), fileBuffer);
 
             // base/32768 directory
@@ -2324,7 +2325,7 @@ testRun(void)
             "base/1/2 {file, s=8192, t=1482182860}\n"
             "base/1/PG_VERSION {file, s=4, t=1482182860}\n"
             "base/16384 {path}\n"
-            "base/16384/16385 {file, s=16384, t=1482182860}\n"
+            "base/16384/16385 {file, s=16384, t=1482182860, e={\"mls\":{\"scr\":\"xfilex\",\"sct\":\"XFILEX\"}}}\n"
             "base/16384/PG_VERSION {file, s=4, t=1482182860}\n"
             "base/32768 {path}\n"
             "base/32768/32769 {file, s=32768, t=1482182860}\n"

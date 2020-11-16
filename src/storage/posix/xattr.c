@@ -89,4 +89,27 @@ storagePosixInfoXAttr(const String *path, bool followLink, const String *name)
     FUNCTION_LOG_RETURN(STRING, result);
 }
 
+/**********************************************************************************************************************************/
+void
+storagePosixInfoXAttrSet(const String *path, bool followLink, const String *name, const Buffer *value)
+{
+    FUNCTION_LOG_BEGIN(logLevelTrace);
+        FUNCTION_LOG_PARAM(STRING, path);
+        FUNCTION_LOG_PARAM(BOOL, followLink);
+        FUNCTION_LOG_PARAM(STRING, name);
+        FUNCTION_LOG_PARAM(BUFFER, value);
+    FUNCTION_LOG_END();
+
+    ASSERT(path != NULL);
+    ASSERT(name != NULL);
+    ASSERT(value != NULL);
+
+    THROW_ON_SYS_ERROR_FMT(
+        followLink ? setxattr(strZ(path), strZ(name), bufPtrConst(value), bufSize(value), 0) :
+            lsetxattr(strZ(path), strZ(name), bufPtrConst(value), bufSize(value), 0),
+        FileWriteError, "unable to set xattr '%s' on '%s'", strZ(name), strZ(path));
+
+    FUNCTION_LOG_RETURN_VOID();
+}
+
 #endif // HAVE_XATTR

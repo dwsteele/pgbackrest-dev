@@ -6,33 +6,6 @@ Test Posix Extended Attributes
 #include "storage/posix/storage.h"
 
 /***********************************************************************************************************************************
-Test function to set extended attributes
-***********************************************************************************************************************************/
-#ifdef HAVE_XATTR
-
-static void
-storagePosixInfoXAttrSet(const String *path, const String *name, const Buffer *value)
-{
-    FUNCTION_HARNESS_BEGIN();
-        FUNCTION_HARNESS_PARAM(STRING, path);
-        FUNCTION_HARNESS_PARAM(STRING, name);
-        FUNCTION_HARNESS_PARAM(BUFFER, value);
-    FUNCTION_HARNESS_END();
-
-    ASSERT(path != NULL);
-    ASSERT(name != NULL);
-    ASSERT(value != NULL);
-
-    THROW_ON_SYS_ERROR_FMT(
-        lsetxattr(strZ(path), strZ(name), bufPtrConst(value), bufSize(value), 0), FileWriteError,
-        "unable to set xattr '%s' on '%s'", strZ(name), strZ(path));
-
-    FUNCTION_HARNESS_RESULT_VOID();
-}
-
-#endif // HAVE_XATTR
-
-/***********************************************************************************************************************************
 Test Run
 ***********************************************************************************************************************************/
 void
@@ -71,7 +44,7 @@ testRun(void)
 
         const Buffer *attrVal = BUFSTRDEF("sample");
 
-        storagePosixInfoXAttrSet(fileName, attrName, attrVal);
+        storagePosixInfoXAttrSet(fileName, false, attrName, attrVal);
         TEST_RESULT_STR(storagePosixInfoXAttr(fileName, false, attrName), strNewBuf(attrVal), "check attr");
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -96,7 +69,7 @@ testRun(void)
             "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
             "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
 
-        storagePosixInfoXAttrSet(fileName, attrName, attrValLong);
+        storagePosixInfoXAttrSet(fileName, false, attrName, attrValLong);
         TEST_RESULT_STR(storagePosixInfoXAttr(fileName, false, attrName), strNewBuf(attrValLong), "check attr");
 
         // -------------------------------------------------------------------------------------------------------------------------

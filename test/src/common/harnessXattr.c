@@ -1,5 +1,7 @@
 /***********************************************************************************************************************************
 Posix Extended Attribute Test Harness
+
+Shim functions for getting and setting extended attributes that cannot normally be set.
 ***********************************************************************************************************************************/
 #include <sys/stat.h>
 #include <unistd.h>
@@ -9,7 +11,6 @@ Posix Extended Attribute Test Harness
 #include "storage/posix/xattr.h"
 
 #include "common/harnessDebug.h"
-#include "common/harnessXattr.h"
 
 /***********************************************************************************************************************************
 Extended attribute constants (duplicated so shim works)
@@ -103,11 +104,17 @@ storagePosixInfoXAttrSet(const String *path, bool followLink, const String *name
 
     if (harnessXAttrLocal.memContext == NULL)
     {
-        harnessXAttrLocal.memContext = memContextNew("HarnessXAttrShim");
-
-        MEM_CONTEXT_BEGIN(harnessXAttrLocal.memContext)
+        MEM_CONTEXT_BEGIN(memContextTop())
         {
-            harnessXAttrLocal.xAttr = kvNew();
+            harnessXAttrLocal.memContext = memContextNew("HarnessXAttrShim");
+
+            MEM_CONTEXT_BEGIN(harnessXAttrLocal.memContext)
+            {
+                harnessXAttrLocal.xAttr = kvNew();
+            }
+            MEM_CONTEXT_END();
+
+            memContextKeep();
         }
         MEM_CONTEXT_END();
     }

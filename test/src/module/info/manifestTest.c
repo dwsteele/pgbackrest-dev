@@ -10,7 +10,6 @@ Test Backup Manifest Handler
 #include "storage/posix/storage.h"
 
 #include "common/harnessInfo.h"
-#include "common/harnessXattr.h"
 
 /***********************************************************************************************************************************
 Special string constants

@@ -16,7 +16,6 @@ Test Backup Command
 
 #include "common/harnessConfig.h"
 #include "common/harnessPq.h"
-#include "common/harnessXattr.h"
 
 /***********************************************************************************************************************************
 Get a list of all files in the backup and a redacted version of the manifest that can be tested against a static string
