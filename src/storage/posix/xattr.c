@@ -60,8 +60,6 @@ storagePosixInfoXAttr(const String *path, bool followLink, const String *name)
                     THROW_ON_SYS_ERROR_FMT(
                         size == -1, FileReadError, "unable to get xattr '%s' size for path '%s'", strZ(name), strZ(path));
 
-                    LOG_DEBUG_FMT("resize to %zd", size);
-
                     bufResize(buffer, (size_t)size + 1);
                 }
                 else
