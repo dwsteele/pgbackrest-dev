@@ -2342,7 +2342,7 @@ testRun(void)
             "pg_hba.conf {link, d=../config/pg_hba.conf}\n"
             "pg_tblspc {path}\n"
             "pg_tblspc/1 {link, d={[path]}/ts/1}\n"
-            "pg_wal {link, d=/home/vagrant/test/test-0/wal, e={\"mls\":{\"scr\":\"xlinkx\",\"sct\":\"XLINKX\"}}}\n"
+            "pg_wal {link, d={[path]}/wal, e={\"mls\":{\"scr\":\"xlinkx\",\"sct\":\"XLINKX\"}}}\n"
             "postgresql.conf {link, d=../config/postgresql.conf}\n");
 
         testRestoreCompare(
