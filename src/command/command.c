@@ -12,8 +12,8 @@ Common Command Routines
 #include "common/stat.h"
 #include "common/time.h"
 #include "common/type/json.h"
-#include "config/config.h"
-#include "config/define.h"
+#include "config/config.intern.h"
+#include "config/parse.h"
 #include "version.h"
 
 /***********************************************************************************************************************************
@@ -76,71 +76,82 @@ cmdOption(void)
                     // Skip the option if not valid for this command.  Generally only one command runs at a time, but sometimes
                     // commands are chained together (e.g. backup and expire) and the second command may not use all the options of
                     // the first command.  Displaying them is harmless but might cause confusion.
-                    if (!cfgDefOptionValid(cfgCommand(), cfgOptionDefIdFromId(optionId)))
+                    if (!cfgOptionValid(optionId) || !cfgParseOptionValid(cfgCommand(), cfgCommandRole(), optionId))
                         continue;
 
-                    // If option was negated
-                    if (cfgOptionNegate(optionId))
-                        strCatFmt(cmdOptionStr, " --no-%s", cfgOptionName(optionId));
-                    // If option was reset
-                    else if (cfgOptionReset(optionId))
-                        strCatFmt(cmdOptionStr, " --reset-%s", cfgOptionName(optionId));
-                    // Else not default
-                    else if (cfgOptionSource(optionId) != cfgSourceDefault)
+                    // Loop through option indexes
+                    unsigned int optionIdxTotal = cfgOptionGroup(optionId) ? cfgOptionGroupIdxTotal(cfgOptionGroupId(optionId)) : 1;
+
+                    for (unsigned int optionIdx = 0; optionIdx < optionIdxTotal; optionIdx++)
                     {
-                        ConfigDefineOption optionDefId = cfgOptionDefIdFromId(optionId);
-
-                        // Don't show redacted options
-                        if (cfgDefOptionSecure(optionDefId))
-                            strCatFmt(cmdOptionStr, " --%s=<redacted>", cfgOptionName(optionId));
-                        // Output boolean option
-                        else if (cfgDefOptionType(optionDefId) == cfgDefOptTypeBoolean)
-                            strCatFmt(cmdOptionStr, " --%s", cfgOptionName(optionId));
-                        // Output other options
-                        else
+                        // If option was negated
+                        if (cfgOptionIdxNegate(optionId, optionIdx))
+                            strCatFmt(cmdOptionStr, " --no-%s", cfgOptionIdxName(optionId, optionIdx));
+                        // If option was reset
+                        else if (cfgOptionIdxReset(optionId, optionIdx))
+                            strCatFmt(cmdOptionStr, " --reset-%s", cfgOptionIdxName(optionId, optionIdx));
+                        // Else not default
+                        else if (cfgOptionIdxSource(optionId, optionIdx) != cfgSourceDefault)
                         {
-                            StringList *valueList = NULL;
-
-                            // Generate the values of hash options
-                            if (cfgDefOptionType(optionDefId) == cfgDefOptTypeHash)
-                            {
-                                valueList = strLstNew();
-
-                                const KeyValue *optionKv = cfgOptionKv(optionId);
-                                const VariantList *keyList = kvKeyList(optionKv);
-
-                                for (unsigned int keyIdx = 0; keyIdx < varLstSize(keyList); keyIdx++)
-                                {
-                                    strLstAdd(
-                                        valueList,
-                                        strNewFmt(
-                                            "%s=%s", strZ(varStr(varLstGet(keyList, keyIdx))),
-                                            strZ(varStrForce(kvGet(optionKv, varLstGet(keyList, keyIdx))))));
-                                }
-                            }
-                            // Generate values for list options
-                            else if (cfgDefOptionType(optionDefId) == cfgDefOptTypeList)
-                            {
-                                valueList = strLstNewVarLst(cfgOptionLst(optionId));
-                            }
-                            // Else only one value
+                            // Don't show redacted options
+                            if (cfgParseOptionSecure(optionId))
+                                strCatFmt(cmdOptionStr, " --%s=<redacted>", cfgOptionIdxName(optionId, optionIdx));
+                            // Output boolean option
+                            else if (cfgParseOptionType(optionId) == cfgOptTypeBoolean)
+                                strCatFmt(cmdOptionStr, " --%s", cfgOptionIdxName(optionId, optionIdx));
+                            // Output other options
                             else
                             {
-                                valueList = strLstNew();
-                                strLstAdd(valueList, varStrForce(cfgOption(optionId)));
-                            }
+                                StringList *valueList = NULL;
 
-                            // Output options and values
-                            for (unsigned int valueListIdx = 0; valueListIdx < strLstSize(valueList); valueListIdx++)
-                            {
-                                const String *value = strLstGet(valueList, valueListIdx);
+                                // Generate the values of hash options
+                                if (cfgParseOptionType(optionId) == cfgOptTypeHash)
+                                {
+                                    valueList = strLstNew();
 
-                                strCatFmt(cmdOptionStr, " --%s", cfgOptionName(optionId));
+                                    const KeyValue *optionKv = cfgOptionIdxKv(optionId, optionIdx);
+                                    const VariantList *keyList = kvKeyList(optionKv);
 
-                                if (strchr(strZ(value), ' ') != NULL)
-                                    value = strNewFmt("\"%s\"", strZ(value));
+                                    for (unsigned int keyIdx = 0; keyIdx < varLstSize(keyList); keyIdx++)
+                                    {
+                                        strLstAdd(
+                                            valueList,
+                                            strNewFmt(
+                                                "%s=%s", strZ(varStr(varLstGet(keyList, keyIdx))),
+                                                strZ(varStrForce(kvGet(optionKv, varLstGet(keyList, keyIdx))))));
+                                    }
+                                }
+                                // Generate values for list options
+                                else if (cfgParseOptionType(optionId) == cfgOptTypeList)
+                                {
+                                    valueList = strLstNewVarLst(cfgOptionIdxLst(optionId, optionIdx));
+                                }
+                                // Generate time value
+                                else if (cfgParseOptionType(optionId) == cfgOptTypeTime)
+                                {
+                                    valueList = strLstNew();
+                                    strLstAdd(
+                                        valueList, cvtDoubleToStr((double)cfgOptionIdxInt64(optionId, optionIdx) / MSEC_PER_SEC));
+                                }
+                                // Else only one value
+                                else
+                                {
+                                    valueList = strLstNew();
+                                    strLstAdd(valueList, varStrForce(cfgOptionIdx(optionId, optionIdx)));
+                                }
 
-                                strCatFmt(cmdOptionStr, "=%s", strZ(value));
+                                // Output options and values
+                                for (unsigned int valueListIdx = 0; valueListIdx < strLstSize(valueList); valueListIdx++)
+                                {
+                                    const String *value = strLstGet(valueList, valueListIdx);
+
+                                    strCatFmt(cmdOptionStr, " --%s", cfgOptionIdxName(optionId, optionIdx));
+
+                                    if (strchr(strZ(value), ' ') != NULL)
+                                        value = strNewFmt("\"%s\"", strZ(value));
+
+                                    strCatFmt(cmdOptionStr, "=%s", strZ(value));
+                                }
                             }
                         }
                     }

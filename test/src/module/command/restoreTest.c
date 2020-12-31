@@ -861,7 +861,7 @@ testRun(void)
 
         TEST_RESULT_LOG(
             "P00   WARN: unknown user '{[user]}' in backup manifest mapped to current user\n"
-            "P00   WARN: unknown group '{[user]}' in backup manifest mapped to current group");
+            "P00   WARN: unknown group '{[group]}' in backup manifest mapped to current group");
 
         userInitInternal();
 
@@ -909,7 +909,7 @@ testRun(void)
 
         TEST_RESULT_VOID(restoreManifestOwner(manifest), "check ownership");
 
-        TEST_RESULT_LOG("P00   WARN: unknown group in backup manifest mapped to '{[user]}'");
+        TEST_RESULT_LOG("P00   WARN: unknown group in backup manifest mapped to '{[group]}'");
 
         // -------------------------------------------------------------------------------------------------------------------------
         TEST_TITLE("owner is root and group is bad");
@@ -1604,7 +1604,7 @@ testRun(void)
                 RECOVERY_SETTING_HEADER
                 "restore_command = 'my_restore_command'\n",
             "check postgresql.auto.conf");
-        TEST_RESULT_BOOL(storageExistsP(storagePg(), PG_FILE_RECOVERYSIGNAL_STR), true, "recovery.signal exists");
+        TEST_RESULT_BOOL(storageExistsP(storagePg(), PG_FILE_RECOVERYSIGNAL_STR), false, "recovery.signal exists");
         TEST_RESULT_BOOL(storageExistsP(storagePg(), PG_FILE_STANDBYSIGNAL_STR), true, "standby.signal missing");
 
         TEST_RESULT_LOG("P00   INFO: write updated {[path]}/pg/postgresql.auto.conf");

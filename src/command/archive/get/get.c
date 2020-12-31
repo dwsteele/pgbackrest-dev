@@ -143,7 +143,7 @@ cmdArchiveGet(void)
             bool throwOnError = false;                                  // Should we throw errors?
 
             // Loop and wait for the WAL segment to be pushed
-            Wait *wait = waitNew((TimeMSec)(cfgOptionDbl(cfgOptArchiveTimeout) * MSEC_PER_SEC));
+            Wait *wait = waitNew(cfgOptionUInt64(cfgOptArchiveTimeout));
 
             do
             {
@@ -202,7 +202,9 @@ cmdArchiveGet(void)
                 // forking the async process off more than once so track that as well.  Use an archive lock to prevent forking if
                 // the async process was launched by another process.
                 if (!forked && (!found || !queueFull)  &&
-                    lockAcquire(cfgOptionStr(cfgOptLockPath), cfgOptionStr(cfgOptStanza), cfgLockType(), 0, false))
+                    lockAcquire(
+                        cfgOptionStr(cfgOptLockPath), cfgOptionStr(cfgOptStanza), cfgOptionStr(cfgOptExecId), cfgLockType(), 0,
+                        false))
                 {
                     // Get control info
                     PgControl pgControl = pgControlFromFile(storagePg());
@@ -336,7 +338,7 @@ cmdArchiveGetAsync(void)
 
             // Create the parallel executor
             ProtocolParallel *parallelExec = protocolParallelNew(
-                (TimeMSec)(cfgOptionDbl(cfgOptProtocolTimeout) * MSEC_PER_SEC) / 2, archiveGetAsyncCallback, &jobData);
+                cfgOptionUInt64(cfgOptProtocolTimeout) / 2, archiveGetAsyncCallback, &jobData);
 
             for (unsigned int processIdx = 1; processIdx <= cfgOptionUInt(cfgOptProcessMax); processIdx++)
                 protocolParallelClientAdd(parallelExec, protocolLocalGet(protocolStorageTypeRepo, 0, processIdx));

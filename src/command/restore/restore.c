@@ -1368,6 +1368,7 @@ restoreRecoveryOption(unsigned int pgVersion)
             // better than, for example, passing --process-max=32 to archive-get because it was specified for restore.
             KeyValue *optionReplace = kvNew();
 
+            kvPut(optionReplace, VARSTR(CFGOPT_EXEC_ID_STR), NULL);
             kvPut(optionReplace, VARSTR(CFGOPT_LOG_LEVEL_CONSOLE_STR), NULL);
             kvPut(optionReplace, VARSTR(CFGOPT_LOG_LEVEL_FILE_STR), NULL);
             kvPut(optionReplace, VARSTR(CFGOPT_LOG_LEVEL_STDERR_STR), NULL);
@@ -1630,19 +1631,21 @@ restoreRecoveryWriteAutoConf(unsigned int pgVersion, const String *restoreLabel)
                 .noAtomic = true, .noSyncPath = true, .user = dataPath.user, .group = dataPath.group),
             BUFSTR(content));
 
-        // The recovery.signal file is required for targeted recovery
-        storagePutP(
-            storageNewWriteP(
-                storagePgWrite(), PG_FILE_RECOVERYSIGNAL_STR, .noCreatePath = true, .modeFile = recoveryFileMode,
-                .noAtomic = true, .noSyncPath = true, .user = dataPath.user, .group = dataPath.group),
-            NULL);
-
         // The standby.signal file is required for standby mode
         if (strEq(cfgOptionStr(cfgOptType), RECOVERY_TYPE_STANDBY_STR))
         {
             storagePutP(
                 storageNewWriteP(
                     storagePgWrite(), PG_FILE_STANDBYSIGNAL_STR, .noCreatePath = true, .modeFile = recoveryFileMode,
+                    .noAtomic = true, .noSyncPath = true, .user = dataPath.user, .group = dataPath.group),
+                NULL);
+        }
+        // Else the recovery.signal file is required for targeted recovery
+        else
+        {
+            storagePutP(
+                storageNewWriteP(
+                    storagePgWrite(), PG_FILE_RECOVERYSIGNAL_STR, .noCreatePath = true, .modeFile = recoveryFileMode,
                     .noAtomic = true, .noSyncPath = true, .user = dataPath.user, .group = dataPath.group),
                 NULL);
         }
@@ -2138,7 +2141,7 @@ cmdRestore(void)
 
         // Create the parallel executor
         ProtocolParallel *parallelExec = protocolParallelNew(
-            (TimeMSec)(cfgOptionDbl(cfgOptProtocolTimeout) * MSEC_PER_SEC) / 2, restoreJobCallback, &jobData);
+            cfgOptionUInt64(cfgOptProtocolTimeout) / 2, restoreJobCallback, &jobData);
 
         for (unsigned int processIdx = 1; processIdx <= cfgOptionUInt(cfgOptProcessMax); processIdx++)
             protocolParallelClientAdd(parallelExec, protocolLocalGet(protocolStorageTypeRepo, 0, processIdx));
