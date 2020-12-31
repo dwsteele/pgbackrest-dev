@@ -297,7 +297,14 @@ testRun(void)
             "check content");
 
         // -------------------------------------------------------------------------------------------------------------------------
-        TEST_TITLE("check protocol function directly with a file");
+        TEST_TITLE("check protocol function directly with a path");
+
+        // Remove the file since ordering cannot be guaranteed in the protocol results
+        storageRemoveP(storageRemote, STRDEF("test"), .errorOnMissing = true);
+
+        // Path timestamp must be set after file is removed since file removal updates it
+        utimeTest = (struct utimbuf){.actime = 1000000000, .modtime = 1555160000};
+        THROW_ON_SYS_ERROR(utime(strZ(storagePathP(storageRemote, NULL)), &utimeTest) != 0, FileWriteError, "unable to set time");
 
         VariantList *paramList = varLstNew();
         varLstAdd(paramList, varNewStrZ(hrnReplaceKey("{[path]}/repo")));
@@ -308,7 +315,6 @@ testRun(void)
             strNewBuf(serverWrite),
             hrnReplaceKey(
                 ".\".\"\n.1\n.1555160000\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.488\n.null\n"
-                ".\"test\"\n.0\n.1555160001\n.6\n.{[user-id]}\n.\"{[user]}\"\n.{[group-id]}\n.\"{[group]}\"\n.416\n.null\n"
                 ".\n"
                 "{\"out\":true}\n"),
             "check result");
