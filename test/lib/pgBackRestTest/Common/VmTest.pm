@@ -377,8 +377,6 @@ my $oyVm =
 
         &VM_DB =>
         [
-            PG_VERSION_83,
-            PG_VERSION_84,
             PG_VERSION_90,
             PG_VERSION_91,
             PG_VERSION_92,

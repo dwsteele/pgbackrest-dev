@@ -49,7 +49,7 @@ use constant CERT_FAKE_SERVER_KEY                                   => CERT_FAKE
 ####################################################################################################################################
 # Container Debug - speeds container debugging by splitting each section into a separate intermediate container
 ####################################################################################################################################
-use constant CONTAINER_DEBUG                                        => false;
+use constant CONTAINER_DEBUG                                        => true;
 
 ####################################################################################################################################
 # Store cache container checksums
@@ -340,7 +340,8 @@ sub containerBuild
 
         #---------------------------------------------------------------------------------------------------------------------------
         my $strScript = sectionHeader() .
-            "# Install packages\n";
+            # !!! THIS IS JUST TO MAKE ARM64 REBUILD -- NEED A BETTER WAY TO DO THIS
+            "#  Install packages\n";
 
         if ($$oVm{$strOS}{&VM_OS_BASE} eq VM_OS_BASE_RHEL)
         {
