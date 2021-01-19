@@ -4,7 +4,7 @@
 # docker rmi -f $(docker images -q)
 #
 # docker build -f Dockerfile -t pgbackrest-test/main .
-# docker run --privileged -itd --name=pgbackrest-test -h pgbackrest-test -v ~/Documents/Code/pgbackrest:/home/docker/pgbackrest pgbackrest-test/main
+# docker run --privileged -itd --name pgbackrest-test -h pgbackrest-test -v ~/Documents/Code/pgbackrest:/home/docker/pgbackrest pgbackrest-test/main
 
 FROM ubuntu:focal
 
