@@ -1,3 +1,8 @@
+# Force remove all containers:
+# docker rm -f $(docker ps -a -q)
+# Force remove all images:
+# docker rmi -f $(docker images -q)
+#
 # docker build -f Dockerfile -t pgbackrest-test/main .
 # docker run --privileged -itd --name=pgbackrest-test -h pgbackrest-test -v ~/Documents/Code/pgbackrest:/home/docker/pgbackrest pgbackrest-test/main
 
@@ -15,10 +20,11 @@ RUN export DEBCONF_NONINTERACTIVE_SEEN=true DEBIAN_FRONTEND=noninteractive && \
         liblz4-tool libpq-dev valgrind lcov autoconf-archive zstd libzstd-dev bzip2 libbz2-dev pkg-config && \
 
 # Install Docker
+    groupadd -g5000 docker && \
     curl -fsSL https://get.docker.com | sh && \
 
 # Create docker user
-    adduser --ingroup=docker --disabled-password --gecos \"\" docker && \
+    adduser --ingroup=docker -uid=5000 --disabled-password --gecos \"\" docker && \
 
 # Configure sudo
     echo '%docker ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
