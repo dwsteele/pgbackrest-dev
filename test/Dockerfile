@@ -3,8 +3,9 @@
 # Force remove all images:
 # docker rmi -f $(docker images -q)
 #
-# docker build -f Dockerfile -t pgbackrest/test:u20-main .
-# docker run --privileged -itd --name pgbackrest-test -h pgbackrest-test -v ~/Documents/Code/pgbackrest:/home/docker/pgbackrest pgbackrest/test:u20-main
+# export PGB=pgbackrest;export PGB_IMAGE=$PGB/test:u20-main;PGB_REPO=~/Documents/Code/$PGB
+# docker build -f $PGB_REPO/test/Dockerfile -t $PGB_IMAGE .
+# docker run --privileged -itd --name $PGB-test -h $PGB-test -v $PGB_REPO:/home/docker/$PGB $PGB_IMAGE
 
 FROM ubuntu:focal
 
@@ -27,13 +28,9 @@ RUN export DEBCONF_NONINTERACTIVE_SEEN=true DEBIAN_FRONTEND=noninteractive && \
     adduser --ingroup=docker -uid=5000 --disabled-password --gecos \"\" docker && \
 
 # Configure sudo
-    echo '%docker ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
-
-# Mount tmpfs at /home/docker/test for faster testing
-    sudo -u docker mkdir -m 770 /home/docker/test && \
-    echo 'tmpfs /home/docker/test tmpfs size=4096M 0 1' >> /etc/fstab
+    echo '%docker ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
 USER docker
 WORKDIR /home/docker
 
-ENTRYPOINT sudo rm -f /var/run/docker.pid && sudo mount -a && sudo dockerd
+ENTRYPOINT sudo rm -f /var/run/docker.pid && sudo dockerd
