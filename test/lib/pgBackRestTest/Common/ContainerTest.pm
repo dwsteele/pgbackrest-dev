@@ -465,7 +465,7 @@ sub containerBuild
                 {
                     $strScript .=
                         "    rpm -ivh \\\n" .
-                        "        https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/" .
+                        "        https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-aarch64/" .
                             "pgdg-redhat-repo-latest.noarch.rpm && \\\n";
                 }
                 elsif ($strOS eq VM_F32)

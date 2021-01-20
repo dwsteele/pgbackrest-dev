@@ -3,8 +3,8 @@
 # Force remove all images:
 # docker rmi -f $(docker images -q)
 #
-# docker build -f Dockerfile -t pgbackrest-test/main .
-# docker run --privileged -itd --name pgbackrest-test -h pgbackrest-test -v ~/Documents/Code/pgbackrest:/home/docker/pgbackrest pgbackrest-test/main
+# docker build -f Dockerfile -t pgbackrest/test:u20-main .
+# docker run --privileged -itd --name pgbackrest-test -h pgbackrest-test -v ~/Documents/Code/pgbackrest:/home/docker/pgbackrest pgbackrest/test:u20-main
 
 FROM ubuntu:focal
 
@@ -14,7 +14,7 @@ RUN export DEBCONF_NONINTERACTIVE_SEEN=true DEBIAN_FRONTEND=noninteractive && \
 # Install packages
     apt-get update && \
     apt-get install -y \
-        sudo vim htop jq rsync \
+        sudo vim htop jq rsync sysstat \
         libdbd-pg-perl libxml-checker-perl libyaml-libyaml-perl \
         devscripts build-essential lintian git cloc txt2man debhelper libssl-dev zlib1g-dev libperl-dev libxml2-dev liblz4-dev \
         liblz4-tool libpq-dev valgrind lcov autoconf-archive zstd libzstd-dev bzip2 libbz2-dev pkg-config && \
@@ -36,4 +36,4 @@ RUN export DEBCONF_NONINTERACTIVE_SEEN=true DEBIAN_FRONTEND=noninteractive && \
 USER docker
 WORKDIR /home/docker
 
-ENTRYPOINT sudo rm -f /var/run/docker.pid && sudo dockerd
+ENTRYPOINT sudo rm -f /var/run/docker.pid && sudo mount -a && sudo dockerd
