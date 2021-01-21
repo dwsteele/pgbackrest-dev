@@ -43,7 +43,8 @@ verifyProtocol(const String *command, const VariantList *paramList, ProtocolServ
                 varUInt64(varLstGet(paramList, 2)),                                                 // File size
                 varStr(varLstGet(paramList, 3)));                                                   // Cipher pass
 
-            protocolServerResponse(server, varNewInt(result));
+            // !!! HIGHLY SUSPECT -- A STRUCT IS BEING RETURNED BUT INT IS PASSED BACK
+            protocolServerResponse(server, varNewInt((int)result));
         }
         else
             found = false;

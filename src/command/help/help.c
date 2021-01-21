@@ -357,7 +357,8 @@ helpRender(void)
 
                     for (unsigned int optionIdx = 0; optionIdx < varLstSize(optionList); optionIdx++)
                     {
-                        ConfigOption optionId = varInt(varLstGet(optionList, optionIdx));
+                        // !!! WHY IS THIS STORED AS AN INT IN THE FIRST PLACE? SHOULD BE UINT?
+                        ConfigOption optionId = (ConfigOption)varInt(varLstGet(optionList, optionIdx));
 
                         // Get option summary
                         String *summary = strFirstLower(
