@@ -470,11 +470,16 @@ sub run
 
                 # Determine which warnings are available
                 my $strWarningFlags =
-                    '-Werror -Wfatal-errors -Wall -Wextra -Wwrite-strings -Wconversion -Wformat=2' .
-                    ' -Wno-format-nonliteral' . # THIS IS A PROBLEM FOR STACK TRACE
-                    ' -Wstrict-prototypes -Wpointer-arith -Wvla' .
-                    # This is theoretically a portability issue but a compiler that does not treat NULL and false as 0 is crazy
-                        ' -Wno-missing-field-initializers';
+                    '';
+                    # '-Wall -Wextra -Wno-missing-field-initializers';
+                    # '-Werror -Wfatal-errors -Wall -Wextra -Wwrite-strings -Wconversion -Wformat=2' .
+                    # ' -Wformat-nonliteral -Wstrict-prototypes -Wpointer-arith -Wvla' .
+                    # ($self->{oTest}->{&TEST_VM} eq VM_U16 || $self->{oTest}->{&TEST_VM} eq VM_U18 ?
+                    #     ' -Wformat-signedness' : '') .
+                    # ($self->{oTest}->{&TEST_VM} eq VM_U18 ?
+                    #     ' -Wduplicated-branches -Wduplicated-cond' : '') .
+                    # # This is theoretically a portability issue but a compiler that does not treat NULL and false as 0 is crazy
+                    #     ' -Wno-missing-field-initializers';
 
                 # Flags that are common to all builds
                 my $strCommonFlags =
