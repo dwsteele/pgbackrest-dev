@@ -449,9 +449,9 @@ sub run
                 # Create build.auto.h
                 my $strBuildAutoH =
                     "#define HAVE_STATIC_ASSERT\n" .
-                    "#define HAVE_BUILTIN_TYPES_COMPATIBLE_P\n" .
-                    (vmWithLz4($self->{oTest}->{&TEST_VM}) ? '#define HAVE_LIBLZ4' : '') . "\n" .
-                    (vmWithZst($self->{oTest}->{&TEST_VM}) ? '#define HAVE_LIBZST' : '') . "\n";
+                    "#define HAVE_BUILTIN_TYPES_COMPATIBLE_P\n";
+                    # (vmWithLz4($self->{oTest}->{&TEST_VM}) ? '#define HAVE_LIBLZ4' : '') . "\n" .
+                    # (vmWithZst($self->{oTest}->{&TEST_VM}) ? '#define HAVE_LIBZST' : '') . "\n";
 
                 buildPutDiffers($self->{oStorageTest}, "$self->{strGCovPath}/" . BUILD_AUTO_H, $strBuildAutoH);
 
@@ -466,24 +466,25 @@ sub run
                 }
 
                 # When optimization is disabled add -ftree-coalesce-vars to make the compiler faster when available
-                my $strNoOptimizeFlags = '-O0' . ($self->{oTest}->{&TEST_VM} ne VM_U12 ? ' -ftree-coalesce-vars' : '');
+                my $strNoOptimizeFlags = '-O0';
 
                 # Determine which warnings are available
                 my $strWarningFlags =
-                    '-Werror -Wfatal-errors -Wall -Wextra -Wwrite-strings -Wconversion -Wformat=2' .
-                    ' -Wformat-nonliteral -Wstrict-prototypes -Wpointer-arith -Wvla' .
-                    ($self->{oTest}->{&TEST_VM} eq VM_U16 || $self->{oTest}->{&TEST_VM} eq VM_U18 ?
-                        ' -Wformat-signedness' : '') .
-                    ($self->{oTest}->{&TEST_VM} eq VM_U18 ?
-                        ' -Wduplicated-branches -Wduplicated-cond' : '') .
-                    # This is theoretically a portability issue but a compiler that does not treat NULL and false as 0 is crazy
-                        ' -Wno-missing-field-initializers';
+                    '';
+                    # '-Wall -Wextra -Wno-missing-field-initializers';
+                    # '-Werror -Wfatal-errors -Wall -Wextra -Wwrite-strings -Wconversion -Wformat=2' .
+                    # ' -Wformat-nonliteral -Wstrict-prototypes -Wpointer-arith -Wvla' .
+                    # ($self->{oTest}->{&TEST_VM} eq VM_U16 || $self->{oTest}->{&TEST_VM} eq VM_U18 ?
+                    #     ' -Wformat-signedness' : '') .
+                    # ($self->{oTest}->{&TEST_VM} eq VM_U18 ?
+                    #     ' -Wduplicated-branches -Wduplicated-cond' : '') .
+                    # # This is theoretically a portability issue but a compiler that does not treat NULL and false as 0 is crazy
+                    #     ' -Wno-missing-field-initializers';
 
                 # Flags that are common to all builds
                 my $strCommonFlags =
-                    '-I. -Itest -std=c99 -fPIC -g -Wno-clobbered -D_POSIX_C_SOURCE=200809L -D_FILE_OFFSET_BITS=64' .
-                        ' `pkg-config libxml-2.0 --cflags`' . ($self->{bProfile} ? " -pg" : '') .
-                        ' -I`pg_config --includedir`' .
+                    '-I. -Itest -std=c99 -fPIC -g -D_DARWIN_C_SOURCE -D_FILE_OFFSET_BITS=64' .
+                        ($self->{bProfile} ? " -pg" : '') .
                     ($self->{oTest}->{&TEST_DEBUG_UNIT_SUPPRESS} ? '' : " -DDEBUG_UNIT") .
                     (vmWithBackTrace($self->{oTest}->{&TEST_VM}) && $self->{bBackTrace} ? ' -DWITH_BACKTRACE' : '') .
                     ($self->{oTest}->{&TEST_CDEF} ? " $self->{oTest}->{&TEST_CDEF}" : '') .
@@ -525,14 +526,14 @@ sub run
                 # Build the Makefile
                 my $strMakefile =
                     "CC=gcc\n" .
-                    "COMMONFLAGS=${strCommonFlags}\n" .
+                    "COMMONFLAGS=${strCommonFlags} -I/Users/dsteele/homebrew/opt/openssl\@1.1/include -I//Users/dsteele/homebrew/opt/libpq/include -I/Users/dsteele/homebrew/opt/libxml2/include/libxml2 -D_DARWIN_C_SOURCE -I.  -I.\n" .
                     "WARNINGFLAGS=${strWarningFlags}\n" .
                     "BUILDFLAGS=${strBuildFlags}\n" .
                     "HARNESSFLAGS=${strHarnessFlags}\n" .
                     "TESTFLAGS=${strTestFlags}\n" .
-                    "LDFLAGS=-lcrypto -lssl -lxml2 -lz -lbz2" .
-                        (vmWithLz4($self->{oTest}->{&TEST_VM}) ? ' -llz4' : '') .
-                        (vmWithZst($self->{oTest}->{&TEST_VM}) ? ' -lzstd' : '') .
+                    "LDFLAGS=-L/Users/dsteele/homebrew/opt/openssl\@1.1/lib -L/Users/dsteele/homebrew/opt/libpq/lib -L/Users/dsteele/homebrew/opt/libxml2/lib -lcrypto -lssl -lxml2 -lz -lbz2" .
+                        # (vmWithLz4($self->{oTest}->{&TEST_VM}) ? ' -llz4' : '') .
+                        # (vmWithZst($self->{oTest}->{&TEST_VM}) ? ' -lzstd' : '') .
                         (vmCoverageC($self->{oTest}->{&TEST_VM}) && $self->{bCoverageUnit} ? " -lgcov" : '') .
                         (vmWithBackTrace($self->{oTest}->{&TEST_VM}) && $self->{bBackTrace} ? ' -lbacktrace' : '') .
                     "\n" .
