@@ -28,9 +28,13 @@ RUN export DEBCONF_NONINTERACTIVE_SEEN=true DEBIAN_FRONTEND=noninteractive && \
     adduser --ingroup=docker -uid=5000 --disabled-password --gecos \"\" docker && \
 
 # Configure sudo
-    echo '%docker ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+    echo '%docker ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
+
+# Mount tmpfs at /home/docker/test for faster testing
+    sudo -u docker mkdir -m 770 /home/docker/test && \
+    echo 'tmpfs /home/docker/test tmpfs size=4096M 0 1' >> /etc/fstab
 
 USER docker
 WORKDIR /home/docker
 
-ENTRYPOINT sudo rm -f /var/run/docker.pid && sudo dockerd
+ENTRYPOINT sudo rm -f /var/run/docker.pid && sudo mount -a && sudo dockerd
