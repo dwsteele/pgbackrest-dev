@@ -450,7 +450,7 @@ eval
                 trim(
                     executeTest(
                         "git -C ${strBackRestBase} ls-files -c --others --exclude-standard |" .
-                            " rsync -rtW --out-format=\"\%n\" --delete" .
+                            " rsync -rtW --out-format=\"\%n\" --delete --ignore-missing-args" .
                             " --exclude=test/result --exclude=repo.manifest" .
                             " ${strBackRestBase}/ --files-from=- ${strRepoCachePath}" .
                             " | grep -E -v '/\$' | cat"))));
@@ -620,40 +620,40 @@ eval
         my $bVersionDev = true;
         my $strVersionBase;
 
-        # if (!$bDev || $bBuildPackage)
-        # {
-        #     # Make sure version number matches the latest release
-        #     #-----------------------------------------------------------------------------------------------------------------------
-        #     &log(INFO, "check version info");
-        #
-        #     # Load the doc modules dynamically since they are not supported on all systems
-        #     require pgBackRestDoc::Common::Doc;
-        #     pgBackRestDoc::Common::Doc->import();
-        #     require pgBackRestDoc::Custom::DocCustomRelease;
-        #     pgBackRestDoc::Custom::DocCustomRelease->import();
-        #
-        #     my $strReleaseFile = dirname(dirname(abs_path($0))) . '/doc/xml/release.xml';
-        #     my $oRelease =
-        #         (new pgBackRestDoc::Custom::DocCustomRelease(new pgBackRestDoc::Common::Doc($strReleaseFile)))->releaseLast();
-        #     my $strVersion = $oRelease->paramGet('version');
-        #     $bVersionDev = false;
-        #     $strVersionBase = $strVersion;
-        #
-        #     if ($strVersion =~ /dev$/)
-        #     {
-        #         $bVersionDev = true;
-        #         $strVersionBase = substr($strVersion, 0, length($strVersion) - 3);
-        #
-        #         if (PROJECT_VERSION !~ /dev$/ && $oRelease->nodeTest('release-core-list'))
-        #         {
-        #             confess "dev release ${strVersion} must match the program version when core changes have been made";
-        #         }
-        #     }
-        #     elsif ($strVersion ne PROJECT_VERSION)
-        #     {
-        #         confess 'unable to find version ' . PROJECT_VERSION . " as the most recent release in ${strReleaseFile}";
-        #     }
-        # }
+        if (!$bDev || $bBuildPackage)
+        {
+            # Make sure version number matches the latest release
+            #-----------------------------------------------------------------------------------------------------------------------
+            &log(INFO, "check version info");
+
+            # Load the doc modules dynamically since they are not supported on all systems
+            require pgBackRestDoc::Common::Doc;
+            pgBackRestDoc::Common::Doc->import();
+            require pgBackRestDoc::Custom::DocCustomRelease;
+            pgBackRestDoc::Custom::DocCustomRelease->import();
+
+            my $strReleaseFile = dirname(dirname(abs_path($0))) . '/doc/xml/release.xml';
+            my $oRelease =
+                (new pgBackRestDoc::Custom::DocCustomRelease(new pgBackRestDoc::Common::Doc($strReleaseFile)))->releaseLast();
+            my $strVersion = $oRelease->paramGet('version');
+            $bVersionDev = false;
+            $strVersionBase = $strVersion;
+
+            if ($strVersion =~ /dev$/)
+            {
+                $bVersionDev = true;
+                $strVersionBase = substr($strVersion, 0, length($strVersion) - 3);
+
+                if (PROJECT_VERSION !~ /dev$/ && $oRelease->nodeTest('release-core-list'))
+                {
+                    confess "dev release ${strVersion} must match the program version when core changes have been made";
+                }
+            }
+            elsif ($strVersion ne PROJECT_VERSION)
+            {
+                confess 'unable to find version ' . PROJECT_VERSION . " as the most recent release in ${strReleaseFile}";
+            }
+        }
 
         # Clean up
         #---------------------------------------------------------------------------------------------------------------------------

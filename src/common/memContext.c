@@ -39,7 +39,6 @@ typedef struct MemContextAlloc
 
 // Make sure the allocation is valid for the current memory context.  This check only works correctly if the allocation is valid but
 // belongs to another context.  Otherwise, there is likely to be a segfault.
-// !!! RETHINK THIS MACRO -- AT LEAST FIX THIS: alloc != MEM_CONTEXT_ALLOC_HEADER(NULL)
 #define ASSERT_ALLOC_VALID(alloc)                                                                                                  \
     ASSERT(                                                                                                                        \
         alloc != NULL && alloc != MEM_CONTEXT_ALLOC_HEADER(NULL) &&                                                                \
@@ -446,7 +445,7 @@ memContextAllocResize(MemContextAlloc *alloc, size_t size)
         FUNCTION_TEST_PARAM(SIZE, size);
     FUNCTION_TEST_END();
 
-    // ASSERT_ALLOC_VALID(alloc);
+    ASSERT_ALLOC_VALID(alloc);
 
     // Resize the allocation
     alloc = memReAllocInternal(alloc, sizeof(MemContextAlloc) + size);
@@ -507,7 +506,7 @@ memFree(void *buffer)
         FUNCTION_TEST_PARAM_P(VOID, buffer);
     FUNCTION_TEST_END();
 
-    // ASSERT_ALLOC_VALID(MEM_CONTEXT_ALLOC_HEADER(buffer));
+    ASSERT_ALLOC_VALID(MEM_CONTEXT_ALLOC_HEADER(buffer));
 
     // Get the allocation
     MemContext *contextCurrent = memContextStack[memContextCurrentStackIdx].memContext;

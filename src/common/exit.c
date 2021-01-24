@@ -161,8 +161,7 @@ exitSafe(int result, bool error, SignalType signalType)
                     strCatZ(errorMessage, "from child process");
                 // Else terminated directly
                 else
-                // !!! DO SOME INVESTIGATION TO GET THE REAL TYPE HERE
-                    strCatFmt(errorMessage, "[SIG%s]", exitSignalName((int)signalType));
+                    strCatFmt(errorMessage, "[SIG%s]", exitSignalName(signalType));
             }
             // Standard error exit message
             else if (error)

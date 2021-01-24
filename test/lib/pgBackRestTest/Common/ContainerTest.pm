@@ -340,8 +340,7 @@ sub containerBuild
 
         #---------------------------------------------------------------------------------------------------------------------------
         my $strScript = sectionHeader() .
-            # !!! THIS IS JUST TO MAKE ARM64 REBUILD -- NEED A BETTER WAY TO DO THIS
-            "#  Install packages\n";
+            "# Install packages\n";
 
         if ($$oVm{$strOS}{&VM_OS_BASE} eq VM_OS_BASE_RHEL)
         {
