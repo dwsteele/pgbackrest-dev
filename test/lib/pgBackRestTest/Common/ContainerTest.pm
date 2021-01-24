@@ -142,7 +142,7 @@ sub groupCreate
     my $strName = shift;
     my $iId = shift;
 
-    return "groupadd -g${iId} ${strName}";
+    return "groupadd -f -g${iId} ${strName}";
 }
 
 sub userCreate
