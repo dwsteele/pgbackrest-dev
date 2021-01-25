@@ -16,7 +16,7 @@ RUN export DEBCONF_NONINTERACTIVE_SEEN=true DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -y \
         sudo vim htop jq rsync sysstat \
-        libdbd-pg-perl libxml-checker-perl libyaml-libyaml-perl \
+        libdbd-pg-perl libxml-checker-perl libyaml-perl \
         devscripts build-essential lintian git cloc txt2man debhelper libssl-dev zlib1g-dev libperl-dev libxml2-dev liblz4-dev \
         liblz4-tool libpq-dev valgrind lcov autoconf-archive zstd libzstd-dev bzip2 libbz2-dev pkg-config && \
 
