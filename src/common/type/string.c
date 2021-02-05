@@ -57,7 +57,7 @@ Object type
 ***********************************************************************************************************************************/
 struct String
 {
-    StringPub pub;                                                  // Publicly accessible members
+    StringPub pub;                                                  // Publicly accessible variables
     MemContext *memContext;                                         // Required for dynamically allocated strings
 };
 
@@ -80,11 +80,14 @@ strNew(const char *string)
 
     *this = (String)
     {
-        .memContext = memContextCurrent(),
-        .pub.size = (unsigned int)stringSize,
+        .pub =
+        {
+            .size = (unsigned int)stringSize,
 
-        // A zero-length string is not very useful so assume this string is being created for appending and allocate extra space
-        .pub.extra = stringSize == 0 ? STRING_EXTRA_MIN : 0,
+            // A zero-length string is not very useful so assume this string is being created for appending and allocate extra space
+            .extra = stringSize == 0 ? STRING_EXTRA_MIN : 0,
+        },
+        .memContext = memContextCurrent(),
     };
 
     // Allocate and assign string
@@ -126,8 +129,11 @@ strNewBuf(const Buffer *buffer)
 
     *this = (String)
     {
+        .pub =
+        {
+            .size = (unsigned int)bufUsed(buffer),
+        },
         .memContext = memContextCurrent(),
-        .pub.size = (unsigned int)bufUsed(buffer),
     };
 
     // Allocate and assign string
@@ -194,8 +200,11 @@ strNewN(const char *string, size_t size)
 
     *this = (String)
     {
+        .pub =
+        {
+            .size = (unsigned int)size,
+        },
         .memContext = memContextCurrent(),
-        .pub.size = (unsigned int)size,
     };
 
     // Allocate and assign string
