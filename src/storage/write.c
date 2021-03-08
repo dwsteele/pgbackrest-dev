@@ -7,6 +7,7 @@ Storage Write Interface
 #include "common/log.h"
 #include "common/memContext.h"
 #include "common/type/object.h"
+#include "storage/write.h"
 
 /***********************************************************************************************************************************
 Object type
