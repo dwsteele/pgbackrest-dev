@@ -12,7 +12,103 @@
     </intro>
 
     <release-list>
-        <release date="XXXX-XX-XX" version="2.32dev" title="UNDER DEVELOPMENT">
+        <release date="XXXX-XX-XX" version="2.33dev" title="UNDER DEVELOPMENT">
+            <release-core-list>
+                <release-bug-list>
+                    <release-item>
+                        <release-item-contributor-list>
+                            <release-item-ideator id="lev.kokotov"/>
+                            <release-item-contributor id="david.steele"/>
+                            <release-item-reviewer id="cynthia.shang"/>
+                        </release-item-contributor-list>
+
+                        <p>Fix option warnings breaking async <cmd>archive-get</cmd>/<cmd>archive-push</cmd>.</p>
+                    </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
+                            <release-item-ideator id="bsiara"/>
+                            <release-item-contributor id="david.steele"/>
+                            <release-item-reviewer id="cynthia.shang"/>
+                        </release-item-contributor-list>
+
+                        <p>Fix stack overflow in cipher passphrase generation.</p>
+                    </release-item>
+                </release-bug-list>
+
+                <release-feature-list>
+                    <release-item>
+                        <release-item-contributor-list>
+                            <release-item-contributor id="cynthia.shang"/>
+                            <release-item-contributor id="david.steele"/>
+                            <release-item-reviewer id="stefan.fercot"/>
+                            <release-item-reviewer id="stephen.frost"/>
+                        </release-item-contributor-list>
+
+                        <p>Multiple repository support.</p>
+                    </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
+                            <release-item-reviewer id="cynthia.shang"/>
+                        </release-item-contributor-list>
+
+                        <p>GCS support for repository storage.</p>
+                    </release-item>
+                </release-feature-list>
+
+                <release-improvement-list>
+                    <release-item>
+                        <release-item-contributor-list>
+                            <release-item-reviewer id="cynthia.shang"/>
+                        </release-item-contributor-list>
+
+                        <p>Consolidate less commonly used repository storage options.</p>
+                    </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
+                            <release-item-contributor id="michael.schout"/>
+                            <release-item-reviewer id="david.steele"/>
+                        </release-item-contributor-list>
+
+                        <p>Allow custom <setting>config-path</setting> default with <id>./configure --with-configdir</id>.</p>
+                    </release-item>
+                </release-improvement-list>
+
+                <release-development-list>
+                    <release-item>
+                        <commit subject="Enhance expire command multi-repo support."/>
+                        <commit subject="Expire continues if an error occurs processing a repository."/>
+                        <commit subject="Add archive-get command multi-repo support."/>
+                        <commit subject="Enhance restore command multi-repo support."/>
+                        <commit subject="Refactor info command repoMin/Max."/>
+                        <commit subject="Remove restore default repo from integration tests."/>
+                        <commit subject="Make --repo optional for backup command."/>
+                        <commit subject="Refactor archive-push command warnings to work like archive-get."/>
+                        <commit subject="Add write fault-tolerance to archive-push command."/>
+                        <commit subject="Make --repo optional for remaining commands except stanza-delete."/>
+
+                        <release-item-contributor-list>
+                            <release-item-contributor id="cynthia.shang"/>
+                            <release-item-contributor id="david.steele"/>
+                        </release-item-contributor-list>
+
+                        <p>Partial multi-repository implementation.</p>
+                    </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
+                            <release-item-reviewer id="cynthia.shang"/>
+                        </release-item-contributor-list>
+
+                        <p>Add <code>HttpUrl</code> object.</p>
+                    </release-item>
+                </release-development-list>
+            </release-core-list>
+        </release>
+
+        <release date="2021-02-08" version="2.32" title="Repository Commands">
             <release-core-list>
                 <release-bug-list>
                     <release-item>
@@ -54,7 +150,7 @@
                             <release-item-reviewer id="michael.banck"/>
                         </release-item-contributor-list>
 
-                        <p>Add <br-setting>archive-mode-check</br-setting> option.</p>
+                        <p>Add <setting>archive-mode-check</setting> option.</p>
                     </release-item>
                 </release-feature-list>
 
@@ -6157,7 +6253,7 @@
                             <release-item-contributor id="cynthia.shang"/>
                         </release-item-contributor-list>
 
-                        <p>Fixed the <cmd>backup</cmd> command so the <br-setting>backup-standby</br-setting> option is reset (and the backup proceeds on the primary) if the standby is not configured and/or reachable.</p>
+                        <p>Fixed the <cmd>backup</cmd> command so the <setting>backup-standby</setting> option is reset (and the backup proceeds on the primary) if the standby is not configured and/or reachable.</p>
                     </release-item>
 
                     <release-item>
@@ -6209,7 +6305,7 @@
             <release-doc-list>
                 <release-bug-list>
                     <release-item>
-                        <p>Changed invalid <setting>max-archive-mb</setting> option in configuration reference to <br-setting>archive-queue-max</br-setting>.</p>
+                        <p>Changed invalid <setting>max-archive-mb</setting> option in configuration reference to <setting>archive-queue-max</setting>.</p>
                     </release-item>
 
                     <release-item>
@@ -9051,6 +9147,11 @@
             <contributor-id type="github">tigerfoot</contributor-id>
         </contributor>
 
+        <contributor id="bsiara">
+            <contributor-name-display>bsiara</contributor-name-display>
+            <contributor-id type="github">bsiara</contributor-id>
+        </contributor>
+
         <contributor id="camilo.aguilar">
             <contributor-name-display>Camilo Aguilar</contributor-name-display>
             <contributor-id type="github">c4milo</contributor-id>
@@ -9371,6 +9472,11 @@
             <contributor-id type="github">L30Bola</contributor-id>
         </contributor>
 
+        <contributor id="lev.kokotov">
+            <contributor-name-display>Lev Kokotov</contributor-name-display>
+            <contributor-id type="github">levkk</contributor-id>
+        </contributor>
+
         <contributor id="loop-evgeny">
             <contributor-name-display>loop-evgeny</contributor-name-display>
             <contributor-id type="github">loop-evgeny</contributor-id>
@@ -9434,6 +9540,11 @@
         <contributor id="michael.renner">
             <contributor-name-display>Michael Renner</contributor-name-display>
             <contributor-id type="github">terrorobe</contributor-id>
+        </contributor>
+
+        <contributor id="michael.schout">
+            <contributor-name-display>Michael Schout</contributor-name-display>
+            <contributor-id type="github">mschout</contributor-id>
         </contributor>
 
         <contributor id="michael.vitale">

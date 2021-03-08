@@ -36,8 +36,7 @@ typedef enum
 /***********************************************************************************************************************************
 Standard config file name and old default path and name
 ***********************************************************************************************************************************/
-#define PGBACKREST_CONFIG_FILE                                      PROJECT_BIN ".conf"
-#define PGBACKREST_CONFIG_ORIG_PATH_FILE                            "/etc/" PGBACKREST_CONFIG_FILE
+#define PGBACKREST_CONFIG_ORIG_PATH_FILE                            "/etc/" PROJECT_CONFIG_FILE
     STRING_STATIC(PGBACKREST_CONFIG_ORIG_PATH_FILE_STR,             PGBACKREST_CONFIG_ORIG_PATH_FILE);
 
 /***********************************************************************************************************************************
@@ -48,11 +47,6 @@ Prefix for environment variables
 
 // In some environments this will not be extern'd
 extern char **environ;
-
-/***********************************************************************************************************************************
-Standard config include path name
-***********************************************************************************************************************************/
-#define PGBACKREST_CONFIG_INCLUDE_PATH                              "conf.d"
 
 /***********************************************************************************************************************************
 Option value constants
@@ -782,7 +776,7 @@ cfgFileLoad(                                                        // NOTE: Pas
         optConfigDefault = strNewFmt(
             "%s/%s", strZ(strLstGet(optionList[cfgOptConfigPath].indexList[0].valueList, 0)), strBaseZ(optConfigDefault));
         optConfigIncludePathDefault = strNewFmt(
-            "%s/%s", strZ(strLstGet(optionList[cfgOptConfigPath].indexList[0].valueList, 0)), PGBACKREST_CONFIG_INCLUDE_PATH);
+            "%s/%s", strZ(strLstGet(optionList[cfgOptConfigPath].indexList[0].valueList, 0)), PROJECT_CONFIG_INCLUDE_PATH);
     }
 
     // If the --no-config option was passed then do not load the config file
@@ -1114,8 +1108,8 @@ configParse(const Storage *storage, unsigned int argListSize, const char *argLis
         if (config->paramList != NULL && !config->help && !parseRuleCommand[config->command].parameterAllowed)
             THROW(ParamInvalidError, "command does not allow parameters");
 
-        // Enable logging (except for local and remote commands) so config file warnings will be output
-        if (config->commandRole != cfgCmdRoleLocal && config->commandRole != cfgCmdRoleRemote && resetLogLevel)
+        // Enable logging for default role so config file warnings will be output
+        if (resetLogLevel && config->commandRole == cfgCmdRoleDefault)
             logInit(logLevelWarn, logLevelWarn, logLevelOff, false, 0, 1, false);
 
         // Only continue if command options need to be validated, i.e. a real command is running or we are getting help for a

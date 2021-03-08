@@ -12,6 +12,9 @@
 #     List of commands the option can be used with this option.  An empty hash signifies that the command does not deviate from the
 #     option defaults.  Otherwise, overrides can be specified.
 #
+#     If another option is referenced (e.g. CFGDEF_COMMAND => CFGOPT_REPO_TYPE) then the list of commands will be copied from the
+#     referenced option.
+#
 # NOTE: If the option (A) has a dependency on another option (B) then the CFGCMD_ must also be specified in the other option
 #         (B), else it will still error on the option (A).
 #
@@ -48,6 +51,9 @@
 # CFGDEF_DEFAULT:
 #   Sets a default for the option for all commands if listed in the global section, or for specific commands if listed in the
 #   CFGDEF_COMMAND section. All boolean types require a default.
+#
+# CFGDEF_DEFAULT_LITERAL:
+#   If the default is a string output it as-is without quoting. This allows C defines to be used as defaults.
 #
 # CFGDEF_NEGATE:
 #   The option can be negated with "no" e.g. --no-compress.  This applies to options that are only valid on the command line (i.e.
@@ -257,15 +263,17 @@ use constant CFGOPT_REPO_HOST_USER                                  => CFGOPT_RE
 # Repository Azure
 use constant CFGDEF_REPO_AZURE                                      => CFGDEF_PREFIX_REPO . '-azure';
 use constant CFGOPT_REPO_AZURE_ACCOUNT                              => CFGDEF_REPO_AZURE . '-account';
-use constant CFGOPT_REPO_AZURE_CA_FILE                              => CFGDEF_REPO_AZURE . '-ca-file';
-use constant CFGOPT_REPO_AZURE_CA_PATH                              => CFGDEF_REPO_AZURE . '-ca-path';
 use constant CFGOPT_REPO_AZURE_CONTAINER                            => CFGDEF_REPO_AZURE . '-container';
 use constant CFGOPT_REPO_AZURE_ENDPOINT                             => CFGDEF_REPO_AZURE . '-endpoint';
-use constant CFGOPT_REPO_AZURE_HOST                                 => CFGDEF_REPO_AZURE . '-host';
 use constant CFGOPT_REPO_AZURE_KEY                                  => CFGDEF_REPO_AZURE . '-key';
 use constant CFGOPT_REPO_AZURE_KEY_TYPE                             => CFGDEF_REPO_AZURE . '-key-type';
-use constant CFGOPT_REPO_AZURE_PORT                                 => CFGDEF_REPO_AZURE . '-port';
-use constant CFGOPT_REPO_AZURE_VERIFY_TLS                           => CFGDEF_REPO_AZURE . '-verify-tls';
+
+# Repository GCS
+use constant CFGDEF_REPO_GCS                                        => CFGDEF_PREFIX_REPO . '-gcs';
+use constant CFGOPT_REPO_GCS_BUCKET                                 => CFGDEF_REPO_GCS . '-bucket';
+use constant CFGOPT_REPO_GCS_ENDPOINT                               => CFGDEF_REPO_GCS . '-endpoint';
+use constant CFGOPT_REPO_GCS_KEY                                    => CFGDEF_REPO_GCS . '-key';
+use constant CFGOPT_REPO_GCS_KEY_TYPE                               => CFGDEF_REPO_GCS . '-key-type';
 
 # Repository S3
 use constant CFGDEF_REPO_S3                                         => CFGDEF_PREFIX_REPO . '-s3';
@@ -273,16 +281,19 @@ use constant CFGOPT_REPO_S3_KEY                                     => CFGDEF_RE
 use constant CFGOPT_REPO_S3_KEY_SECRET                              => CFGDEF_REPO_S3 . '-key-secret';
 use constant CFGOPT_REPO_S3_KEY_TYPE                                => CFGDEF_REPO_S3 . '-key-type';
 use constant CFGOPT_REPO_S3_BUCKET                                  => CFGDEF_REPO_S3 . '-bucket';
-use constant CFGOPT_REPO_S3_CA_FILE                                 => CFGDEF_REPO_S3 . '-ca-file';
-use constant CFGOPT_REPO_S3_CA_PATH                                 => CFGDEF_REPO_S3 . '-ca-path';
 use constant CFGOPT_REPO_S3_ENDPOINT                                => CFGDEF_REPO_S3 . '-endpoint';
-use constant CFGOPT_REPO_S3_HOST                                    => CFGDEF_REPO_S3 . '-host';
-use constant CFGOPT_REPO_S3_PORT                                    => CFGDEF_REPO_S3 . '-port';
 use constant CFGOPT_REPO_S3_ROLE                                    => CFGDEF_REPO_S3 . '-role';
 use constant CFGOPT_REPO_S3_REGION                                  => CFGDEF_REPO_S3 . '-region';
 use constant CFGOPT_REPO_S3_TOKEN                                   => CFGDEF_REPO_S3 . '-token';
 use constant CFGOPT_REPO_S3_URI_STYLE                               => CFGDEF_REPO_S3 . '-uri-style';
-use constant CFGOPT_REPO_S3_VERIFY_TLS                              => CFGDEF_REPO_S3 . '-verify-tls';
+
+# Repository Storage
+use constant CFGDEF_REPO_STORAGE                                    => CFGDEF_PREFIX_REPO . '-storage';
+use constant CFGOPT_REPO_STORAGE_CA_FILE                            => CFGDEF_REPO_STORAGE . '-ca-file';
+use constant CFGOPT_REPO_STORAGE_CA_PATH                            => CFGDEF_REPO_STORAGE . '-ca-path';
+use constant CFGOPT_REPO_STORAGE_HOST                               => CFGDEF_REPO_STORAGE . '-host';
+use constant CFGOPT_REPO_STORAGE_PORT                               => CFGDEF_REPO_STORAGE . '-port';
+use constant CFGOPT_REPO_STORAGE_VERIFY_TLS                         => CFGDEF_REPO_STORAGE . '-verify-tls';
 
 # Archive options
 #-----------------------------------------------------------------------------------------------------------------------------------
@@ -363,6 +374,7 @@ use constant CFGOPTVAL_BACKUP_TYPE_INCR                             => 'incr';
 #-----------------------------------------------------------------------------------------------------------------------------------
 use constant CFGOPTVAL_REPO_TYPE_AZURE                              => 'azure';
 use constant CFGOPTVAL_REPO_TYPE_CIFS                               => 'cifs';
+use constant CFGOPTVAL_REPO_TYPE_GCS                                => 'gcs';
 use constant CFGOPTVAL_REPO_TYPE_POSIX                              => 'posix';
 use constant CFGOPTVAL_REPO_TYPE_S3                                 => 's3';
 
@@ -405,10 +417,6 @@ use constant CFGDEF_DEFAULT_BUFFER_SIZE_MIN                         => 16384;
 
 use constant CFGDEF_DEFAULT_COMPRESS_LEVEL_MIN                      => 0;
 use constant CFGDEF_DEFAULT_COMPRESS_LEVEL_MAX                      => 9;
-
-use constant CFGDEF_DEFAULT_CONFIG_PATH                             => '/etc/' . PROJECT_EXE;
-use constant CFGDEF_DEFAULT_CONFIG                                  => CFGDEF_DEFAULT_CONFIG_PATH . '/' . PROJECT_CONF;
-use constant CFGDEF_DEFAULT_CONFIG_INCLUDE_PATH                     => CFGDEF_DEFAULT_CONFIG_PATH . '/conf.d';
 
 use constant CFGDEF_DEFAULT_DB_TIMEOUT                              => 1800;
 use constant CFGDEF_DEFAULT_DB_TIMEOUT_MIN                          => WAIT_TIME_MINIMUM;
@@ -472,6 +480,8 @@ use constant CFGDEF_ALLOW_RANGE                                     => 'allow-ra
     push @EXPORT, qw(CFGDEF_ALLOW_RANGE);
 use constant CFGDEF_DEFAULT                                         => 'default';
     push @EXPORT, qw(CFGDEF_DEFAULT);
+use constant CFGDEF_DEFAULT_LITERAL                                 => 'default-literal';
+    push @EXPORT, qw(CFGDEF_DEFAULT_LITERAL);
 use constant CFGDEF_DEPEND                                          => 'depend';
     push @EXPORT, qw(CFGDEF_DEPEND);
 use constant CFGDEF_DEPEND_OPTION                                   => 'depend-option';
@@ -768,7 +778,8 @@ my %hConfigDefine =
     &CFGOPT_CONFIG =>
     {
         &CFGDEF_TYPE => CFGDEF_TYPE_STRING,
-        &CFGDEF_DEFAULT => CFGDEF_DEFAULT_CONFIG,
+        &CFGDEF_DEFAULT => "CFGOPTDEF_CONFIG_PATH \"/\" PROJECT_CONFIG_FILE",
+        &CFGDEF_DEFAULT_LITERAL => true,
         &CFGDEF_NEGATE => true,
     },
 
@@ -776,7 +787,8 @@ my %hConfigDefine =
     {
         &CFGDEF_TYPE => CFGDEF_TYPE_PATH,
         &CFGDEF_INHERIT => CFGOPT_CONFIG,
-        &CFGDEF_DEFAULT => CFGDEF_DEFAULT_CONFIG_INCLUDE_PATH,
+        &CFGDEF_DEFAULT => "CFGOPTDEF_CONFIG_PATH \"/\" PROJECT_CONFIG_INCLUDE_PATH",
+        &CFGDEF_DEFAULT_LITERAL => true,
         &CFGDEF_NEGATE => false,
     },
 
@@ -784,7 +796,8 @@ my %hConfigDefine =
     {
         &CFGDEF_TYPE => CFGDEF_TYPE_PATH,
         &CFGDEF_INHERIT => CFGOPT_CONFIG,
-        &CFGDEF_DEFAULT => CFGDEF_DEFAULT_CONFIG_PATH,
+        &CFGDEF_DEFAULT => "CFGOPTDEF_CONFIG_PATH",
+        &CFGDEF_DEFAULT_LITERAL => true,
         &CFGDEF_NEGATE => false,
     },
 
@@ -1693,7 +1706,6 @@ my %hConfigDefine =
     &CFGOPT_REPO =>
     {
         &CFGDEF_TYPE => CFGDEF_TYPE_INTEGER,
-        &CFGDEF_INTERNAL => true,
         &CFGDEF_REQUIRED => false,
         &CFGDEF_ALLOW_RANGE => [1, CFGDEF_INDEX_REPO],
         &CFGDEF_COMMAND =>
@@ -2002,7 +2014,8 @@ my %hConfigDefine =
         &CFGDEF_GROUP => CFGOPTGRP_REPO,
         &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
         &CFGDEF_TYPE => CFGDEF_TYPE_STRING,
-        &CFGDEF_DEFAULT => CFGDEF_DEFAULT_CONFIG,
+        &CFGDEF_DEFAULT => "CFGOPTDEF_CONFIG_PATH \"/\" PROJECT_CONFIG_FILE",
+        &CFGDEF_DEFAULT_LITERAL => true,
         &CFGDEF_NAME_ALT =>
         {
             'backup-config' => {&CFGDEF_INDEX => 1, &CFGDEF_RESET => false},
@@ -2024,14 +2037,16 @@ my %hConfigDefine =
     {
         &CFGDEF_TYPE => CFGDEF_TYPE_PATH,
         &CFGDEF_INHERIT => CFGOPT_REPO_HOST_CONFIG,
-        &CFGDEF_DEFAULT => CFGDEF_DEFAULT_CONFIG_PATH,
+        &CFGDEF_DEFAULT => "CFGOPTDEF_CONFIG_PATH",
+        &CFGDEF_DEFAULT_LITERAL => true,
     },
 
     &CFGOPT_REPO_HOST_CONFIG_INCLUDE_PATH =>
     {
         &CFGDEF_TYPE => CFGDEF_TYPE_PATH,
         &CFGDEF_INHERIT => CFGOPT_REPO_HOST_CONFIG,
-        &CFGDEF_DEFAULT => CFGDEF_DEFAULT_CONFIG_INCLUDE_PATH,
+        &CFGDEF_DEFAULT => "CFGOPTDEF_CONFIG_PATH \"/\" PROJECT_CONFIG_INCLUDE_PATH",
+        &CFGDEF_DEFAULT_LITERAL => true,
     },
 
     &CFGOPT_REPO_HOST_PORT =>
@@ -2221,17 +2236,6 @@ my %hConfigDefine =
         &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
     },
 
-    &CFGOPT_REPO_AZURE_CA_FILE =>
-    {
-        &CFGDEF_INHERIT => CFGOPT_REPO_AZURE_HOST,
-    },
-
-    &CFGOPT_REPO_AZURE_CA_PATH =>
-    {
-        &CFGDEF_TYPE => CFGDEF_TYPE_PATH,
-        &CFGDEF_INHERIT => CFGOPT_REPO_AZURE_HOST,
-    },
-
     &CFGOPT_REPO_AZURE_CONTAINER =>
     {
         &CFGDEF_GROUP => CFGOPTGRP_REPO,
@@ -2243,18 +2247,8 @@ my %hConfigDefine =
 
     &CFGOPT_REPO_AZURE_ENDPOINT =>
     {
-        &CFGDEF_INHERIT => CFGOPT_REPO_AZURE_HOST,
+        &CFGDEF_INHERIT => CFGOPT_REPO_AZURE_ACCOUNT,
         &CFGDEF_DEFAULT => 'blob.core.windows.net',
-    },
-
-    &CFGOPT_REPO_AZURE_HOST =>
-    {
-        &CFGDEF_GROUP => CFGOPTGRP_REPO,
-        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
-        &CFGDEF_TYPE => CFGDEF_TYPE_STRING,
-        &CFGDEF_REQUIRED => false,
-        &CFGDEF_DEPEND => CFGOPT_REPO_AZURE_ACCOUNT,
-        &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
     },
 
     &CFGOPT_REPO_AZURE_KEY =>
@@ -2273,24 +2267,55 @@ my %hConfigDefine =
         ],
     },
 
-    &CFGOPT_REPO_AZURE_PORT =>
+    &CFGOPT_REPO_GCS_BUCKET =>
     {
         &CFGDEF_GROUP => CFGOPTGRP_REPO,
         &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
-        &CFGDEF_TYPE => CFGDEF_TYPE_INTEGER,
-        &CFGDEF_DEFAULT => 443,
-        &CFGDEF_ALLOW_RANGE => [1, 65535],
-        &CFGDEF_DEPEND => CFGOPT_REPO_AZURE_ACCOUNT,
+        &CFGDEF_TYPE => CFGDEF_TYPE_STRING,
+        &CFGDEF_REQUIRED => true,
+        &CFGDEF_DEPEND =>
+        {
+            &CFGDEF_DEPEND_OPTION => CFGOPT_REPO_GCS_KEY_TYPE,
+        },
         &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
     },
 
-    &CFGOPT_REPO_AZURE_VERIFY_TLS =>
+    &CFGOPT_REPO_GCS_ENDPOINT =>
     {
         &CFGDEF_GROUP => CFGOPTGRP_REPO,
         &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
-        &CFGDEF_TYPE => CFGDEF_TYPE_BOOLEAN,
-        &CFGDEF_DEFAULT => true,
-        &CFGDEF_DEPEND => CFGOPT_REPO_AZURE_ACCOUNT,
+        &CFGDEF_TYPE => CFGDEF_TYPE_STRING,
+        &CFGDEF_DEFAULT => 'storage.googleapis.com',
+        &CFGDEF_DEPEND => CFGOPT_REPO_GCS_BUCKET,
+        &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
+    },
+
+    &CFGOPT_REPO_GCS_KEY =>
+    {
+        &CFGDEF_GROUP => CFGOPTGRP_REPO,
+        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
+        &CFGDEF_TYPE => CFGDEF_TYPE_STRING,
+        &CFGDEF_SECURE => true,
+        &CFGDEF_DEPEND => CFGOPT_REPO_GCS_BUCKET,
+        &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
+    },
+
+    &CFGOPT_REPO_GCS_KEY_TYPE =>
+    {
+        &CFGDEF_GROUP => CFGOPTGRP_REPO,
+        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
+        &CFGDEF_TYPE => CFGDEF_TYPE_STRING,
+        &CFGDEF_DEFAULT => 'service',
+        &CFGDEF_ALLOW_LIST =>
+        [
+            'service',
+            'token',
+        ],
+        &CFGDEF_DEPEND =>
+        {
+            &CFGDEF_DEPEND_OPTION => CFGOPT_REPO_TYPE,
+            &CFGDEF_DEPEND_LIST => [CFGOPTVAL_REPO_TYPE_GCS],
+        },
         &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
     },
 
@@ -2309,25 +2334,6 @@ my %hConfigDefine =
             'repo-s3-bucket' => {&CFGDEF_INDEX => 1, &CFGDEF_RESET => false},
         },
         &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
-    },
-
-    &CFGOPT_REPO_S3_CA_FILE =>
-    {
-        &CFGDEF_INHERIT => CFGOPT_REPO_S3_HOST,
-        &CFGDEF_NAME_ALT =>
-        {
-            'repo-s3-ca-file' => {&CFGDEF_INDEX => 1, &CFGDEF_RESET => false},
-        },
-    },
-
-    &CFGOPT_REPO_S3_CA_PATH =>
-    {
-        &CFGDEF_TYPE => CFGDEF_TYPE_PATH,
-        &CFGDEF_INHERIT => CFGOPT_REPO_S3_HOST,
-        &CFGDEF_NAME_ALT =>
-        {
-            'repo-s3-ca-path' => {&CFGDEF_INDEX => 1, &CFGDEF_RESET => false},
-        },
     },
 
     &CFGOPT_REPO_S3_KEY_TYPE =>
@@ -2378,31 +2384,6 @@ my %hConfigDefine =
         },
     },
 
-    &CFGOPT_REPO_S3_HOST =>
-    {
-        &CFGDEF_GROUP => CFGOPTGRP_REPO,
-        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
-        &CFGDEF_TYPE => CFGDEF_TYPE_STRING,
-        &CFGDEF_REQUIRED => false,
-        &CFGDEF_DEPEND => CFGOPT_REPO_S3_BUCKET,
-        &CFGDEF_NAME_ALT =>
-        {
-            'repo-s3-host' => {&CFGDEF_INDEX => 1, &CFGDEF_RESET => false},
-        },
-        &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
-    },
-
-    &CFGOPT_REPO_S3_PORT =>
-    {
-        &CFGDEF_GROUP => CFGOPTGRP_REPO,
-        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
-        &CFGDEF_TYPE => CFGDEF_TYPE_INTEGER,
-        &CFGDEF_DEFAULT => 443,
-        &CFGDEF_ALLOW_RANGE => [1, 65535],
-        &CFGDEF_DEPEND => CFGOPT_REPO_S3_BUCKET,
-        &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
-    },
-
     &CFGOPT_REPO_S3_REGION,
     {
         &CFGDEF_INHERIT => CFGOPT_REPO_S3_BUCKET,
@@ -2445,7 +2426,71 @@ my %hConfigDefine =
         &CFGDEF_DEPEND => CFGOPT_REPO_S3_BUCKET,
     },
 
-    &CFGOPT_REPO_S3_VERIFY_TLS =>
+    &CFGOPT_REPO_STORAGE_CA_FILE =>
+    {
+        &CFGDEF_GROUP => CFGOPTGRP_REPO,
+        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
+        &CFGDEF_TYPE => CFGDEF_TYPE_STRING,
+        &CFGDEF_REQUIRED => false,
+        &CFGDEF_NAME_ALT =>
+        {
+            'repo?-azure-ca-file' => {&CFGDEF_INDEX => 1},
+            'repo-s3-ca-file' => {&CFGDEF_INDEX => 1, &CFGDEF_RESET => false},
+            'repo?-s3-ca-file' => {&CFGDEF_INDEX => 1},
+        },
+        &CFGDEF_DEPEND => CFGOPT_REPO_STORAGE_VERIFY_TLS,
+        &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
+    },
+
+    &CFGOPT_REPO_STORAGE_CA_PATH =>
+    {
+        &CFGDEF_TYPE => CFGDEF_TYPE_PATH,
+        &CFGDEF_INHERIT => CFGOPT_REPO_STORAGE_CA_FILE,
+        &CFGDEF_NAME_ALT =>
+        {
+            'repo?-azure-ca-path' => {&CFGDEF_INDEX => 1},
+            'repo-s3-ca-path' => {&CFGDEF_INDEX => 1, &CFGDEF_RESET => false},
+            'repo?-s3-ca-path' => {&CFGDEF_INDEX => 1},
+        },
+    },
+
+    &CFGOPT_REPO_STORAGE_HOST =>
+    {
+        &CFGDEF_GROUP => CFGOPTGRP_REPO,
+        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
+        &CFGDEF_TYPE => CFGDEF_TYPE_STRING,
+        &CFGDEF_REQUIRED => false,
+        &CFGDEF_NAME_ALT =>
+        {
+            'repo?-azure-host' => {&CFGDEF_INDEX => 1},
+            'repo-s3-host' => {&CFGDEF_INDEX => 1, &CFGDEF_RESET => false},
+            'repo?-s3-host' => {&CFGDEF_INDEX => 1},
+        },
+        &CFGDEF_DEPEND =>
+        {
+            &CFGDEF_DEPEND_OPTION => CFGOPT_REPO_TYPE,
+            &CFGDEF_DEPEND_LIST => [CFGOPTVAL_REPO_TYPE_AZURE, CFGOPTVAL_REPO_TYPE_S3],
+        },
+        &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
+    },
+
+    &CFGOPT_REPO_STORAGE_PORT =>
+    {
+        &CFGDEF_GROUP => CFGOPTGRP_REPO,
+        &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
+        &CFGDEF_TYPE => CFGDEF_TYPE_INTEGER,
+        &CFGDEF_DEFAULT => 443,
+        &CFGDEF_ALLOW_RANGE => [1, 65535],
+        &CFGDEF_NAME_ALT =>
+        {
+            'repo?-azure-port' => {&CFGDEF_INDEX => 1},
+            'repo?-s3-port' => {&CFGDEF_INDEX => 1},
+        },
+        &CFGDEF_DEPEND => CFGOPT_REPO_STORAGE_HOST,
+        &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
+    },
+
+    &CFGOPT_REPO_STORAGE_VERIFY_TLS =>
     {
         &CFGDEF_GROUP => CFGOPTGRP_REPO,
         &CFGDEF_SECTION => CFGDEF_SECTION_GLOBAL,
@@ -2453,11 +2498,17 @@ my %hConfigDefine =
         &CFGDEF_DEFAULT => true,
         &CFGDEF_NAME_ALT =>
         {
+            'repo?-azure-verify-tls' => {&CFGDEF_INDEX => 1},
             'repo-s3-verify-ssl' => {&CFGDEF_INDEX => 1, &CFGDEF_RESET => false},
             'repo?-s3-verify-ssl' => {&CFGDEF_INDEX => 1, &CFGDEF_RESET => false},
+            'repo?-s3-verify-tls' => {&CFGDEF_INDEX => 1},
+        },
+        &CFGDEF_DEPEND =>
+        {
+            &CFGDEF_DEPEND_OPTION => CFGOPT_REPO_TYPE,
+            &CFGDEF_DEPEND_LIST => [CFGOPTVAL_REPO_TYPE_AZURE, CFGOPTVAL_REPO_TYPE_GCS, CFGOPTVAL_REPO_TYPE_S3],
         },
         &CFGDEF_COMMAND => CFGOPT_REPO_TYPE,
-        &CFGDEF_DEPEND => CFGOPT_REPO_S3_BUCKET,
     },
 
     &CFGOPT_REPO_TYPE =>
@@ -2470,6 +2521,7 @@ my %hConfigDefine =
         [
             &CFGOPTVAL_REPO_TYPE_AZURE,
             &CFGOPTVAL_REPO_TYPE_CIFS,
+            &CFGOPTVAL_REPO_TYPE_GCS,
             &CFGOPTVAL_REPO_TYPE_POSIX,
             &CFGOPTVAL_REPO_TYPE_S3,
         ],
@@ -3224,7 +3276,8 @@ my %hConfigDefine =
     &CFGOPT_PG_HOST_CONFIG =>
     {
         &CFGDEF_INHERIT => CFGOPT_PG_HOST_CMD,
-        &CFGDEF_DEFAULT => CFGDEF_DEFAULT_CONFIG,
+        &CFGDEF_DEFAULT => "CFGOPTDEF_CONFIG_PATH \"/\" PROJECT_CONFIG_FILE",
+        &CFGDEF_DEFAULT_LITERAL => true,
         &CFGDEF_REQUIRED => true,
         &CFGDEF_NAME_ALT =>
         {
@@ -3237,14 +3290,16 @@ my %hConfigDefine =
     {
         &CFGDEF_TYPE => CFGDEF_TYPE_PATH,
         &CFGDEF_INHERIT => CFGOPT_PG_HOST_CMD,
-        &CFGDEF_DEFAULT => CFGDEF_DEFAULT_CONFIG_PATH,
+        &CFGDEF_DEFAULT => "CFGOPTDEF_CONFIG_PATH",
+        &CFGDEF_DEFAULT_LITERAL => true,
     },
 
     &CFGOPT_PG_HOST_CONFIG_INCLUDE_PATH =>
     {
         &CFGDEF_TYPE => CFGDEF_TYPE_PATH,
         &CFGDEF_INHERIT => CFGOPT_PG_HOST_CMD,
-        &CFGDEF_DEFAULT => CFGDEF_DEFAULT_CONFIG_INCLUDE_PATH,
+        &CFGDEF_DEFAULT => "CFGOPTDEF_CONFIG_PATH \"/\" PROJECT_CONFIG_INCLUDE_PATH",
+        &CFGDEF_DEFAULT_LITERAL => true,
     },
 
     &CFGOPT_PG_HOST_PORT =>

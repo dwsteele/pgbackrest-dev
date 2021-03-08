@@ -146,6 +146,40 @@ strNewBuf(const Buffer *buffer)
 
 /**********************************************************************************************************************************/
 String *
+strNewEncode(EncodeType type, const Buffer *buffer)
+{
+    FUNCTION_TEST_BEGIN();
+        FUNCTION_TEST_PARAM(ENUM, type);
+        FUNCTION_TEST_PARAM(BUFFER, buffer);
+    FUNCTION_TEST_END();
+
+    ASSERT(buffer != NULL);
+
+    // Check encoded size
+    size_t size = encodeToStrSize(type, bufUsed(buffer));
+    CHECK_SIZE(size);
+
+    // Create object
+    String *this = memNew(sizeof(String));
+
+    *this = (String)
+    {
+        .pub =
+        {
+            .size = (unsigned int)size,
+        },
+        .memContext = memContextCurrent(),
+    };
+
+    // Allocate and encode buffer
+    this->pub.buffer = memNew(this->pub.size + 1);
+    encodeToStr(type, bufPtrConst(buffer), bufUsed(buffer), this->pub.buffer);
+
+    FUNCTION_TEST_RETURN(this);
+}
+
+/**********************************************************************************************************************************/
+String *
 strNewFmt(const char *format, ...)
 {
     FUNCTION_TEST_BEGIN();
@@ -399,6 +433,33 @@ strCatChr(String *this, char cat)
     this->pub.buffer[this->pub.size++] = cat;
     this->pub.buffer[this->pub.size] = 0;
     this->pub.extra--;
+
+    FUNCTION_TEST_RETURN(this);
+}
+
+/**********************************************************************************************************************************/
+String *
+strCatEncode(String *this, EncodeType type, const Buffer *buffer)
+{
+    FUNCTION_TEST_BEGIN();
+        FUNCTION_TEST_PARAM(STRING, this);
+        FUNCTION_TEST_PARAM(ENUM, type);
+        FUNCTION_TEST_PARAM(BUFFER, buffer);
+    FUNCTION_TEST_END();
+
+    ASSERT(this != NULL);
+    ASSERT(buffer != NULL);
+
+    // Ensure there is enough space to grow the string
+    size_t encodeSize = encodeToStrSize(type, bufUsed(buffer));
+    strResize(this, encodeSize);
+
+    // Append the encoded string
+    encodeToStr(type, bufPtrConst(buffer), bufUsed(buffer), this->pub.buffer + this->pub.size);
+
+    // Update size/extra
+    this->pub.size += (unsigned int)encodeSize;
+    this->pub.extra -= (unsigned int)encodeSize;
 
     FUNCTION_TEST_RETURN(this);
 }
