@@ -790,6 +790,7 @@ unit:
           - protocol/helper # !!! REMOVE
 
         depend: # !!! REMOVE
+          - command/backup/file # !!! MOVE BACK TO COVERAGE
           - command/local/local
           - command/verify/file
           - command/verify/protocol
