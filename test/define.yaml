@@ -775,16 +775,15 @@ unit:
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: backup
-        total: 10
-        binReq: true
+        total: 9
 
         coverage:
           - command/backup/backup
           - command/backup/common
-          - command/backup/file
           - command/backup/protocol
 
         include:
+          - command/backup/file # !!! MOVE BACK TO COVERAGE
           - info/info
           - info/manifest
           - storage/storage
