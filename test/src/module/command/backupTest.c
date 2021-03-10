@@ -3,11 +3,15 @@ Test Backup Command
 ***********************************************************************************************************************************/
 #include <utime.h>
 
+#include "command/local/local.h"
 #include "command/stanza/create.h"
 #include "command/stanza/upgrade.h"
 #include "common/crypto/hash.h"
+#include "common/fork.h"
 #include "common/io/bufferRead.h"
 #include "common/io/bufferWrite.h"
+#include "common/io/fdRead.h"
+#include "common/io/fdWrite.h"
 #include "common/io/io.h"
 #include "postgres/interface/static.vendor.h"
 #include "storage/helper.h"
@@ -15,6 +19,58 @@ Test Backup Command
 
 #include "common/harnessConfig.h"
 #include "common/harnessPq.h"
+
+/***********************************************************************************************************************************
+!!!
+***********************************************************************************************************************************/
+static void
+testBackupLocalExec(
+    ProtocolHelperClient *helper, ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId)
+{
+    FUNCTION_TEST_BEGIN();
+        FUNCTION_TEST_PARAM_P(VOID, helper);
+        FUNCTION_TEST_PARAM(ENUM, protocolStorageType);
+        FUNCTION_TEST_PARAM(UINT, hostIdx);
+        FUNCTION_TEST_PARAM(UINT, processId);
+    FUNCTION_TEST_END();
+
+    // Create pipes to communicate with the subprocess. The names of the pipes are from the perspective of the parent process since
+    // the child process will use them only briefly before exec'ing.
+    int pipeRead[2];
+    int pipeWrite[2];
+
+    THROW_ON_SYS_ERROR(pipe(pipeRead) == -1, KernelError, "unable to create read pipe");
+    THROW_ON_SYS_ERROR(pipe(pipeWrite) == -1, KernelError, "unable to create write pipe");
+
+    // Exec command in the child process
+    if (forkSafe() == 0)
+    {
+        // Load configuration
+        const StringList *const paramList = protocolLocalParam(protocolStorageType, hostIdx, processId);
+        harnessCfgLoadRaw(strLstSize(paramList), strLstPtr(paramList));
+
+        // Change log process id to aid in debugging
+        hrnLogProcessIdSet(processId);
+
+        cmdLocal(pipeWrite[0], pipeRead[1]);
+        exit(0);
+    }
+
+    // Close the unused file descriptors
+    close(pipeRead[1]);
+    close(pipeWrite[0]);
+
+    // Create protocol object
+    IoRead *read = ioFdReadNew(strNewFmt(PROTOCOL_SERVICE_LOCAL "-%u shim protocol read", processId), pipeRead[0], 5000);
+    ioReadOpen(read);
+    IoWrite *write = ioFdWriteNew(strNewFmt(PROTOCOL_SERVICE_LOCAL "-%u shim protocol write", processId), pipeWrite[1], 5000);
+    ioWriteOpen(write);
+
+    helper->client = protocolClientNew(
+        strNewFmt(PROTOCOL_SERVICE_LOCAL "-%u shim protocol", processId), PROTOCOL_SERVICE_LOCAL_STR, read, write);
+
+    FUNCTION_TEST_RETURN_VOID();
+}
 
 /***********************************************************************************************************************************
 Get a list of all files in the backup and a redacted version of the manifest that can be tested against a static string
@@ -243,7 +299,7 @@ typedef struct TestBackupPqScriptParam
     unsigned int timeline;                                          // Timeline to use for WAL files
 } TestBackupPqScriptParam;
 
-#define testBackupPqScriptP(pgVersion, backupStartTime, ...)                                                                                           \
+#define testBackupPqScriptP(pgVersion, backupStartTime, ...)                                                                       \
     testBackupPqScript(pgVersion, backupStartTime, (TestBackupPqScriptParam){VAR_PARAM_INIT, __VA_ARGS__})
 
 static void
@@ -442,6 +498,9 @@ void
 testRun(void)
 {
     FUNCTION_HARNESS_VOID();
+
+    // !!! SET HOOK
+    protocolLocalExecHook = testBackupLocalExec;
 
     // The tests expect the timezone to be UTC
     setenv("TZ", "UTC", true);

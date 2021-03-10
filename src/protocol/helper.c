@@ -202,6 +202,10 @@ protocolLocalExec(
     FUNCTION_TEST_RETURN_VOID();
 }
 
+static void (*protocolLocalExecHook)(
+    ProtocolHelperClient *helper, ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId) =
+    protocolLocalExec;
+
 ProtocolClient *
 protocolLocalGet(ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId)
 {
@@ -236,7 +240,7 @@ protocolLocalGet(ProtocolStorageType protocolStorageType, unsigned int hostIdx, 
     {
         MEM_CONTEXT_BEGIN(protocolHelper.memContext)
         {
-            protocolLocalExec(protocolHelperClient, protocolStorageType, hostIdx, processId);
+            protocolLocalExecHook(protocolHelperClient, protocolStorageType, hostIdx, processId);
         }
         MEM_CONTEXT_END();
     }

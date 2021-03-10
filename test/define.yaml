@@ -788,6 +788,12 @@ unit:
           - info/info
           - info/manifest
           - storage/storage
+          - protocol/helper # !!! REMOVE
+
+        depend: # !!! REMOVE
+          - command/local/local
+          - command/verify/file
+          - command/verify/protocol
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: repo
