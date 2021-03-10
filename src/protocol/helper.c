@@ -202,6 +202,7 @@ protocolLocalExec(
     FUNCTION_TEST_RETURN_VOID();
 }
 
+// !!! TEMP HOOK TO MAKE SURE A SHIM WILL WORK
 static void (*protocolLocalExecHook)(
     ProtocolHelperClient *helper, ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId) =
     protocolLocalExec;

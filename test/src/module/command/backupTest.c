@@ -24,15 +24,15 @@ Test Backup Command
 !!!
 ***********************************************************************************************************************************/
 static void
-testBackupLocalExec(
+testBackupLocalShim(
     ProtocolHelperClient *helper, ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId)
 {
-    FUNCTION_TEST_BEGIN();
-        FUNCTION_TEST_PARAM_P(VOID, helper);
-        FUNCTION_TEST_PARAM(ENUM, protocolStorageType);
-        FUNCTION_TEST_PARAM(UINT, hostIdx);
-        FUNCTION_TEST_PARAM(UINT, processId);
-    FUNCTION_TEST_END();
+    FUNCTION_HARNESS_BEGIN();
+        FUNCTION_HARNESS_PARAM_P(VOID, helper);
+        FUNCTION_HARNESS_PARAM(ENUM, protocolStorageType);
+        FUNCTION_HARNESS_PARAM(UINT, hostIdx);
+        FUNCTION_HARNESS_PARAM(UINT, processId);
+    FUNCTION_HARNESS_END();
 
     // Create pipes to communicate with the subprocess. The names of the pipes are from the perspective of the parent process since
     // the child process will use them only briefly before exec'ing.
@@ -69,7 +69,7 @@ testBackupLocalExec(
     helper->client = protocolClientNew(
         strNewFmt(PROTOCOL_SERVICE_LOCAL "-%u shim protocol", processId), PROTOCOL_SERVICE_LOCAL_STR, read, write);
 
-    FUNCTION_TEST_RETURN_VOID();
+    FUNCTION_HARNESS_RESULT_VOID();
 }
 
 /***********************************************************************************************************************************
@@ -499,8 +499,8 @@ testRun(void)
 {
     FUNCTION_HARNESS_VOID();
 
-    // !!! SET HOOK
-    protocolLocalExecHook = testBackupLocalExec;
+    // !!! SET HOOK -- REMOVE WHEN IT IS A SHIM
+    protocolLocalExecHook = testBackupLocalShim;
 
     // The tests expect the timezone to be UTC
     setenv("TZ", "UTC", true);
