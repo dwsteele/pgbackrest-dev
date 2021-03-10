@@ -175,21 +175,31 @@ protocolLocalParam(ProtocolStorageType protocolStorageType, unsigned int hostIdx
 
 /**********************************************************************************************************************************/
 // Helper to execute the local process. This is a separate function solely so that it can be shimmed during testing.
-static Exec *
-protocolLocalExecGet(ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId)
+static void
+protocolLocalExec(
+    ProtocolHelperClient *helper, ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId)
 {
     FUNCTION_TEST_BEGIN();
+        FUNCTION_TEST_PARAM_P(VOID, helper);
         FUNCTION_TEST_PARAM(ENUM, protocolStorageType);
         FUNCTION_TEST_PARAM(UINT, hostIdx);
         FUNCTION_TEST_PARAM(UINT, processId);
     FUNCTION_TEST_END();
 
-    Exec *result = execNew(
+    // Execute the protocol command
+    helper->exec = execNew(
         cfgExe(), protocolLocalParam(protocolStorageType, hostIdx, processId),
         strNewFmt(PROTOCOL_SERVICE_LOCAL "-%u process", processId), cfgOptionUInt64(cfgOptProtocolTimeout));
-    execOpen(result);
+    execOpen(helper->exec);
 
-    FUNCTION_TEST_RETURN(result);
+    // Create protocol object
+    helper->client = protocolClientNew(
+        strNewFmt(PROTOCOL_SERVICE_LOCAL "-%u protocol", processId),
+        PROTOCOL_SERVICE_LOCAL_STR, execIoRead(helper->exec), execIoWrite(helper->exec));
+
+    protocolClientMove(helper->client, execMemContext(helper->exec));
+
+    FUNCTION_TEST_RETURN_VOID();
 }
 
 ProtocolClient *
@@ -226,15 +236,7 @@ protocolLocalGet(ProtocolStorageType protocolStorageType, unsigned int hostIdx, 
     {
         MEM_CONTEXT_BEGIN(protocolHelper.memContext)
         {
-            // Execute the protocol command
-            protocolHelperClient->exec = protocolLocalExecGet(protocolStorageType, hostIdx, processId);
-
-            // Create protocol object
-            protocolHelperClient->client = protocolClientNew(
-                strNewFmt(PROTOCOL_SERVICE_LOCAL "-%u protocol", processId),
-                PROTOCOL_SERVICE_LOCAL_STR, execIoRead(protocolHelperClient->exec), execIoWrite(protocolHelperClient->exec));
-
-            protocolClientMove(protocolHelperClient->client, execMemContext(protocolHelperClient->exec));
+            protocolLocalExec(protocolHelperClient, protocolStorageType, hostIdx, processId);
         }
         MEM_CONTEXT_END();
     }

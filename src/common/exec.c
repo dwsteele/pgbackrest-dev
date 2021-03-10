@@ -296,13 +296,12 @@ execFdRead(const THIS_VOID)
 }
 
 /**********************************************************************************************************************************/
-// !!! NEED HELPER/SHIM COMMENT HERE
-static void
-execOpenFork(Exec *this)
+void
+execOpen(Exec *this)
 {
-    FUNCTION_TEST_BEGIN()
-        FUNCTION_TEST_PARAM(EXEC, this);
-    FUNCTION_TEST_END();
+    FUNCTION_LOG_BEGIN(logLevelDebug)
+        FUNCTION_LOG_PARAM(EXEC, this);
+    FUNCTION_LOG_END();
 
     ASSERT(this != NULL);
 
@@ -319,7 +318,7 @@ execOpenFork(Exec *this)
     // Fork the subprocess
     this->processId = forkSafe();
 
-    // Setup child process
+    // Exec command in the child process
     if (this->processId == 0)
     {
         // Disable logging and close log file
@@ -334,7 +333,13 @@ execOpenFork(Exec *this)
         // Assign stderr to the input side of the error pipe
         PIPE_DUP2(pipeError, 1, STDERR_FILENO);
 
-        FUNCTION_TEST_RETURN_VOID();
+        // Execute the binary.  This statement will not return if it is successful
+        execvp(strZ(this->command), (char ** const)strLstPtr(this->param));
+
+        // If we got here then there was an error.  We can't use a throw as we normally would because we have already shutdown
+        // logging and we don't want to execute exit paths that might free parent resources which we still have references to.
+        fprintf(stderr, "unable to execute '%s': [%d] %s\n", strZ(this->command), errno, strerror(errno));
+        exit(errorTypeCode(&ExecuteError));
     }
 
     // Close the unused file descriptors
@@ -360,33 +365,6 @@ execOpenFork(Exec *this)
 
     // Set a callback so the file descriptors will get freed
     memContextCallbackSet(this->memContext, execFreeResource, this);
-
-    FUNCTION_TEST_RETURN_VOID();
-}
-
-void
-execOpen(Exec *this)
-{
-    FUNCTION_LOG_BEGIN(logLevelDebug)
-        FUNCTION_LOG_PARAM(EXEC, this);
-    FUNCTION_LOG_END();
-
-    ASSERT(this != NULL);
-
-    // Fork the new process
-    execOpenFork(this);
-
-    // Exec command in the child process
-    if (this->processId == 0)
-    {
-        // Execute the binary. This statement will not return if it is successful
-        execvp(strZ(this->command), (char ** const)strLstPtr(this->param));
-
-        // If we got here then there was an error. We can't use a throw as we normally would because we have already shutdown
-        // logging and we don't want to execute exit paths that might free parent resources which we still have references to.
-        fprintf(stderr, "unable to execute '%s': [%d] %s\n", strZ(this->command), errno, strerror(errno));
-        exit(errorTypeCode(&ExecuteError));
-    }
 
     FUNCTION_LOG_RETURN_VOID();
 }
