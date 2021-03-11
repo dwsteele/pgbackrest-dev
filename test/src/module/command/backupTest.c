@@ -689,31 +689,6 @@ testRun(void)
                 storageExistsP(storageRepo(), backupPathFile) && result.pageChecksumResult == NULL),
             true, "    noop");
 
-        // Check protocol function directly
-        // -------------------------------------------------------------------------------------------------------------------------
-        // pgFileChecksum, hasReference, delta
-        paramList = varLstNew();
-        varLstAdd(paramList, varNewStr(pgFile));            // pgFile
-        varLstAdd(paramList, varNewBool(false));            // pgFileIgnoreMissing
-        varLstAdd(paramList, varNewUInt64(12));             // pgFileSize
-        varLstAdd(paramList, varNewBool(false));            // pgFileCopyExactSize
-        varLstAdd(paramList, varNewStrZ("c3ae4687ea8ccd47bfdb190dbe7fd3b37545fdb9"));   // pgFileChecksum
-        varLstAdd(paramList, varNewBool(false));            // pgFileChecksumPage
-        varLstAdd(paramList, varNewUInt64(0));              // pgFileChecksumPageLsnLimit
-        varLstAdd(paramList, varNewStr(pgFile));            // repoFile
-        varLstAdd(paramList, varNewBool(true));             // repoFileHasReference
-        varLstAdd(paramList, varNewUInt(compressTypeNone)); // repoFileCompress
-        varLstAdd(paramList, varNewInt(1));                 // repoFileCompressLevel
-        varLstAdd(paramList, varNewStr(backupLabel));       // backupLabel
-        varLstAdd(paramList, varNewBool(true));             // delta
-        varLstAdd(paramList, NULL);                         // cipherSubPass
-
-        TEST_RESULT_BOOL(
-            backupProtocol(PROTOCOL_COMMAND_BACKUP_FILE_STR, paramList, server), true, "protocol backup file - noop");
-        TEST_RESULT_STR_Z(
-            strNewBuf(serverWrite), "{\"out\":[4,12,0,\"c3ae4687ea8ccd47bfdb190dbe7fd3b37545fdb9\",null]}\n", "    check result");
-        bufUsedSet(serverWrite, 0);
-
         // -------------------------------------------------------------------------------------------------------------------------
         // File exists in repo and db, pg checksum mismatch, delta set, ignoreMissing false, hasReference - COPY
         TEST_ASSIGN(
@@ -831,31 +806,6 @@ testRun(void)
                 result.pageChecksumResult == NULL),
             true, "    compressed repo file matches");
 
-        // Check protocol function directly
-        // -------------------------------------------------------------------------------------------------------------------------
-        // compression
-        paramList = varLstNew();
-        varLstAdd(paramList, varNewStr(pgFile));            // pgFile
-        varLstAdd(paramList, varNewBool(false));            // pgFileIgnoreMissing
-        varLstAdd(paramList, varNewUInt64(9));              // pgFileSize
-        varLstAdd(paramList, varNewBool(true));             // pgFileCopyExactSize
-        varLstAdd(paramList, varNewStrZ("9bc8ab2dda60ef4beed07d1e19ce0676d5edde67"));   // pgFileChecksum
-        varLstAdd(paramList, varNewBool(false));            // pgFileChecksumPage
-        varLstAdd(paramList, varNewUInt64(0));              // pgFileChecksumPageLsnLimit
-        varLstAdd(paramList, varNewStr(pgFile));            // repoFile
-        varLstAdd(paramList, varNewBool(false));            // repoFileHasReference
-        varLstAdd(paramList, varNewUInt(compressTypeGz));   // repoFileCompress
-        varLstAdd(paramList, varNewInt(3));                 // repoFileCompressLevel
-        varLstAdd(paramList, varNewStr(backupLabel));       // backupLabel
-        varLstAdd(paramList, varNewBool(false));            // delta
-        varLstAdd(paramList, NULL);                         // cipherSubPass
-
-        TEST_RESULT_BOOL(
-            backupProtocol(PROTOCOL_COMMAND_BACKUP_FILE_STR, paramList, server), true, "protocol backup file - copy, compress");
-        TEST_RESULT_STR_Z(
-            strNewBuf(serverWrite), "{\"out\":[0,9,29,\"9bc8ab2dda60ef4beed07d1e19ce0676d5edde67\",null]}\n", "    check result");
-        bufUsedSet(serverWrite, 0);
-
         // -------------------------------------------------------------------------------------------------------------------------
         // Create a zero sized file - checksum will be set but in backupManifestUpdate it will not be copied
         storagePutP(storageNewWriteP(storagePgWrite(), strNew("zerofile")), BUFSTRDEF(""));
@@ -874,10 +824,6 @@ testRun(void)
             (storageExistsP(storageRepo(), strNewFmt(STORAGE_REPO_BACKUP "/%s/zerofile", strZ(backupLabel))) &&
                 result.pageChecksumResult == NULL),
             true, "    copy zero file to repo success");
-
-        // Check invalid protocol function
-        // -------------------------------------------------------------------------------------------------------------------------
-        TEST_RESULT_BOOL(backupProtocol(strNew(BOGUS_STR), paramList, server), false, "invalid function");
     }
 
     // *****************************************************************************************************************************
@@ -950,9 +896,9 @@ testRun(void)
                 storageExistsP(storageRepo(), backupPathFile) && result.pageChecksumResult == NULL),
             true, "    recopy file to encrypted repo success");
 
-        // Check protocol function directly
         // -------------------------------------------------------------------------------------------------------------------------
-        // cipherType, cipherPass
+        TEST_TITLE("protocol function call - cipherType, cipherPass");
+
         paramList = varLstNew();
         varLstAdd(paramList, varNewStr(pgFile));                // pgFile
         varLstAdd(paramList, varNewBool(false));                // pgFileIgnoreMissing
@@ -974,6 +920,12 @@ testRun(void)
         TEST_RESULT_STR_Z(
             strNewBuf(serverWrite), "{\"out\":[2,9,32,\"9bc8ab2dda60ef4beed07d1e19ce0676d5edde67\",null]}\n", "    check result");
         bufUsedSet(serverWrite, 0);
+
+        // Check invalid protocol function
+        // -------------------------------------------------------------------------------------------------------------------------
+        TEST_TITLE("invalid protocol function");
+
+        TEST_RESULT_BOOL(backupProtocol(strNew(BOGUS_STR), paramList, server), false, "invalid function");
     }
 
     // *****************************************************************************************************************************
