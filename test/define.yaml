@@ -775,15 +775,15 @@ unit:
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: backup
-        total: 9
+        total: 10
 
         coverage:
           - command/backup/backup
           - command/backup/common
+          - command/backup/file
           - command/backup/protocol
 
         include:
-          - command/backup/file # !!! MOVE BACK TO COVERAGE
           - info/info
           - info/manifest
           - storage/storage
