@@ -2126,7 +2126,9 @@ testRun(void)
                 "compare file list");
 
             // Remove test files
-            storagePathRemoveP(storagePgWrite(), STRDEF("base/1"), .recurse = true);
+            TEST_STORAGE_REMOVE(storagePgWrite(), "base/1/2");
+            TEST_STORAGE_REMOVE(storagePgWrite(), "base/1/3");
+            TEST_STORAGE_REMOVE(storagePgWrite(), "base/1/4");
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -2202,9 +2204,11 @@ testRun(void)
                 "P00   WARN: a timeline switch has occurred since the 20191027-181320F backup, enabling delta checksum\n"
                 "            HINT: this is normal after restoring from backup or promoting a standby.\n"
                 "P01 DETAIL: match file from prior backup {[path]}/pg1/global/pg_control (8KB, [PCT]) checksum [SHA1]\n"
+                "P01 DETAIL: match file from prior backup /home/docker/test/test-0/pg1/base/1/1 (8KB, [PCT]) checksum [SHA1]\n"
                 "P01 DETAIL: match file from prior backup {[path]}/pg1/postgresql.conf (11B, [PCT]) checksum [SHA1]\n"
                 "P01 DETAIL: match file from prior backup {[path]}/pg1/PG_VERSION (2B, [PCT]) checksum [SHA1]\n"
                 "P00 DETAIL: hardlink pg_data/PG_VERSION to 20191027-181320F\n"
+                "P00 DETAIL: hardlink pg_data/base/1/1 to 20191027-181320F\n"
                 "P00 DETAIL: hardlink pg_data/global/pg_control to 20191027-181320F\n"
                 "P00 DETAIL: hardlink pg_data/postgresql.conf to 20191027-181320F\n"
                 "P00 DETAIL: hardlink pg_tblspc/32768/PG_11_201809051/1/5 to 20191027-181320F\n"
@@ -2222,6 +2226,8 @@ testRun(void)
                 "pg_data/PG_VERSION.gz {file, s=2}\n"
                 "pg_data/backup_label.gz {file, s=17}\n"
                 "pg_data/base {path}\n"
+                "pg_data/base/1 {path}\n"
+                "pg_data/base/1/1.gz {file, s=8192}\n"
                 "pg_data/global {path}\n"
                 "pg_data/global/pg_control.gz {file, s=8192}\n"
                 "pg_data/pg_tblspc {path}\n"
@@ -2244,6 +2250,8 @@ testRun(void)
                     ",\"size\":2,\"timestamp\":1572200000}\n"
                 "pg_data/backup_label={\"checksum\":\"8e6f41ac87a7514be96260d65bacbffb11be77dc\",\"size\":17"
                     ",\"timestamp\":1572400002}\n"
+                "pg_data/base/1/1={\"checksum\":\"0631457264ff7f8d5fb1edc2c0211992a67c73e6\",\"checksum-page\":true"
+                    ",\"master\":false,\"reference\":\"20191027-181320F\",\"size\":8192,\"timestamp\":1572200000}\n"
                 "pg_data/global/pg_control={\"reference\":\"20191027-181320F\",\"size\":8192,\"timestamp\":1572400000}\n"
                 "pg_data/postgresql.conf={\"checksum\":\"e3db315c260e79211b7b52587123b7aa060f30ab\""
                     ",\"reference\":\"20191027-181320F\",\"size\":11,\"timestamp\":1570000000}\n"
@@ -2256,6 +2264,7 @@ testRun(void)
                 "[target:path]\n"
                 "pg_data={}\n"
                 "pg_data/base={}\n"
+                "pg_data/base/1={}\n"
                 "pg_data/global={}\n"
                 "pg_data/pg_tblspc={}\n"
                 "pg_data/pg_wal={}\n"
@@ -2264,9 +2273,6 @@ testRun(void)
                 "pg_tblspc/32768/PG_11_201809051={}\n"
                 "pg_tblspc/32768/PG_11_201809051/1={}\n",
                 "compare file list");
-
-            // Remove test files
-            storagePathRemoveP(storagePgWrite(), STRDEF("base/1"), .recurse = true);
         }
     }
 
