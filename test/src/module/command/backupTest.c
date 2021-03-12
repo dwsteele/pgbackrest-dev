@@ -451,13 +451,13 @@ testRun(void)
 {
     FUNCTION_HARNESS_VOID();
 
+    // Install local command handler shim
+    hrnProtocolLocalShimInstall(testLocalHandlerList, PROTOCOL_SERVER_HANDLER_LIST_SIZE(testLocalHandlerList));
+
     // The tests expect the timezone to be UTC
     setenv("TZ", "UTC", true);
 
     Storage *storageTest = storagePosixNewP(strNew(testPath()), .write = true);
-
-    // Install local command handler shim
-    hrnProtocolLocalShimInstall(testLocalHandlerList, PROTOCOL_SERVER_HANDLER_LIST_SIZE(testLocalHandlerList));
 
     const String *pgFile = strNew("testfile");
     const String *missingFile = strNew("missing");
