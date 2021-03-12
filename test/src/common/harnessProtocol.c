@@ -87,7 +87,7 @@ hrnProtocolLocalShim(
 
 /**********************************************************************************************************************************/
 void
-hrnProtocolLocalHandler(const ProtocolServerHandler *const handlerList, const unsigned int handlerListSize)
+hrnProtocolLocalShimInstall(const ProtocolServerHandler *const handlerList, const unsigned int handlerListSize)
 {
     FUNCTION_HARNESS_BEGIN();
         FUNCTION_HARNESS_PARAM_P(VOID, handlerList);
