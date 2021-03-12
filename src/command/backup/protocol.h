@@ -11,13 +11,13 @@ Backup Protocol Handler
 /***********************************************************************************************************************************
 Constants
 ***********************************************************************************************************************************/
-#define PROTOCOL_COMMAND_BACKUP_FILE                               "backupFile"
+#define PROTOCOL_COMMAND_BACKUP_FILE                                "backupFile"
     STRING_DECLARE(PROTOCOL_COMMAND_BACKUP_FILE_STR);
 
 /***********************************************************************************************************************************
 Functions
 ***********************************************************************************************************************************/
 // Process protocol requests
-bool backupProtocol(const String *command, const VariantList *paramList, ProtocolServer *server);
+void backupFileProtocol(const VariantList *paramList, ProtocolServer *server);
 
 #endif

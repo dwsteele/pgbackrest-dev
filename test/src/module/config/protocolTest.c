@@ -37,8 +37,13 @@ testRun(void)
                 harnessCfgLoad(cfgCmdArchiveGet, argList);
 
                 ProtocolServer *server = protocolServerNew(strNew("test"), strNew("config"), read, write);
-                protocolServerHandlerAdd(server, configProtocol);
-                protocolServerProcess(server, NULL);
+
+                static const ProtocolServerHandler commandHandler[] =
+                {
+                    {.command = PROTOCOL_COMMAND_CONFIG_OPTION, .handler = configOptionProtocol},
+                };
+
+                protocolServerProcess(server, NULL, commandHandler, PROTOCOL_SERVER_HANDLER_LIST_SIZE(commandHandler));
             }
             HARNESS_FORK_CHILD_END();
 
