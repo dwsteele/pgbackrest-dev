@@ -1,15 +1,11 @@
 /***********************************************************************************************************************************
 Test Backup Command
 ***********************************************************************************************************************************/
-#include "command/local/local.h"
 #include "command/stanza/create.h"
 #include "command/stanza/upgrade.h"
 #include "common/crypto/hash.h"
-#include "common/fork.h"
 #include "common/io/bufferRead.h"
 #include "common/io/bufferWrite.h"
-#include "common/io/fdRead.h"
-#include "common/io/fdWrite.h"
 #include "common/io/io.h"
 #include "postgres/interface/static.vendor.h"
 #include "storage/helper.h"
@@ -17,59 +13,8 @@ Test Backup Command
 
 #include "common/harnessConfig.h"
 #include "common/harnessPq.h"
+#include "common/harnessProtocol.h"
 #include "common/harnessStorage.h"
-
-/***********************************************************************************************************************************
-!!!
-***********************************************************************************************************************************/
-static void
-testBackupLocalShim(
-    ProtocolHelperClient *helper, ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId)
-{
-    FUNCTION_HARNESS_BEGIN();
-        FUNCTION_HARNESS_PARAM_P(VOID, helper);
-        FUNCTION_HARNESS_PARAM(ENUM, protocolStorageType);
-        FUNCTION_HARNESS_PARAM(UINT, hostIdx);
-        FUNCTION_HARNESS_PARAM(UINT, processId);
-    FUNCTION_HARNESS_END();
-
-    // Create pipes to communicate with the subprocess. The names of the pipes are from the perspective of the parent process since
-    // the child process will use them only briefly before exec'ing.
-    int pipeRead[2];
-    int pipeWrite[2];
-
-    THROW_ON_SYS_ERROR(pipe(pipeRead) == -1, KernelError, "unable to create read pipe");
-    THROW_ON_SYS_ERROR(pipe(pipeWrite) == -1, KernelError, "unable to create write pipe");
-
-    // Exec command in the child process
-    if (forkSafe() == 0)
-    {
-        // Load configuration
-        const StringList *const paramList = protocolLocalParam(protocolStorageType, hostIdx, processId);
-        harnessCfgLoadRaw(strLstSize(paramList), strLstPtr(paramList));
-
-        // Change log process id to aid in debugging
-        hrnLogProcessIdSet(processId);
-
-        cmdLocal(pipeWrite[0], pipeRead[1]);
-        exit(0);
-    }
-
-    // Close the unused file descriptors
-    close(pipeRead[1]);
-    close(pipeWrite[0]);
-
-    // Create protocol object
-    IoRead *read = ioFdReadNew(strNewFmt(PROTOCOL_SERVICE_LOCAL "-%u shim protocol read", processId), pipeRead[0], 5000);
-    ioReadOpen(read);
-    IoWrite *write = ioFdWriteNew(strNewFmt(PROTOCOL_SERVICE_LOCAL "-%u shim protocol write", processId), pipeWrite[1], 5000);
-    ioWriteOpen(write);
-
-    helper->client = protocolClientNew(
-        strNewFmt(PROTOCOL_SERVICE_LOCAL "-%u shim protocol", processId), PROTOCOL_SERVICE_LOCAL_STR, read, write);
-
-    FUNCTION_HARNESS_RETURN_VOID();
-}
 
 /***********************************************************************************************************************************
 Get a list of all files in the backup and a redacted version of the manifest that can be tested against a static string
@@ -491,6 +436,14 @@ testBackupPqScript(unsigned int pgVersion, time_t backupTimeStart, TestBackupPqS
 };
 
 /***********************************************************************************************************************************
+Command handlers
+***********************************************************************************************************************************/
+static const ProtocolServerHandler testLocalHandlerList[] =
+{
+    {.command = PROTOCOL_COMMAND_BACKUP_FILE, .handler = backupFileProtocol},
+};
+
+/***********************************************************************************************************************************
 Test Run
 ***********************************************************************************************************************************/
 void
@@ -498,13 +451,13 @@ testRun(void)
 {
     FUNCTION_HARNESS_VOID();
 
-    // !!! SET HOOK -- REMOVE WHEN IT IS A SHIM
-    protocolLocalExecHook = testBackupLocalShim;
-
     // The tests expect the timezone to be UTC
     setenv("TZ", "UTC", true);
 
     Storage *storageTest = storagePosixNewP(strNew(testPath()), .write = true);
+
+    // Install local handler shim
+    hrnProtocolLocalHandler(testLocalHandlerList, PROTOCOL_SERVER_HANDLER_LIST_SIZE(testLocalHandlerList));
 
     // Start a protocol server to test the protocol directly
     Buffer *serverWrite = bufNew(8192);

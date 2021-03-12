@@ -6,3 +6,5 @@ Harness for Protocol Testing
 /***********************************************************************************************************************************
 Functions
 ***********************************************************************************************************************************/
+// !!!
+void hrnProtocolLocalHandler(const ProtocolServerHandler *const handlerList, const unsigned int handlerListSize);

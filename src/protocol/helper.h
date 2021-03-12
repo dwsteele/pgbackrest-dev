@@ -35,6 +35,20 @@ void protocolKeepAlive(void);
 // Local protocol client
 ProtocolClient *protocolLocalGet(ProtocolStorageType protocolStorageType, unsigned int hostId, unsigned int protocolId);
 
+// !!! REMOVE ONCE SHIM
+#include "common/exec.h"
+
+StringList *protocolLocalParam(ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId);
+
+typedef struct ProtocolHelperClient
+{
+    Exec *exec;                                                     // Executed client
+    ProtocolClient *client;                                         // Protocol client
+} ProtocolHelperClient;
+
+extern void (*protocolLocalExecHook)(
+    ProtocolHelperClient *helper, ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId);
+
 // Free (shutdown) a local
 void protocolLocalFree(unsigned int protocolId);
 

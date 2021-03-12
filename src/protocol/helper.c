@@ -29,12 +29,6 @@ STRING_STATIC(PROTOCOL_REMOTE_TYPE_REPO_STR,                        PROTOCOL_REM
 /***********************************************************************************************************************************
 Local variables
 ***********************************************************************************************************************************/
-typedef struct ProtocolHelperClient
-{
-    Exec *exec;                                                     // Executed client
-    ProtocolClient *client;                                         // Protocol client
-} ProtocolHelperClient;
-
 static struct
 {
     MemContext *memContext;                                         // Mem context for protocol helper
@@ -128,7 +122,7 @@ pgIsLocalVerify(void)
 /***********************************************************************************************************************************
 Get the command line required for local protocol execution
 ***********************************************************************************************************************************/
-static StringList *
+StringList *
 protocolLocalParam(ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId)
 {
     FUNCTION_LOG_BEGIN(logLevelDebug);
@@ -203,7 +197,7 @@ protocolLocalExec(
 }
 
 // !!! TEMP HOOK TO MAKE SURE A SHIM WILL WORK
-static void (*protocolLocalExecHook)(
+void (*protocolLocalExecHook)(
     ProtocolHelperClient *helper, ProtocolStorageType protocolStorageType, unsigned int hostIdx, unsigned int processId) =
     protocolLocalExec;
 
