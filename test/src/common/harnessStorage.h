@@ -68,14 +68,6 @@ typedef struct HrnStorageModeParam
 void hrnStorageMode(const int line, const Storage *const storage, const char *const path, HrnStorageModeParam param);
 
 /***********************************************************************************************************************************
-Change the time of a path/file
-***********************************************************************************************************************************/
-#define HRN_STORAGE_TIME(storage, path, time)                                                                                      \
-    hrnStorageTime(__LINE__, storage, path, time)
-
-void hrnStorageTime(const int line, const Storage *const storage, const char *const path, time_t modified);
-
-/***********************************************************************************************************************************
 Put a file with optional compression and/or encryption
 ***********************************************************************************************************************************/
 typedef struct HrnStoragePutParam
