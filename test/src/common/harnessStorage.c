@@ -314,12 +314,12 @@ hrnStoragePutLog(const Storage *storage, const char *file, const Buffer *buffer,
 
 /**********************************************************************************************************************************/
 void
-hrnStorageTime(const int line, const Storage *const storage, const char *const path, time_t modified)
+hrnStorageTime(const int line, const Storage *const storage, const char *const path, const time_t modified)
 {
     hrnTestLogPrefix(line, true);
     hrnTestResultBegin(__func__, line, false);
 
-    const char *const pathFull = strZ(storagePathP(storage, STR(path)));
+    const char *const pathFull = strZ(storagePathP(storage, path == NULL ? NULL : STR(path)));
 
     printf("time '%" PRId64 "' on '%s'\n", (int64_t)modified, pathFull);
     fflush(stdout);
