@@ -141,14 +141,6 @@ testManifestMinimal(const String *label, unsigned int pgVersion, const String *p
 }
 
 /***********************************************************************************************************************************
-Test local command handlers
-***********************************************************************************************************************************/
-static const ProtocolServerHandler testLocalHandlerList[] =
-{
-    {.command = PROTOCOL_COMMAND_RESTORE_FILE, .handler = restoreFileProtocol},
-};
-
-/***********************************************************************************************************************************
 Test Run
 ***********************************************************************************************************************************/
 void
@@ -157,6 +149,7 @@ testRun(void)
     FUNCTION_HARNESS_VOID();
 
     // Install local command handler shim
+    static const ProtocolServerHandler testLocalHandlerList[] = {PROTOCOL_SERVER_HANDLER_RESTORE_LIST};
     hrnProtocolLocalShimInstall(testLocalHandlerList, PROTOCOL_SERVER_HANDLER_LIST_SIZE(testLocalHandlerList));
 
     // Create default storage object for testing

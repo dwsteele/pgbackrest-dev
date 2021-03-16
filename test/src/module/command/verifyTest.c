@@ -14,14 +14,6 @@ Test Stanza Commands
 #include "common/harnessProtocol.h"
 
 /***********************************************************************************************************************************
-Test local command handlers
-***********************************************************************************************************************************/
-static const ProtocolServerHandler testLocalHandlerList[] =
-{
-    {.command = PROTOCOL_COMMAND_VERIFY_FILE, .handler = verifyFileProtocol},
-};
-
-/***********************************************************************************************************************************
 Test Run
 ***********************************************************************************************************************************/
 void
@@ -30,6 +22,7 @@ testRun(void)
     FUNCTION_HARNESS_VOID();
 
     // Install local command handler shim
+    static const ProtocolServerHandler testLocalHandlerList[] = {PROTOCOL_SERVER_HANDLER_VERIFY_LIST};
     hrnProtocolLocalShimInstall(testLocalHandlerList, PROTOCOL_SERVER_HANDLER_LIST_SIZE(testLocalHandlerList));
 
     Storage *storageTest = storagePosixNewP(strNew(testPath()), .write = true);

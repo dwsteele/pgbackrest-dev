@@ -436,14 +436,6 @@ testBackupPqScript(unsigned int pgVersion, time_t backupTimeStart, TestBackupPqS
 };
 
 /***********************************************************************************************************************************
-Test local command handlers
-***********************************************************************************************************************************/
-static const ProtocolServerHandler testLocalHandlerList[] =
-{
-    {.command = PROTOCOL_COMMAND_BACKUP_FILE, .handler = backupFileProtocol},
-};
-
-/***********************************************************************************************************************************
 Test Run
 ***********************************************************************************************************************************/
 void
@@ -452,6 +444,7 @@ testRun(void)
     FUNCTION_HARNESS_VOID();
 
     // Install local command handler shim
+    static const ProtocolServerHandler testLocalHandlerList[] = {PROTOCOL_SERVER_HANDLER_BACKUP_LIST};
     hrnProtocolLocalShimInstall(testLocalHandlerList, PROTOCOL_SERVER_HANDLER_LIST_SIZE(testLocalHandlerList));
 
     // The tests expect the timezone to be UTC
