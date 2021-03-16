@@ -882,7 +882,7 @@ testRun(void)
     }
 
     // *****************************************************************************************************************************
-    if (testBegin("verifyFile() and verifyFileProtocol()"))
+    if (testBegin("verifyFile()"))
     {
         // Load Parameters
         StringList *argList = strLstDup(argListBase);
