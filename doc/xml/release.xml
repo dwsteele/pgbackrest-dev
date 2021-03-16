@@ -45,6 +45,16 @@
 
                         <p>Fix stack overflow in cipher passphrase generation.</p>
                     </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
+                            <release-item-ideator id="lesovsky.alexey"/>
+                            <release-item-contributor id="david.steele"/>
+                            <release-item-reviewer id="cynthia.shang"/>
+                        </release-item-contributor-list>
+
+                        <p>Fix <cmd>repo-ls</cmd> <id>/</id> on <proper>S3</proper> repositories.</p>
+                    </release-item>
                 </release-bug-list>
 
                 <release-feature-list>
@@ -83,6 +93,15 @@
                 <release-improvement-list>
                     <release-item>
                         <release-item-contributor-list>
+                            <release-item-contributor id="stefan.fercot"/>
+                            <release-item-reviewer id="cynthia.shang"/>
+                        </release-item-contributor-list>
+
+                        <p>Include recreated system databases during selective restore.</p>
+                    </release-item>
+
+                    <release-item>
+                        <release-item-contributor-list>
                             <release-item-reviewer id="cynthia.shang"/>
                         </release-item-contributor-list>
 
@@ -110,6 +129,14 @@
                 </release-improvement-list>
 
                 <release-development-list>
+                    <release-item>
+                        <release-item-contributor-list>
+                            <release-item-reviewer id="cynthia.shang"/>
+                        </release-item-contributor-list>
+
+                        <p>Improve protocol handlers.</p>
+                    </release-item>
+
                     <release-item>
                         <release-item-contributor-list>
                             <release-item-reviewer id="cynthia.shang"/>
@@ -9512,6 +9539,11 @@
         <contributor id="leonardo.gg.avellar">
             <contributor-name-display>Leonardo GG Avellar</contributor-name-display>
             <contributor-id type="github">L30Bola</contributor-id>
+        </contributor>
+
+        <contributor id="lesovsky.alexey">
+            <contributor-name-display>Lesovsky Alexey</contributor-name-display>
+            <contributor-id type="github">lesovsky</contributor-id>
         </contributor>
 
         <contributor id="lev.kokotov">
