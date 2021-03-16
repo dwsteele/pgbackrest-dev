@@ -266,6 +266,40 @@ switch (int)
             <title>Objects</title>
 
             <p>Object-oriented programming is used extensively.  The object pointer is always referred to as <id>this</id>.</p>
+
+            <p>An object can expose internal struct members by defining a public struct that contains the members to be exposed and using inline functions to get/set the members.</p>
+
+            <p>The header file:</p>
+
+            <code-block type="c">
+/***********************************************************************************************************************************
+Getters/setters
+***********************************************************************************************************************************/
+typedef struct StringPub
+{
+    uint64_t size:32;                                               // Actual size of the string
+} StringPub;
+
+// String size minus null-terminator, i.e. the same value that strlen() would return
+__attribute__((always_inline)) static inline size_t
+strSize(const String *this)
+{
+    ASSERT_INLINE(this != NULL);
+    return ((const StringPub *)this)->size;
+}
+            </code-block>
+
+            <p>And the C file:</p>
+
+            <code-block type="c">
+struct String
+{
+    StringPub pub;                                                  // Publicly accessible variables
+    ...
+};
+            </code-block>
+
+            <p>The public struct must be the first member of the private struct. The naming convention for the public struct is to add <id>Pub</id> to the end of the private struct name.</p>
         </section>
 
         <section id="variadic-functions">
