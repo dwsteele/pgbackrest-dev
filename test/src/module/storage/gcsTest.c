@@ -595,6 +595,11 @@ testRun(void)
                     strZ(hrnServerHost()));
 
                 // -----------------------------------------------------------------------------------------------------------------
+                TEST_TITLE("info for / does not exist");
+
+                TEST_RESULT_BOOL(storageInfoP(storage, NULL, .ignoreMissing = true).exists, false, "info for /");
+
+                // -----------------------------------------------------------------------------------------------------------------
                 TEST_TITLE("info for missing file");
 
                 testRequestP(service, HTTP_VERB_GET, .object = "BOGUS", .query = "fields=size%2Cupdated");
@@ -927,5 +932,5 @@ testRun(void)
         HARNESS_FORK_END();
     }
 
-    FUNCTION_HARNESS_RESULT_VOID();
+    FUNCTION_HARNESS_RETURN_VOID();
 }
